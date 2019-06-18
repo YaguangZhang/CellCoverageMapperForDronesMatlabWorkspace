@@ -7,11 +7,41 @@ clear; clc; close all;
 
 %% Configurations
 
+% Set this to be true to generate figures.
+FLAG_GEN_FIGS = true;
+
+% Locate the current working directory.
+cd(fileparts(mfilename('fullpath')));
+addpath(fullfile(pwd)); cd('..');
+
+LIBRARY_TO_USE = 'CPlusPlus';
+% Load the NTIA eHata library first, if necessary, to avoid the "unable to
+% find ehata" error.
+if strcmpi(LIBRARY_TO_USE, 'cplusplus') ...
+        && (~libisloaded('ehata'))
+    if ~strcmpi(computer, 'PCWIN64')
+        warning(['The NTIA C++ eHata library was setup only ', ...
+            'for x64 Windows machines!']);
+    end
+    
+    try
+        addpath(fullfile('lib', 'ext', 'eHataNtia'));
+        loadlibrary('ehata');
+    catch e
+        switch e.identifier
+            case 'MATLAB:loadlibrary:FileNotFound'
+                disp(e.message);
+                error(['Restarting Matlab and loading the lib first ', ...
+                    'may resolve this issue.']);
+            otherwise
+                error(e.message);
+        end
+    end
+end
+
 % Add libs to current path and set ABS_PATH_TO_NIST_SHARED_FOLDER according
 % to the machine name.
-cd(fileparts(mfilename('fullpath')));
-addpath(fullfile(pwd));
-cd('..'); setPath;
+setPath;
 
 % The absolute path to the Lidar .las file.
 ABS_PATH_TO_ACRE_LIDAR_LAS = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
@@ -45,13 +75,25 @@ FLAG_FTECH_ELE_FROM_GOOGLE = false;
 
 % Parameters for the extented Hata model.
 TERRAIN_RES_IN_M = 10; % Terrain profile resolution.
-REGION = 'Suburban';
 CARRIER_FREQUENCY_IN_MHZ = 1900;
 
 % Rx heights for different algorithms to inspect.
 RX_ANT_HEIGHTS_IN_M_FOR_EHATA = [1.5; 10];
 RX_ANT_HEIGHTS_IN_M_FOR_LOS = [50; 100];
 RX_ANT_HEIGHTS_IN_M_FOR_TWO_RAY = [50; 100];
+
+switch lower(LIBRARY_TO_USE)
+    case 'cplusplus'
+        % The quantile percent not exceeded of the signal.
+        %   Limits: 0 < reliability < 1
+        NTIA_EHATA_RELIABILITY = 0.75;
+        % The NLCD environment code.
+        NTIA_EHATA_ENVIRO_CODE = 82; % Cultivated Crops.
+    case 'matlab'
+        REGION = 'Suburban';
+    otherwise
+        error(['Unsupported library: ', model, '!'])
+end
 
 %% Before Processing the Data
 
@@ -151,46 +193,49 @@ if (~exist('lidarEles', 'var') || all(isnan(lidarEles)))
         % Interperlate the data with lat and lon.
         lidarEles = interp2(acreElevDataLons, acreElevDataLats, ...
             rawElevDataElesSorted, lidarLons, lidarLats);
-                
-        % Plot the interperlated elevation for the LiDAR data.
-        hInterpElesForLiDAR = figure;
-        plot3k([lidarLons lidarLats lidarEles], 'ColorBar', false);
-        xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
-        view(2); axis equal; axis tight;
         
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            'ElevationsInterpolated.jpg');
-        saveas(hInterpElesForLiDAR, pathToSaveFig);
-        
-        % Create a function to get elevation from UTM coordinates in the
-        % same way.
-        getEleFromXYFct = @(xs, ys) ...
-            genUtmEleGetter(acreElevDataLats, acreElevDataLons , ...
-            rawElevDataElesSorted, xs, ys, UTM_ZONE);
-        
-        % Test getEleFromXYFct with the LiDAR data locations.
-        lidarElesFromUtm = getEleFromXYFct(lidarXYZ(:,1), lidarXYZ(:,2));
-        
-        % Plot the interperlated elevation for the LiDAR data.
-        hInterpElesFromUtmForLiDAR = figure;
-        plot3k([lidarLons lidarLats lidarElesFromUtm], 'ColorBar', false);
-        xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
-        view(2); axis equal; axis tight;
-        
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            'ElevationsInterpolatedFromUtmCoors.jpg');
-        saveas(hInterpElesFromUtmForLiDAR, pathToSaveFig);
-        
-        % Plot the difference between the two interperlated elevation sets.
-        hInterpElesDiffForLiDAR = figure;
-        plot3k([lidarLons lidarLats lidarEles-lidarElesFromUtm], ...
-            'Labels', {'', 'Longitude (degrees)', 'Latitude (degrees)', ...
-            '', 'lidarEles-lidarElesFromUtm'});
-        view(2); axis equal; axis tight;
-        
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            'ElevationsInterpolatedDiff.jpg');
-        saveas(hInterpElesDiffForLiDAR, pathToSaveFig);
+        if FLAG_GEN_FIGS
+            % Plot the interperlated elevation for the LiDAR data.
+            hInterpElesForLiDAR = figure;
+            plot3k([lidarLons lidarLats lidarEles], 'ColorBar', false);
+            xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
+            view(2); axis equal; axis tight;
+            
+            pathToSaveFig = fullfile(pathToSaveResults, ...
+                'ElevationsInterpolated.jpg');
+            saveas(hInterpElesForLiDAR, pathToSaveFig);
+            
+            % Create a function to get elevation from UTM coordinates in
+            % the same way.
+            getEleFromXYFct = @(xs, ys) ...
+                genUtmEleGetter(acreElevDataLats, acreElevDataLons , ...
+                rawElevDataElesSorted, xs, ys, UTM_ZONE);
+            
+            % Test getEleFromXYFct with the LiDAR data locations.
+            lidarElesFromUtm = getEleFromXYFct(lidarXYZ(:,1), lidarXYZ(:,2));
+            
+            % Plot the interperlated elevation for the LiDAR data.
+            hInterpElesFromUtmForLiDAR = figure;
+            plot3k([lidarLons lidarLats lidarElesFromUtm], 'ColorBar', false);
+            xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
+            view(2); axis equal; axis tight;
+            
+            pathToSaveFig = fullfile(pathToSaveResults, ...
+                'ElevationsInterpolatedFromUtmCoors.jpg');
+            saveas(hInterpElesFromUtmForLiDAR, pathToSaveFig);
+            
+            % Plot the difference between the two interperlated elevation
+            % sets.
+            hInterpElesDiffForLiDAR = figure;
+            plot3k([lidarLons lidarLats lidarEles-lidarElesFromUtm], ...
+                'Labels', {'', 'Longitude (degrees)', 'Latitude (degrees)', ...
+                '', 'lidarEles-lidarElesFromUtm'});
+            view(2); axis equal; axis tight;
+            
+            pathToSaveFig = fullfile(pathToSaveResults, ...
+                'ElevationsInterpolatedDiff.jpg');
+            saveas(hInterpElesDiffForLiDAR, pathToSaveFig);
+        end
     end
     
     % Save the results.
@@ -203,46 +248,49 @@ disp('    Done!')
 
 %% Generate a Few Plots for the LiDAR Data
 
-disp(' ')
-disp('    Generating plots for LiDAR Data ...')
-
-hIntensity = figure;
-plot3k([lidarXYZ(:,1), lidarXYZ(:,2), lidarIntensity], 'Labels', ...
-    {'', 'x (m)', 'y (m)', '', 'LiDAR Intenstiy'});
-grid on; view(2); axis equal; axis tight;
-
-pathToSaveFig = fullfile(pathToSaveResults, 'lidarIntensity.png');
-saveas(hIntensity, pathToSaveFig);
-
-hZ = figure;
-plot3k(lidarXYZ, 'Labels', ...
-    {'', 'x (m)', 'y (m)', '', 'z (m)'});
-grid on; view(2); axis equal; axis tight;
-
-pathToSaveFig = fullfile(pathToSaveResults, 'lidarZ.png');
-saveas(hZ, pathToSaveFig);
-
-downSampFactor = 10;
-hZDownSamped = figure;
-plot3k(lidarXYZ(1:downSampFactor:end, :), 'Labels', ...
-    {['LiDAR z (Down sampled by ', num2str(downSampFactor) ')'], ...
-    'x (m)', 'y (m)', '', 'z (m)'});
-grid on; view(2); axis equal; axis tight;
-
-pathToSaveFig = fullfile(pathToSaveResults, ...
-    ['lidarZDownSamped_', num2str(downSampFactor), '.png']);
-saveas(hZDownSamped, pathToSaveFig);
-
-hDiffBetweenLidarZAndEle = figure;
-plot3k([lidarXYZ(:,1:2) lidarXYZ(:,3)-lidarEles], 'Labels', ...
-    {'LiDAR z minus Elevation', ...
-    'x (m)', 'y (m)', '', 'z-ele (m)'});
-grid on; view(2); axis equal; axis tight
-
-pathToSaveFig = fullfile(pathToSaveResults, 'diffBetweenLidarZAndEle.png');
-saveas(hDiffBetweenLidarZAndEle, pathToSaveFig);
-
-disp('    Done!')
+if FLAG_GEN_FIGS
+    disp(' ')
+    disp('    Generating plots for LiDAR Data ...')
+    
+    hIntensity = figure;
+    plot3k([lidarXYZ(:,1), lidarXYZ(:,2), lidarIntensity], 'Labels', ...
+        {'', 'x (m)', 'y (m)', '', 'LiDAR Intenstiy'});
+    grid on; view(2); axis equal; axis tight;
+    
+    pathToSaveFig = fullfile(pathToSaveResults, 'lidarIntensity.png');
+    saveas(hIntensity, pathToSaveFig);
+    
+    hZ = figure;
+    plot3k(lidarXYZ, 'Labels', ...
+        {'', 'x (m)', 'y (m)', '', 'z (m)'});
+    grid on; view(2); axis equal; axis tight;
+    
+    pathToSaveFig = fullfile(pathToSaveResults, 'lidarZ.png');
+    saveas(hZ, pathToSaveFig);
+    
+    downSampFactor = 10;
+    hZDownSamped = figure;
+    plot3k(lidarXYZ(1:downSampFactor:end, :), 'Labels', ...
+        {['LiDAR z (Down sampled by ', num2str(downSampFactor) ')'], ...
+        'x (m)', 'y (m)', '', 'z (m)'});
+    grid on; view(2); axis equal; axis tight;
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['lidarZDownSamped_', num2str(downSampFactor), '.png']);
+    saveas(hZDownSamped, pathToSaveFig);
+    
+    hDiffBetweenLidarZAndEle = figure;
+    plot3k([lidarXYZ(:,1:2) lidarXYZ(:,3)-lidarEles], 'Labels', ...
+        {'LiDAR z minus Elevation', ...
+        'x (m)', 'y (m)', '', 'z-ele (m)'});
+    grid on; view(2); axis equal; axis tight
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        'diffBetweenLidarZAndEle.png');
+    saveas(hDiffBetweenLidarZAndEle, pathToSaveFig);
+    
+    disp('    Done!')
+end
 
 %% Load Antenna Info
 
@@ -278,24 +326,26 @@ assert(all(strcmp( ...
     ['Locations in the area of interest are not all', ...
     ' in the expected UTM zone!']);
 
-% Show the antennas and the area of interest on the Lidar data.
-hCellAntsOnZ = figure;
-plot3k(lidarXYZ, 'ColorBar', false);
-hold on;
-hAreaOfInt = plot3([rangeOfInterestXs(1); rangeOfInterestXs(1); ...
-    rangeOfInterestXs(2); rangeOfInterestXs(2); rangeOfInterestXs(1)], ...
-    [rangeOfInterestYs(1); rangeOfInterestYs(2); ...
-    rangeOfInterestYs(2); rangeOfInterestYs(1); rangeOfInterestYs(1)], ...
-    ones(5,1).*max(lidarXYZ(:,3)), ...
-    '--', 'LineWidth', 1.5, 'Color', ones(1,3).*0.7);
-hCellAnt = plot3(cellAntsXs, cellAntsYs, cellAntsLatLonAlt(:,3), '*r');
-grid on; xlabel('x (m)'); ylabel('y (m)'); zlabel('z (m)');
-view(2); axis equal; axis tight;
-legend([hAreaOfInt, hCellAnt], 'Area of Interest', 'Cellular Antennas');
-
-pathToSaveFig = fullfile(pathToSaveResults, ...
-    'areaOfInterestAndCellAntsOnLidarZ.png');
-saveas(hCellAntsOnZ, pathToSaveFig);
+if FLAG_GEN_FIGS
+    % Show the antennas and the area of interest on the Lidar data.
+    hCellAntsOnZ = figure;
+    plot3k(lidarXYZ, 'ColorBar', false);
+    hold on;
+    hAreaOfInt = plot3([rangeOfInterestXs(1); rangeOfInterestXs(1); ...
+        rangeOfInterestXs(2); rangeOfInterestXs(2); rangeOfInterestXs(1)], ...
+        [rangeOfInterestYs(1); rangeOfInterestYs(2); ...
+        rangeOfInterestYs(2); rangeOfInterestYs(1); rangeOfInterestYs(1)], ...
+        ones(5,1).*max(lidarXYZ(:,3)), ...
+        '--', 'LineWidth', 1.5, 'Color', ones(1,3).*0.7);
+    hCellAnt = plot3(cellAntsXs, cellAntsYs, cellAntsLatLonAlt(:,3), '*r');
+    grid on; xlabel('x (m)'); ylabel('y (m)'); zlabel('z (m)');
+    view(2); axis equal; axis tight;
+    legend([hAreaOfInt, hCellAnt], 'Area of Interest', 'Cellular Antennas');
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        'areaOfInterestAndCellAntsOnLidarZ.png');
+    saveas(hCellAntsOnZ, pathToSaveFig);
+end
 
 % Create a grid for the area of interest.
 areaOfInterestXs ...
@@ -307,7 +357,7 @@ areaOfInterestYs ...
 
 disp('    Done!')
 
-%% Generate Coverage Maps
+%% Generate Path Loss Maps
 
 disp(' ')
 disp('    Generating coverage maps ...')
@@ -340,41 +390,88 @@ for idxH = 1:numOfHs
             = getEleFromXYFct(curBaseAntXY(1), curBaseAntXY(2));
         
         curBaseAntHeightInM = curBaseAntAltInM - curBaseAntEleInM;
-        [pathLossMaps{idxCellAntenna}, ...
-            pathLossMapXLabels{idxCellAntenna}, ...
-            pathLossMapYLabels{idxCellAntenna}] ...
-            = genMedianBasicPropLossMapViaEHata( ...
-            CARRIER_FREQUENCY_IN_MHZ, ...
-            curBaseAntXY, curBaseAntHeightInM, ...
-            areaOfInterestXs, areaOfInterestYs, curRxAntH, ...
-            getEleFromXYFct, REGION, ...
-            TERRAIN_RES_IN_M);
         
-        % Generate a figure on Google map to show the path loss map.
-        [curXs, curYs] = meshgrid(pathLossMapXLabels{idxCellAntenna}, ...
-            pathLossMapYLabels{idxCellAntenna});
-        boolsFinitePLs = ~isinf(pathLossMaps{idxCellAntenna}(:));
-        [curLatsToShow, curLonsToShow] ...
-            = utm2deg(curXs(boolsFinitePLs), curYs(boolsFinitePLs), ...
-            repmat(UTM_ZONE, sum(boolsFinitePLs), 1));
+        switch lower(LIBRARY_TO_USE)
+            case 'cplusplus'
+                [pathLossMaps{idxCellAntenna}, ...
+                    pathLossMapXLabels{idxCellAntenna}, ...
+                    pathLossMapYLabels{idxCellAntenna}] ...
+                    = genMedianBasicPropLossMapViaEHata( ...
+                    CARRIER_FREQUENCY_IN_MHZ, ...
+                    curBaseAntXY, curBaseAntHeightInM, ...
+                    areaOfInterestXs, areaOfInterestYs, curRxAntH, ...
+                    getEleFromXYFct, NTIA_EHATA_ENVIRO_CODE, ...
+                    TERRAIN_RES_IN_M, LIBRARY_TO_USE, ...
+                    NTIA_EHATA_RELIABILITY);
+                curFigFileName = [ ...
+                    'CellTowerCoverage_RxHeight_', num2str(curRxAntH), ...
+                    '_TxCell_', num2str(idxCellAntenna), ...
+                    '_eHataLib_', LIBRARY_TO_USE, ...
+                    '_TerrainCode_', num2str(NTIA_EHATA_ENVIRO_CODE), ...
+                    '.png'];
+            case 'matlab'
+                [pathLossMaps{idxCellAntenna}, ...
+                    pathLossMapXLabels{idxCellAntenna}, ...
+                    pathLossMapYLabels{idxCellAntenna}] ...
+                    = genMedianBasicPropLossMapViaEHata( ...
+                    CARRIER_FREQUENCY_IN_MHZ, ...
+                    curBaseAntXY, curBaseAntHeightInM, ...
+                    areaOfInterestXs, areaOfInterestYs, curRxAntH, ...
+                    getEleFromXYFct, REGION, ...
+                    TERRAIN_RES_IN_M, LIBRARY_TO_USE);
+                curFigFileName = [ ...
+                    'CellTowerCoverage_RxHeight_', num2str(curRxAntH), ...
+                    '_TxCell_', num2str(idxCellAntenna), ...
+                    '_eHataLib_', LIBRARY_TO_USE, ...
+                    '_Terrain_', REGION, '.png'];
+        end
         
-        hCurPLMap = figure;
-        plot3k([curLonsToShow curLatsToShow ...
-            pathLossMaps{idxCellAntenna}(boolsFinitePLs)], ...
-           'Labels', {'', 'Longitude (degrees)', 'Latitude (degrees)', ...
-            '', 'Path Loss (dB)'}); 
-        grid on; view(2); plot_google_map('MapType', 'satellite');
-        
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            ['CellTowerCoverage_RxHeight_', num2str(curRxAntH), ...
-            '_TxAnt_', num2str(idxCellAntenna), '.png']);
-        saveas(hCurPLMap, pathToSaveFig);
+        if FLAG_GEN_FIGS
+            % Generate a figure on Google map to show the path loss map.
+            [curXs, curYs] ...
+                = meshgrid(pathLossMapXLabels{idxCellAntenna}, ...
+                pathLossMapYLabels{idxCellAntenna});
+            boolsFinitePLs = ~isinf(pathLossMaps{idxCellAntenna}(:));
+            [curLatsToShow, curLonsToShow] ...
+                = utm2deg(curXs(boolsFinitePLs), curYs(boolsFinitePLs), ...
+                repmat(UTM_ZONE, sum(boolsFinitePLs), 1));
+            
+            hCurPLMap = figure;
+            plot3k([curLonsToShow curLatsToShow ...
+                pathLossMaps{idxCellAntenna}(boolsFinitePLs)], ...
+                'Labels', {'', ...
+                'Longitude (degrees)', 'Latitude (degrees)', ...
+                '', 'Path Loss (dB)'});
+            grid on; view(2); plot_google_map('MapType', 'satellite');
+            
+            pathToSaveFig = fullfile(pathToSaveResults, curFigFileName);
+            saveas(hCurPLMap, pathToSaveFig);
+        end
     end
     
     % Save the results.
     towerPathLossMapsEHata{idxH} = pathLossMaps;
     towerPathLossMapsEHataXLabels{idxH} = pathLossMapXLabels;
     towerPathLossMapsEHataYLabels{idxH} = pathLossMapYLabels;
+end
+
+% Clear Things Up if Necessary
+if libisloaded('ehata')
+    unloadlibrary('ehata');
+end
+
+disp('    Done!')
+
+%% Generate Path Loss Maps
+
+disp(' ')
+disp('        Combinning path loss maps ...')
+
+for idxH = 1:numOfHs
+    [coverageMapsEHata{idxH}, coverageMapsEHataXLabels{idxH}, ...
+        coverageMapsEHataYLabels{idxH}] = combineTowerPathLossMaps( ...
+        towerPathLossMapsEHata, towerPathLossMapsEHataXLabels, ...
+        towerPathLossMapsEHataYLabels);
 end
 
 disp('    Done!')

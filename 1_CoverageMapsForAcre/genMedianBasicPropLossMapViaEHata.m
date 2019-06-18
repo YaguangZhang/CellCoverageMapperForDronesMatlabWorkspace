@@ -3,7 +3,7 @@ function [ MedianBPLMap, MedianBPLMapXLabels,  MedianBPLMapYLabels] ...
     baseAntXY, baseAntHeightInM, ...
     rxLocXs, rxLocYs, mobileAntHeightInM, ...
     terrainXYZs, region, ...
-    eleProfileResForEHataInM)
+    eleProfileResForEHataInM, libraryToUse, NTIA_EHATA_RELIABILITY)
 %GENMEDIANBASICPROPLOSSMAPVIAEHATA Compute the median basic propogation
 %loss via the Extended Hata model for a grid to form a map.
 %
@@ -31,15 +31,29 @@ function [ MedianBPLMap, MedianBPLMapXLabels,  MedianBPLMapYLabels] ...
 %         from the terrain matrix above. In this case, the z values can be
 %         gotten by terrainXYZs(xs, ys).
 %   - region
-%     A string ('DenseUrban', 'Urban', or 'Suburban') specifying the type
-%     of the terrain.
+%     The type of the terrain.
+%       - For the NTIA C++ eHata libary, it is an integer for the NLCD
+%         environment code.
+%       - For the Matlab version of eHATA library by Thao Nguyen, it is a
+%         string ('DenseUrban', 'Urban', or 'Suburban').
 %   - eleProfileResForEHataInM
 %     The elevation profile resolution in meter for the extended Hata
 %     model. The smaller this value is, the more points between the
 %     transmitter and the receiver will be considered to generate the
 %     elevation profile for the path loss evaluation via the extended Hata
 %     model.
-%
+%   - libraryToUse
+%     A string specifying which eHATA model library to use:
+%       - 'CPlusPlus'
+%         The NITA C++ version of the eHATA library will be used. Source
+%         code available at https://github.com/NTIA/ehata.
+%       - 'Matlab'
+%         The Matlab version of eHATA library by Thao Nguyen will be used.
+%         Source code available at https://github.com/Thao-Nguyen/eHATA.
+%   - NTIA_EHATA_RELIABILITY
+%     Only required when the NTIA C++ eHata libary is used. It is a double
+%     value from [0, 1] specifying the quantile percent not exceeded of the
+%     signal.
 % Outputs:
 %   - MedianBPLMap
 %     A matrix representing the median basic transmission loss map. The map
@@ -106,9 +120,21 @@ for idxRxX= 1:numRxXs
             curEleProfile(2) = distTxToRx/(numPoints-1);
             curEleProfile(3:end) = fetchZs(eleProfXs, eleProfYs);
             
-            MedianBPLMap(idxRxY, idxRxX) = ExtendedHata_PropLoss( ...
-                fsMHz, baseAntHeightInM, mobileAntHeightInM, ...
-                region, curEleProfile);
+            switch lower(libraryToUse)
+                case 'cplusplus'
+                    MedianBPLMap(idxRxY, idxRxX) ...
+                        = calllib('ehata', 'ExtendedHata', ...
+                        curEleProfile, fsMHz, ...
+                        baseAntHeightInM, mobileAntHeightInM, ...
+                        int8(region), NTIA_EHATA_RELIABILITY);
+                case 'matlab'
+                    MedianBPLMap(idxRxY, idxRxX) ...
+                        = ExtendedHata_PropLoss( ...
+                        fsMHz, baseAntHeightInM, mobileAntHeightInM, ...
+                        region, curEleProfile);
+                otherwise
+                    error(['Unsupported library: ', model, '!'])
+            end            
         end
     end
 end
