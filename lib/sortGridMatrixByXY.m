@@ -5,16 +5,17 @@ function [ XsSorted, YsSorted, gridMatSorted ] ...
 %
 % Inputs:
 %   - Xs, Ys
-%     The labels for the horizontal axis (the columns) and the vertical
-%     axis (the rows) of the grid data, respectively.
+%     Column vectors. The labels for the horizontal axis (the columns) and
+%     the vertical axis (the rows) of the grid data, respectively.
 %   - gridMat
 %     The grid data stored as a matrix. The (i,j) element corresponds to
 %     the location [Xs(j), Ys(i)].
 %
 % Outputs:
 %   - XsSorted, YsSorted, gridMatSorted
-%     The sorted results for the inputs so that the new X/Y labels are
-%     monotonically increasing.
+%     The sorted results for the inputs so that the new X labels are
+%     monotonically increasing while the new Y labels are monotonically
+%     decreasing.
 %
 % Yaguang Zhang, Purdue, 06/11/2019
 

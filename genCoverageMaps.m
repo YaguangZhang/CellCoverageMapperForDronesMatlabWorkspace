@@ -7,15 +7,14 @@
 % Yaguang Zhang, Purdue, 06/10/2019
 
 clear; clc; close all;
-
-% Add libs to current path and set ABS_PATH_TO_SHARED_FOLDER according to
-% the machine name.
 cd(fileparts(mfilename('fullpath')));
-addpath(genpath(fullfile(pwd)));
-setPath;
 
-%% 1_Calibration: Calibrate the Gnu Radio RX
+%% 1_CoverageMapsForAcre: Generage Coverage Maps for ACRE
 addpath(fullfile(pwd, '1_CoverageMapsForAcre'));
 genCoverageMapForAcre;
+
+%% 2_CoverageMapsForTipp: Generage Coverage Maps for Tippecanoe
+addpath(fullfile(pwd, '2_CoverageMapsForTipp'));
+genCoverageMapForTipp;
 
 % EOF

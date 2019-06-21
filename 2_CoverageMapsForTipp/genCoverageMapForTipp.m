@@ -1,7 +1,7 @@
-% GENCOVERAGEMAPFORACRE Calculate path loss and generate coverage maps for
-% Acre.
+% GENCOVERAGEMAPFORTIPP Calculate path loss and generate coverage maps for
+% Tippecanoe County, Indiana.
 %
-% Yaguang Zhang, Purdue, 06/10/2019
+% Yaguang Zhang, Purdue, 06/19/2019
 
 clear; clc; close all;
 
@@ -30,40 +30,50 @@ setPath;
 FLAG_GEN_FIGS = true;
 
 % The absolute path to the Lidar .las file.
-ABS_PATH_TO_ACRE_LIDAR_LAS = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'Lidar', 'ACRE', 'points.las');
+ABS_PATH_TO_TIPP_LIDAR_TIF = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'Lidar', 'Tipp', 'output_be.tif');
 
 % The absolute path to the antenna infomation file.
-ABS_PATH_TO_ACRE_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'CellTowerInfo', 'ACRE', 'CellAntennasLatLonAlt.csv');
+ABS_PATH_TO_TIPP_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
 
 % The absolute path to save results.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'PostProcessingResults', '1_CoverageMapsForAcre');
+    'PostProcessingResults', '2_CoverageMapsForTipp');
 
 % Configure other paths accordingly.
-[~, ACRE_LIDAR_LAS_FILENAME, ~] = fileparts(ABS_PATH_TO_ACRE_LIDAR_LAS);
+[~, TIPP_LIDAR_LAS_FILENAME, ~] = fileparts(ABS_PATH_TO_TIPP_LIDAR_TIF);
 ABS_PATH_TO_SAVE_LIDAR = fullfile(pathToSaveResults, ...
-    [ACRE_LIDAR_LAS_FILENAME, '_LiDAR.mat']);
+    [TIPP_LIDAR_LAS_FILENAME, '_LiDAR.mat']);
 ABS_PATH_TO_SAVE_ELEVATIONS = fullfile(pathToSaveResults, ...
-    [ACRE_LIDAR_LAS_FILENAME, '_Elevations.mat']);
+    [TIPP_LIDAR_LAS_FILENAME, '_Elevations.mat']);
 
-% The UTM zone expected for the ACRE data.
+% The UTM zone expected for the Tippecanoe data.
 UTM_ZONE = '16 T';
 
+% The State plane code for the Tippecanoe data.
+STATE_PLANE_CODE_TIPP = 'indiana west';
+
+% The raster LiDAR data we have has a spacial resolution of 5 survey feet
+% (~1.524 m). We will down sample this to speed up the computation.
+LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE = 80; % New resolution: ~121.92 m.
+
 % The area of interest in terms of (minLat, maxLat, minLon, maxLon) for
-% generating the coverage maps.
+% generating the coverage maps. This is a little smaller than the whole
+% county because we do not have all the LiDAR data to cover that large of
+% an area.
 LAT_LON_RANGES_OF_INTEREST ...
-    = [40.467341, 40.501484, -87.015762, -86.979905];
-GRID_UNIT_LENGTH_IN_M = 25;
+    = [40.242314, 40.536134, -87.083795, -86.700450];
+GRID_UNIT_LENGTH_IN_M = 250;
 
 % Set this to be true to try to fetch elevation data from Google Maps.
 % Currently, we do not have enough quota for this.
 FLAG_FTECH_ELE_FROM_GOOGLE = false;
 
 % Parameters for the extented Hata model.
-TERRAIN_RES_IN_M = 10; % Terrain profile resolution.
+TERRAIN_RES_IN_M = 500; % Terrain profile resolution.
 CARRIER_FREQUENCY_IN_MHZ = 1900;
+DEFAULT_TX_ANT_HEIGHT_IN_M = 200;
 
 % Rx heights for different algorithms to inspect.
 RX_ANT_HEIGHTS_IN_M_FOR_EHATA = [1.5; 10; 50; 100];
@@ -103,20 +113,59 @@ else
     disp(' ')
     disp('        Processing the raw LiDAR data set ...')
     
-    lidarData = lasdata(ABS_PATH_TO_ACRE_LIDAR_LAS);
-    lidarXYZ = [lidarData.x, lidarData.y, lidarData.z];
+    [lidarDataImg, ~] ...
+        = geotiffread(ABS_PATH_TO_TIPP_LIDAR_TIF);
+    [lidarRasterXLabels, lidarRasterYLabels] ...
+        = pixcenters(geotiffinfo(ABS_PATH_TO_TIPP_LIDAR_TIF));
     
-    % The stored intensity is unit16 and we need double for plotting.
-    lidarIntensity = double(lidarData.get_intensity);
+    % Down sample the LiDAR data.
+    lidarDataImg ...
+        = lidarDataImg(1:LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE:end, ...
+        1:LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE:end);
+    lidarRasterXLabels ...
+        = lidarRasterXLabels(1:LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE:end);
+    lidarRasterYLabels ...
+        = lidarRasterYLabels(1:LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE:end);
+    
+    % Prepare the results for building a grid.
+    [ lidarRasterXLabels, lidarRasterYLabels, lidarDataImg ] ...
+        = sortGridMatrixByXY(lidarRasterXLabels', lidarRasterYLabels', ...
+        lidarDataImg);
+    
+    % Convert raster (row, col) to (lat, lon).
+    [lidarRasterXs, lidarRasterYs] ...
+        = meshgrid(lidarRasterXLabels, lidarRasterYLabels);
+    [lidarLons, lidarLats] ...
+        = sp_proj(STATE_PLANE_CODE_TIPP, 'inverse', ...
+        lidarRasterXs(:), lidarRasterYs(:), 'sf');
+    
+    % Store the new (x,y,z) data.
+    lidarLats = lidarLats(:);
+    lidarLons = lidarLons(:);
+    [lidarXs, lidarYs, lidarRasterZones] ...
+        = deg2utm(lidarLats, lidarLons);
+    assert(all(strcmp( ...
+        mat2cell(lidarRasterZones, ...
+        ones(1, length(lidarRasterZones)), 4), ...
+        UTM_ZONE)), ...
+        'LiDAR raster locations are not all in the expected UTM zone!');
+    lidarXYZ = [lidarXs, lidarYs, lidarDataImg(:)];
     
     % Create a function to get LiDAR z from UTM coordinates.
+    fctLonLatToLidarStatePlaneXY ...
+        = @(lon, lat) sp_proj(STATE_PLANE_CODE_TIPP, ...
+        'forward', lon, lat, 'sf');
+    getLiDarZFromStatePlaneXYFct = @(spXs, spYs) ...
+        interp2(lidarRasterXs, lidarRasterYs, ...
+        lidarDataImg, spXs, spYs);
     getLiDarZFromXYFct ...
-        = scatteredInterpolant(lidarData.x, lidarData.y, lidarData.z);
+        = @(xs, ys) genRasterLidarZGetter( ...
+        getLiDarZFromStatePlaneXYFct, fctLonLatToLidarStatePlaneXY, ...
+        xs, ys, UTM_ZONE);
     
     % Save the results.
     save(ABS_PATH_TO_SAVE_LIDAR, ...
-        'lidarXYZ', 'lidarIntensity', ...
-        'getLiDarZFromXYFct');
+        'lidarXYZ', 'lidarLats', 'lidarLons', 'getLiDarZFromXYFct');
 end
 
 [lidarNumSamps, ~] = size(lidarXYZ);
@@ -132,10 +181,7 @@ if exist(ABS_PATH_TO_SAVE_ELEVATIONS, 'file')==2
     disp('        Loading previous results ...')
     load(ABS_PATH_TO_SAVE_ELEVATIONS);
 else
-    disp('        Converting UTM to (lat, lon) ...')
-    % UTM to (lat, lon).
-    [lidarLats, lidarLons] = utm2deg(lidarXYZ(:,1), lidarXYZ(:,2), ...
-        repmat(UTM_ZONE, lidarNumSamps, 1));
+    disp('        Fetching elevation data ...')
     
     latRange = [min(lidarLats) max(lidarLats)];
     lonRange = [min(lidarLons) max(lidarLons)];
@@ -187,17 +233,17 @@ if (~exist('lidarEles', 'var') || all(isnan(lidarEles)))
             rawElevData.elev);
         
         % Create a grid for the elevation data.
-        [acreElevDataLons, acreElevDataLats] = meshgrid( ...
+        [tippElevDataLons, tippElevDataLats] = meshgrid( ...
             rawElevDataLonsSorted, rawElevDataLatsSorted);
         
         % Interperlate the data with lat and lon.
-        lidarEles = interp2(acreElevDataLons, acreElevDataLats, ...
+        lidarEles = interp2(tippElevDataLons, tippElevDataLats, ...
             rawElevDataElesSorted, lidarLons, lidarLats);
         
         % Create a function to get elevation from UTM coordinates in the
         % same way.
         getEleFromXYFct = @(xs, ys) ...
-            genUtmEleGetter(acreElevDataLats, acreElevDataLons, ...
+            genUtmEleGetter(tippElevDataLats, tippElevDataLons, ...
             rawElevDataElesSorted, xs, ys, UTM_ZONE);
         
         if FLAG_GEN_FIGS
@@ -253,14 +299,6 @@ if FLAG_GEN_FIGS
     disp(' ')
     disp('    Generating plots for LiDAR Data ...')
     
-    hIntensity = figure;
-    plot3k([lidarXYZ(:,1), lidarXYZ(:,2), lidarIntensity], 'Labels', ...
-        {'', 'x (m)', 'y (m)', '', 'LiDAR Intenstiy'});
-    grid on; view(2); axis equal; axis tight;
-    
-    pathToSaveFig = fullfile(pathToSaveResults, 'lidarIntensity.png');
-    saveas(hIntensity, pathToSaveFig);
-    
     hZ = figure;
     plot3k(lidarXYZ, 'Labels', ...
         {'', 'x (m)', 'y (m)', '', 'z (m)'});
@@ -300,18 +338,33 @@ disp('    Done!')
 disp(' ')
 disp('    Loading cellular antenna information ...')
 
-cellAntsLatLonAlt = csvread(ABS_PATH_TO_ACRE_CELL_ANTENNAS_CSV);
-[numOfCellAnts, ~] = size(cellAntsLatLonAlt);
+cellAntsLatLon = csvread(ABS_PATH_TO_TIPP_CELL_ANTENNAS_CSV, 1, 1);
+
+% Keep only the cell towers we need.
+boolSCellAntsToKeep ...
+    = cellAntsLatLon(:,1)>=LAT_LON_RANGES_OF_INTEREST(1) ...
+    & cellAntsLatLon(:,1)<=LAT_LON_RANGES_OF_INTEREST(2) ...
+    & cellAntsLatLon(:,2)>=LAT_LON_RANGES_OF_INTEREST(3) ...
+    & cellAntsLatLon(:,2)<=LAT_LON_RANGES_OF_INTEREST(4);
+cellAntsLatLon = cellAntsLatLon(boolSCellAntsToKeep, :);
+
+[numOfCellAnts, ~] = size(cellAntsLatLon);
 
 % Add UTM x and y.
-[cellAntsXs,cellAntsYs,cellAntsZones] ...
-    = deg2utm(cellAntsLatLonAlt(:,1), cellAntsLatLonAlt(:,2));
+[cellAntsXs, cellAntsYs, cellAntsZones] ...
+    = deg2utm(cellAntsLatLon(:,1), cellAntsLatLon(:,2));
 assert(all(strcmp( ...
     mat2cell(cellAntsZones, ones(1, numOfCellAnts), 4), ...
     UTM_ZONE)), ...
     'Cell antenna locations are not all in the expected UTM zone!');
-cellAntsLatLonXYAlt = [cellAntsLatLonAlt(:,1:2) ...
-    cellAntsXs cellAntsYs cellAntsLatLonAlt(:,3)];
+
+% We will use the default cell tower antenna height to compute their
+% altitude.
+cellAntsAlts = getEleFromXYFct(cellAntsXs, cellAntsYs) ...
+    + DEFAULT_TX_ANT_HEIGHT_IN_M;
+
+cellAntsLatLonXYAlt = [cellAntsLatLon ...
+    cellAntsXs cellAntsYs cellAntsAlts];
 
 disp('    Done!')
 
@@ -340,7 +393,8 @@ if FLAG_GEN_FIGS
         rangeOfInterestYs(2); rangeOfInterestYs(1); rangeOfInterestYs(1)], ...
         ones(5,1).*max(lidarXYZ(:,3)), ...
         '--', 'LineWidth', 1.5, 'Color', ones(1,3).*0.7);
-    hCellAnt = plot3(cellAntsXs, cellAntsYs, cellAntsLatLonAlt(:,3), '*r');
+    hCellAnt = plot3(cellAntsXs, cellAntsYs, ...
+        cellAntsLatLonXYAlt(:,5), '*r');
     grid on; xlabel('x (m)'); ylabel('y (m)'); zlabel('z (m)');
     view(2); axis equal; axis tight;
     legend([hAreaOfInt, hCellAnt], 'Area of Interest', 'Cellular Antennas');
@@ -381,7 +435,7 @@ for idxH = 1:numOfHs
     disp('            Done!')
     disp(' ')
     
-    disp(['            Height #', num2str(idxH), '/', num2str(numOfHs)]);
+    disp(['            Height #', num2str(idxH), '/', num2str(numOfHs)]);    
     curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
     % Generate a propogation map for each cell tower. We will first
     % generate the path loss maps, one for each cell tower location.
@@ -412,7 +466,7 @@ for idxH = 1:numOfHs
                     getEleFromXYFct, getLiDarZFromXYFct, ...
                     NTIA_EHATA_ENVIRO_CODE, ...
                     TERRAIN_RES_IN_M, LIBRARY_TO_USE, ...
-                    NTIA_EHATA_RELIABILITY);
+                    NTIA_EHATA_RELIABILITY, inf);
                 curFigFileName = [ ...
                     'CellTowerPathLoss_RxHeight_', num2str(curRxAntH), ...
                     '_TxCell_', num2str(idxCellAntenna), ...
@@ -428,7 +482,7 @@ for idxH = 1:numOfHs
                     curBaseAntXY, curBaseAntHeightInM, ...
                     areaOfInterestXs, areaOfInterestYs, curRxAntH, ...
                     getEleFromXYFct, getLiDarZFromXYFct, REGION, ...
-                    TERRAIN_RES_IN_M, LIBRARY_TO_USE);
+                    TERRAIN_RES_IN_M, LIBRARY_TO_USE, [], inf);
                 curFigFileName = [ ...
                     'CellTowerPathLoss_RxHeight_', num2str(curRxAntH), ...
                     '_TxCell_', num2str(idxCellAntenna), ...
