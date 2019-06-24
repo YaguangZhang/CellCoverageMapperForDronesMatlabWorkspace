@@ -47,6 +47,8 @@ ABS_PATH_TO_SAVE_LIDAR = fullfile(pathToSaveResults, ...
     [TIPP_LIDAR_LAS_FILENAME, '_LiDAR.mat']);
 ABS_PATH_TO_SAVE_ELEVATIONS = fullfile(pathToSaveResults, ...
     [TIPP_LIDAR_LAS_FILENAME, '_Elevations.mat']);
+ABS_PATH_TO_SAVE_COVERAGE_MAPS = fullfile(pathToSaveResults, ...
+    [TIPP_LIDAR_LAS_FILENAME, '_CoverageMaps.mat']);
 
 % The UTM zone expected for the Tippecanoe data.
 UTM_ZONE = '16 T';
@@ -584,6 +586,10 @@ for idxH = 1:numOfHs
         saveas(hCurPLMap, pathToSaveFig);
     end
 end
+
+save(ABS_PATH_TO_SAVE_COVERAGE_MAPS, 'coverageMapsEHata', ...
+    'towerPathLossMapsEHata', ...
+    'coverageMapsEHataXLabels', 'coverageMapsEHataYLabels');
 
 disp('    Done!')
 
