@@ -73,7 +73,7 @@ GRID_UNIT_LENGTH_IN_M = 250;
 FLAG_FTECH_ELE_FROM_GOOGLE = false;
 
 % Parameters for the extented Hata model.
-TERRAIN_RES_IN_M = 500; % Terrain profile resolution.
+TERRAIN_RES_IN_M = 50; % Terrain profile resolution.
 CARRIER_FREQUENCY_IN_MHZ = 1900;
 DEFAULT_TX_ANT_HEIGHT_IN_M = 200;
 
@@ -573,17 +573,19 @@ for idxH = 1:numOfHs
             repmat(UTM_ZONE, length(curXs(:)), 1));
         
         hCurPLMap = figure;
+        hold on;
+        hCurTxs = plot3(cellAntsLatLon(:,2), cellAntsLatLon(:,1), ...
+            ones(length(cellAntsLatLon(:,1)), 1)...
+            .*(max(coverageMapsEHata{idxH}(:))+1), ...
+            'xr', 'LineWidth', 1.5);
         plot3k([curLons curLats ...
             coverageMapsEHata{idxH}(:)], ...
             'Labels', {'', ...
             'Longitude (degrees)', 'Latitude (degrees)', ...
             '', 'Path Loss (dB)'});
-        grid on; view(2); plotGoogleMapAfterPlot3k(gcf, 'satellite');
-        
-        pathToSaveFig = fullfile(pathToSaveResults, [ ...
-            'Coverage_RxHeight_', num2str(curRxAntH), ...
-            '_eHataLib_', LIBRARY_TO_USE, '.png']);
-        saveas(hCurPLMap, pathToSaveFig);
+        grid on; view(2); axis tight;
+        legend(hCurTxs, 'TXs', 'Location', 'SouthEast');
+        plotGoogleMapAfterPlot3k(gcf, 'satellite');
     end
 end
 
@@ -599,7 +601,7 @@ if libisloaded('ehata')
     unloadlibrary('ehata');
 end
 
-% Print out a ruler to indicate everythin is done.
+% Print out a ruler to indicate everything is done.
 disp(fileNameHintRuler);
 
 % EOF

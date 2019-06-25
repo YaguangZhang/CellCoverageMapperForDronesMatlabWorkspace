@@ -539,7 +539,7 @@ if libisloaded('ehata')
     unloadlibrary('ehata');
 end
 
-% Print out a ruler to indicate everythin is done.
+% Print out a ruler to indicate everything is done.
 disp(fileNameHintRuler);
 
 % EOF
