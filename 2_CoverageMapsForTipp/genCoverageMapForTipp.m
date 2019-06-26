@@ -94,7 +94,7 @@ switch lower(LIBRARY_TO_USE)
 end
 
 % For coordinating the color used in plot3k.
-EXPECTED_PL_RANGE_IN_DB = [35, 150];
+EXPECTED_PL_RANGE_IN_DB = [35, 200];
 
 %% Before Processing the Data
 
@@ -521,8 +521,8 @@ for idxH = 1:numOfHs
             saveas(hCurPLMap, pathToSaveFig);
             
             hCurTransPLMap = figure;
-            curAlpha = 0.7;
-            curDotSize = 3;
+            curAlpha = 0.95;
+            curDotSize = 15;
             scatter(curLonsToShow, curLatsToShow, ...
                 curDotSize.*ones(length(curLatsToShow),1), ...
                 pathLossMaps{idxCellAntenna}(curBoolsToShow), ...

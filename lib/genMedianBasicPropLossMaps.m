@@ -85,7 +85,7 @@ EHATA_VALID_DIST_RANGE_IN_M = [1000, 100000];
 % According to Prof. Anderson.
 EHATA_MIN_BASE_ANT_H_IN_M = 20;
 % Any path loss above this will be considered as inf.
-MAX_MEDIAN_BPL_ALLOWED_IN_DB = 200;
+MAX_MEDIAN_BPL_ALLOWED_IN_DB = inf;
 
 % Carrier wavelength.
 lambdaInM = physconst('LightSpeed')/fsMHz/1e6;
