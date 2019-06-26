@@ -185,18 +185,17 @@ for idxRxX= 1:numRxXs
                 && (distTxToRx<=EHATA_VALID_DIST_RANGE_IN_M(2)) ...
                 && (baseAntHeightInM>=EHATA_MIN_BASE_ANT_H_IN_M)
             curEleProfile = nan(numPoints+2, 1);
+            curEleProfile(1) = numPoints-1;
             curEleProfile(2) = distTxToRx/(numPoints-1);
             curEleProfile(3:end) = fetchEles(eleProfXs, eleProfYs);
             
             switch lower(libraryToUse)
                 case 'cplusplus'
-                    curEleProfile(1) = numPoints+1;
                     curMedianBPL = ExtendedHata_PropLoss_CPP( ...
                         curEleProfile, fsMHz, ...
                         baseAntHeightInM, mobileAntHeightInM, ...
                         int8(region), NTIA_EHATA_RELIABILITY);
                 case 'matlab'
-                    curEleProfile(1) = numPoints-1;
                     curMedianBPL = ExtendedHata_PropLoss( ...
                         fsMHz, baseAntHeightInM, mobileAntHeightInM, ...
                         region, curEleProfile);
