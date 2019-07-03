@@ -49,6 +49,8 @@ ABS_PATH_TO_SAVE_LIDAR = fullfile(pathToSaveResults, ...
     [ACRE_LIDAR_LAS_FILENAME, '_LiDAR.mat']);
 ABS_PATH_TO_SAVE_ELEVATIONS = fullfile(pathToSaveResults, ...
     [ACRE_LIDAR_LAS_FILENAME, '_Elevations.mat']);
+ABS_PATH_TO_SAVE_COVERAGE_MAPS = fullfile(pathToSaveResults, ...
+    [ACRE_LIDAR_LAS_FILENAME, '_CoverageMaps.mat']);
 
 % The UTM zone expected for the ACRE data.
 UTM_ZONE = '16 T';
@@ -493,6 +495,7 @@ disp('    Done!')
 
 %% Combine Path Loss Maps
 
+cellAntsLatLon = cellAntsLatLonAlt(:, 1:2);
 combinePathLossMaps;
 
 %% Clear Things Up if Necessary

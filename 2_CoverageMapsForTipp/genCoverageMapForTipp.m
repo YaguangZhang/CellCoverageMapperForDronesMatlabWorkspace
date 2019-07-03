@@ -80,7 +80,7 @@ GRID_UNIT_LENGTH_IN_M = 250;
 FLAG_FTECH_ELE_FROM_GOOGLE = false;
 
 % Parameters for the extented Hata model.
-TERRAIN_RES_IN_M = 50; % Terrain profile resolution.
+TERRAIN_RES_IN_M = 25; % Terrain profile resolution.
 CARRIER_FREQUENCY_IN_MHZ = 1900;
 DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
 
@@ -347,7 +347,8 @@ disp('    Done!')
 disp(' ')
 disp('    Loading cellular antenna information ...')
 
-cellAntsLatLon = csvread(ABS_PATH_TO_TIPP_CELL_ANTENNAS_CSV, 1, 1);
+ABS_PATH_TO_SAVE_COVERAGE_MAPS ...
+    = csvread(ABS_PATH_TO_TIPP_CELL_ANTENNAS_CSV, 1, 1);
 
 % Keep only the cell towers we need.
 boolSCellAntsToKeep ...
