@@ -7,7 +7,7 @@ clear; clc; close all;
 
 %% Configurations
 
-timerValueStart = tic; 
+timerValueStart = tic;
 
 % Locate the current working directory.
 cd(fileparts(mfilename('fullpath')));
@@ -367,8 +367,7 @@ disp('    Generating coverage maps ...')
 
 % Generate a propogation map for each height to inspect.
 numOfHs = length(RX_ANT_HEIGHTS_IN_M_FOR_EHATA);
-[coverageMapsEHata, coverageMapsEHataXLabels, coverageMapsEHataYLabels, ...
-    towerPathLossMapsEHata, towerPathLossMapsEHataXLabels, ...
+[towerPathLossMapsEHata, towerPathLossMapsEHataXLabels, ...
     towerPathLossMapsEHataYLabels] ...
     = deal(cell(numOfHs, 1));
 
@@ -494,44 +493,7 @@ disp('    Done!')
 
 %% Combine Path Loss Maps
 
-disp(' ')
-disp('        Combinning path loss maps ...')
-
-for idxH = 1:numOfHs
-    curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
-    
-    [coverageMapsEHata{idxH}, coverageMapsEHataXLabels{idxH}, ...
-        coverageMapsEHataYLabels{idxH}] = combineTowerPathLossMaps( ...
-        towerPathLossMapsEHata{idxH}, ...
-        towerPathLossMapsEHataXLabels{idxH}, ...
-        towerPathLossMapsEHataYLabels{idxH}, ...
-        EXPECTED_PL_RANGE_IN_DB);
-    
-    if FLAG_GEN_FIGS
-        % Generate a figure on Google map to show the path loss map.
-        [curXs, curYs] ...
-            = meshgrid(coverageMapsEHataXLabels{idxH}, ...
-            coverageMapsEHataYLabels{idxH});
-        [curLats, curLons] ...
-            = utm2deg(curXs(:), curYs(:), ...
-            repmat(UTM_ZONE, length(curXs(:)), 1));
-        
-        hCurPLMap = figure;
-        plot3k([curLons curLats ...
-            coverageMapsEHata{idxH}(:)], ...
-            'Labels', {'', ...
-            'Longitude (degrees)', 'Latitude (degrees)', ...
-            '', 'Path Loss (dB)'});
-        grid on; view(2); plotGoogleMapAfterPlot3k(gcf, 'satellite');
-        
-        pathToSaveFig = fullfile(pathToSaveResults, [ ...
-            'Coverage_RxHeight_', num2str(curRxAntH), ...
-            '_eHataLib_', LIBRARY_TO_USE, '.png']);
-        saveas(hCurPLMap, pathToSaveFig);
-    end
-end
-
-disp('    Done!')
+combinePathLossMaps;
 
 %% Clear Things Up if Necessary
 % This should be put at the very end of a script using the cpp ehata lib.
