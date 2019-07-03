@@ -7,6 +7,8 @@ clear; clc; close all;
 
 %% Configurations
 
+timerValueStart = tic; 
+
 % Locate the current working directory.
 cd(fileparts(mfilename('fullpath')));
 cd('..'); addpath('lib');
@@ -289,8 +291,6 @@ if FLAG_GEN_FIGS
     pathToSaveFig = fullfile(pathToSaveResults, ...
         'diffBetweenLidarZAndEle.png');
     saveas(hDiffBetweenLidarZAndEle, pathToSaveFig);
-    
-    disp('    Done!')
 end
 
 disp('    Done!')
@@ -412,7 +412,7 @@ for idxH = 1:numOfHs
                     getEleFromXYFct, getLiDarZFromXYFct, ...
                     NTIA_EHATA_ENVIRO_CODE, ...
                     TERRAIN_RES_IN_M, LIBRARY_TO_USE, ...
-                    NTIA_EHATA_RELIABILITY);
+                    NTIA_EHATA_RELIABILITY, inf);
                 curFigFileName = [ ...
                     'CellTowerPathLoss_RxHeight_', num2str(curRxAntH), ...
                     '_TxCell_', num2str(idxCellAntenna), ...
@@ -542,4 +542,5 @@ end
 % Print out a ruler to indicate everything is done.
 disp(fileNameHintRuler);
 
+toc(timerValueStart);
 % EOF

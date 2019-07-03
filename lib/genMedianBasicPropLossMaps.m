@@ -125,13 +125,9 @@ else
 end
 
 % For progress feedback.
-numColsProcessed = 0;
 ratioToReportProgress = 0.05;
 
-totalNumCols = numRxXs;
-numColsToReportProgress = ceil(totalNumCols.*ratioToReportProgress);
-
-medianBPLMap = inf(numRxYs, numRxXs);
+medianBPLMap = nan(numRxYs, numRxXs);
 
 if strcmpi(libraryToUse, 'cplusplus')
     ExtendedHata_PropLoss_CPP = @(elePro, fsMHz, baseAntHeightInM, ...
@@ -142,22 +138,50 @@ if strcmpi(libraryToUse, 'cplusplus')
 end
 
 disp('    ------');
+
+% Pre-assign pixels to workers to avoid unnecessary data copying.
+localCluster = gcp;
+maxNumOfWorkers = min(localCluster.NumWorkers, numOfWorkers);
+
+indicesRxXsYsForAllWorkers = cell(maxNumOfWorkers, 1);
+
+pixelCnt = 0;
 for idxRxX= 1:numRxXs
-    curRxX = medianBPLMapXLabels(idxRxX);
-    
-    if mod(numColsProcessed, numColsToReportProgress)==0
-        disp(['    Column #', num2str(idxRxX), ' (', ...
-            num2str(numColsProcessed/totalNumCols*100, ...
-            '%.2f'), '%) ...']);
+    for idxRxY = 1:numRxYs
+        indicesRxXsYsForAllWorkers{mod(pixelCnt, maxNumOfWorkers)+1} = ...
+            [indicesRxXsYsForAllWorkers{ ...
+            mod(pixelCnt, maxNumOfWorkers)+1}; ...
+            idxRxX idxRxY];
+        pixelCnt = pixelCnt+1;
     end
-    parfor (idxRxY = 1:numRxYs, numOfWorkers)
-        % Load the NTIA eHata library first, if necessary, to avoid the
-        % "unable to find ehata" error.
-        if strcmpi(libraryToUse, 'cplusplus') && (~libisloaded('ehata'))
-            loadlibrary('ehata');
+end
+
+allMedianBPLs = cell(maxNumOfWorkers,1);
+parfor (idxWorker = 1:maxNumOfWorkers, maxNumOfWorkers)
+    % Load the NTIA eHata library first, if necessary, to avoid the "unable
+    % to find ehata" error.
+    if strcmpi(libraryToUse, 'cplusplus') && (~libisloaded('ehata'))
+        loadlibrary('ehata');
+    end
+    
+    [curNumOfPixs,~] = size(indicesRxXsYsForAllWorkers{idxWorker});
+    
+    numPixsProcessed = 0;
+    numPixsToReportProgress = ceil(curNumOfPixs.*ratioToReportProgress);
+    
+    curMedianBPLs = inf(curNumOfPixs, 1);
+    for idxPixel = 1:curNumOfPixs
+        if mod(numPixsProcessed, numPixsToReportProgress)==0
+            disp(['    Worker #', num2str(idxWorker), ' (', ...
+                num2str(numPixsProcessed/curNumOfPixs*100, ...
+                '%.2f'), '%) ...']);
         end
         
-        curRxY = medianBPLMapYLabels(idxRxY);
+        curIdxRxX = indicesRxXsYsForAllWorkers{idxWorker}(idxPixel, 1);
+        curIdxRxY = indicesRxXsYsForAllWorkers{idxWorker}(idxPixel, 2);
+        
+        curRxX = medianBPLMapXLabels(curIdxRxX); %#ok<PFBNS>
+        curRxY = medianBPLMapYLabels(curIdxRxY); %#ok<PFBNS>
         
         % Generate the elevation profile needed by the extended Hata model
         % according to our terrain information.
@@ -182,12 +206,13 @@ for idxRxX= 1:numRxXs
         % For the extended Hata model, the distance between transmitter and
         % receiver should be in the valid distance range.
         if (distTxToRx>=EHATA_VALID_DIST_RANGE_IN_M(1)) ...
-                && (distTxToRx<=EHATA_VALID_DIST_RANGE_IN_M(2)) ...
-                && (baseAntHeightInM>=EHATA_MIN_BASE_ANT_H_IN_M)
+                &&(distTxToRx<=EHATA_VALID_DIST_RANGE_IN_M(2)) ...
+                &&(baseAntHeightInM>=EHATA_MIN_BASE_ANT_H_IN_M) %#ok<PFBNS>
             curEleProfile = nan(numPoints+2, 1);
             curEleProfile(1) = numPoints-1;
             curEleProfile(2) = distTxToRx/(numPoints-1);
-            curEleProfile(3:end) = fetchEles(eleProfXs, eleProfYs);
+            curEleProfile(3:end) ...
+                = fetchEles(eleProfXs, eleProfYs); %#ok<PFBNS>
             
             switch lower(libraryToUse)
                 case 'cplusplus'
@@ -204,13 +229,14 @@ for idxRxX= 1:numRxXs
             end
             
             if curMedianBPL <= MAX_MEDIAN_BPL_ALLOWED_IN_DB
-                medianBPLMap(idxRxY, idxRxX) = curMedianBPL;
+                curMedianBPLs(idxPixel) = curMedianBPL;
             end
         else
             % Use the free-space path loss model, instead.
             eleProfDists = linspace(0, distTxToRx, numPoints)';
             
-            curLidarProfileZs = fetchLidarZs(eleProfXs, eleProfYs);
+            curLidarProfileZs ...
+                = fetchLidarZs(eleProfXs, eleProfYs); %#ok<PFBNS>
             parsLoSPath = polyfit([0; distTxToRx], ...
                 [baseAntHeightInM+fetchEles(baseAntXY(1),baseAntXY(2)); ...
                 mobileAntHeightInM+fetchEles(curRxX, curRxY)], 1);
@@ -219,14 +245,28 @@ for idxRxX= 1:numRxXs
             % Make sure there is no obstacles blocking the LoS path
             % according to the LiDAR data.
             if all(curLosPathHs>=curLidarProfileZs)
-                medianBPLMap(idxRxY, idxRxX) = fspl(distTxToRx, lambdaInM);
+                curMedianBPLs(idxPixel) = fspl(distTxToRx, lambdaInM);
             end
         end
+        numPixsProcessed = numPixsProcessed+1;
     end
-    numColsProcessed = numColsProcessed+1;
+    
+    allMedianBPLs{idxWorker} = curMedianBPLs;
+    
+    disp(['    Worker #', num2str(idxWorker), ' (', ...
+        num2str(100, '%.2f'), '%) ...']);
 end
-disp(['    Column #', num2str(idxRxX), ' (', ...
-    num2str(100, '%.2f'), '%)']);
+
+% Output the results.
+for idxW = 1:maxNumOfWorkers
+    % Note the order for indices (row, col) is different from that for UTM
+    % labels (x, y).
+    medianBPLMap(sub2ind(size(medianBPLMap), ...
+        indicesRxXsYsForAllWorkers{idxW}(:, 2), ...
+        indicesRxXsYsForAllWorkers{idxW}(:, 1))) ...
+        = allMedianBPLs{idxW};
+end
+
 disp('    ------');
 
 end

@@ -5,14 +5,22 @@
 % Yaguang Zhang, Purdue, 06/19/2019
 
 if ~libisloaded('ehata')
-    if ~strcmpi(computer, 'PCWIN64')
+    if ~(strcmpi(computer, 'PCWIN64') || strcmpi(computer, 'GLNXA64'))
         warning(['The NTIA C++ eHata library was setup only ', ...
-            'for x64 Windows machines!']);
+            'for x64 Windows/Linux machines!']);
     end
     
     try
         restoredefaultpath;
-        addpath(fullfile('lib', 'ext', 'eHataNtia'));
+        
+        if ispc
+            % The .dll version.
+            addpath(fullfile('lib', 'ext', 'eHataNtia'));
+        elseif isunix
+            % The .so version.
+            addpath(fullfile('lib', 'ext', 'eHataNtiaLinux'));
+        end
+        
         loadlibrary('ehata');
     catch e
         switch e.identifier
