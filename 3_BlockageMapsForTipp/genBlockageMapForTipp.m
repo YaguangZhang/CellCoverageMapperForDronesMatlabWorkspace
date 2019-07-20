@@ -1,4 +1,4 @@
-% GENCOVERAGEMAPFORTIPP Calculate path loss and generate coverage maps for
+% GENBLOCKAGEMAPFORTIPP Generate the blockage maps for
 % Tippecanoe County, Indiana.
 %
 % Yaguang Zhang, Purdue, 06/19/2019
@@ -14,15 +14,6 @@ cd(fileparts(mfilename('fullpath')));
 cd('..'); addpath('lib');
 curFileName = mfilename;
 fileNameHintRuler = hintScriptName(curFileName);
-
-% 'Matlab' or 'CPlusPlus'.
-LIBRARY_TO_USE = 'CPlusPlus';
-
-% Load the NTIA eHata library first, if necessary, to avoid the "unable to
-% find ehata" error.
-if strcmpi(LIBRARY_TO_USE, 'cplusplus')
-    loadEHataCppLib;
-end
 
 % Add libs to current path and set ABS_PATH_TO_NIST_SHARED_FOLDER according
 % to the machine name.
@@ -41,16 +32,17 @@ ABS_PATH_TO_TIPP_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 
 % The absolute path to save results.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'PostProcessingResults', '2_CoverageMapsForTipp');
+    'PostProcessingResults', '3_BlockageMapsForTipp');
 
 % Configure other paths accordingly.
 [~, TIPP_LIDAR_LAS_FILENAME, ~] = fileparts(ABS_PATH_TO_TIPP_LIDAR_TIF);
-ABS_PATH_TO_SAVE_LIDAR = fullfile(pathToSaveResults, ...
+ABS_PATH_TO_LOAD_LIDAR = fullfile(pathToSaveResults, ...
     [TIPP_LIDAR_LAS_FILENAME, '_LiDAR.mat']);
-ABS_PATH_TO_SAVE_ELEVATIONS = fullfile(pathToSaveResults, ...
+ABS_PATH_TO_LOAD_ELEVATIONS = fullfile(pathToSaveResults, ...
     [TIPP_LIDAR_LAS_FILENAME, '_Elevations.mat']);
 ABS_PATH_TO_SAVE_COVERAGE_MAPS = fullfile(pathToSaveResults, ...
     [TIPP_LIDAR_LAS_FILENAME, '_CoverageMaps.mat']);
+
 % We will save a cell, with each element being a boolean vectore indicating
 % for a height of interest whether any of the cells have been calculated or
 % not.
@@ -65,12 +57,15 @@ STATE_PLANE_CODE_TIPP = 'indiana west';
 
 % The raster LiDAR data we have has a spacial resolution of 5 survey feet
 % (~1.524 m). We will down sample this to speed up the computation.
-LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE = 80; % New resolution: ~121.92 m.
+%   80 => resolution: ~121.92 m;
+%    25 => resolution: ~38.1 m;
+%   10 => resolution: ~15.24 m.
+LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE = 10; 
 
 % The area of interest in terms of (minLat, maxLat, minLon, maxLon) for
 % generating the coverage maps. This is a little smaller than the whole
 % county because we do not have all the LiDAR data to cover that large of
-% an area.
+% an area.`
 LAT_LON_RANGES_OF_INTEREST ...
     = [40.242314, 40.536134, -87.083795, -86.700450];
 GRID_UNIT_LENGTH_IN_M = 250;
@@ -85,20 +80,7 @@ CARRIER_FREQUENCY_IN_MHZ = 1900;
 DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
 
 % Rx heights for different algorithms to inspect.
-RX_ANT_HEIGHTS_IN_M_FOR_EHATA = [1.5; 10; 50; 100];
-
-switch lower(LIBRARY_TO_USE)
-    case 'cplusplus'
-        % The quantile percent not exceeded of the signal.
-        %   Limits: 0 < reliability < 1
-        NTIA_EHATA_RELIABILITY = 0.95;
-        % The NLCD environment code.
-        NTIA_EHATA_ENVIRO_CODE = 82; % Cultivated Crops.
-    case 'matlab'
-        REGION = 'Suburban';
-    otherwise
-        error(['Unsupported library: ', model, '!'])
-end
+RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; (10:10:100)'];
 
 % For coordinating the color used in plot3k.
 EXPECTED_PL_RANGE_IN_DB = [35, 200];
@@ -115,9 +97,9 @@ end
 disp(' ')
 disp('    Loading LiDAR data ...')
 
-if exist(ABS_PATH_TO_SAVE_LIDAR, 'file')==2
+if exist(ABS_PATH_TO_LOAD_LIDAR, 'file')==2
     disp('        Loading previous results ...')
-    load(ABS_PATH_TO_SAVE_LIDAR);
+    load(ABS_PATH_TO_LOAD_LIDAR);
 else
     disp(' ')
     disp('        Processing the raw LiDAR data set ...')
@@ -176,7 +158,7 @@ else
         xs, ys, UTM_ZONE);
     
     % Save the results.
-    save(ABS_PATH_TO_SAVE_LIDAR, ...
+    save(ABS_PATH_TO_LOAD_LIDAR, ...
         'lidarXYZ', 'lidarLats', 'lidarLons', 'getLiDarZFromXYFct');
 end
 
@@ -189,9 +171,9 @@ disp('    Done!')
 disp(' ')
 disp('    Generating elevation information ...')
 
-if exist(ABS_PATH_TO_SAVE_ELEVATIONS, 'file')==2
+if exist(ABS_PATH_TO_LOAD_ELEVATIONS, 'file')==2
     disp('        Loading previous results ...')
-    load(ABS_PATH_TO_SAVE_ELEVATIONS);
+    load(ABS_PATH_TO_LOAD_ELEVATIONS);
 else
     disp('        Fetching elevation data ...')
     
@@ -213,7 +195,7 @@ else
     saveas(hElePreview, pathToSaveFig);
     
     % Save the results.
-    save(ABS_PATH_TO_SAVE_ELEVATIONS, 'rawElevData', ...
+    save(ABS_PATH_TO_LOAD_ELEVATIONS, 'rawElevData', ...
         'lidarLats', 'lidarLons');
 end
 
@@ -298,7 +280,7 @@ if (~exist('lidarEles', 'var') || all(isnan(lidarEles)))
     end
     
     % Save the results.
-    save(ABS_PATH_TO_SAVE_ELEVATIONS, ...
+    save(ABS_PATH_TO_LOAD_ELEVATIONS, ...
         'lidarEles', 'getEleFromXYFct', ...
         'FLAG_FTECH_ELE_FROM_GOOGLE', '-append');
 end
@@ -428,15 +410,15 @@ disp('    Done!')
 
 %% Generate Path Loss Maps
 
-genPathLossMaps;
+% Note that we are still generating the blockage maps via the path loss map
+% generation approach, with LoS FSPL model used.
+genBlokageMaps;
 
 %% Combine Path Loss Maps
 
+% For reusing the map combination script for results from the eHata model.
+RX_ANT_HEIGHTS_IN_M_FOR_EHATA = RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
 combinePathLossMaps;
-
-%% Plot the Blockage Maps
-
-
 
 %% Clear Things Up if Necessary
 % This should be put at the very end of a script using the cpp ehata lib.

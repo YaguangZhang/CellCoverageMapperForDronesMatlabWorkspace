@@ -382,13 +382,15 @@ for idxH = 1:numOfHs
     disp('            Done!')
     disp(' ')
     
-    disp(['            Height #', num2str(idxH), '/', num2str(numOfHs)]);
     curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
     % Generate a propogation map for each cell tower. We will first
     % generate the path loss maps, one for each cell tower location.
     [pathLossMaps, pathLossMapXLabels, pathLossMapYLabels] ...
         = deal(cell(numOfCellAnts, 1));
     for idxCellAntenna = 1:numOfCellAnts
+        disp(' ');
+        disp(['            Height #', num2str(idxH), '/', ...
+            num2str(numOfHs)]);
         disp(['                Cell antenna #', ...
             num2str(idxCellAntenna), '/', num2str(numOfCellAnts)]);
         curBaseAntXY = cellAntsLatLonXYAlt(idxCellAntenna, 3:4);

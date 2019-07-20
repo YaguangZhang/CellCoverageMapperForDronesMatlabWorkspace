@@ -17,4 +17,8 @@ genCoverageMapForAcre;
 addpath(fullfile(pwd, '2_CoverageMapsForTipp'));
 genCoverageMapForTipp;
 
+%% 3_BlockageMapsForTipp: Generage Blockage Maps for Tippecanoe
+addpath(fullfile(pwd, '3_BlockageMapsForTipp'));
+genBlockageMapForTipp;
+
 % EOF

@@ -4,7 +4,7 @@ function [ medianBPLMap, medianBPLMapXLabels,  medianBPLMapYLabels] ...
     rxLocXs, rxLocYs, mobileAntHeightInM, ...
     terrainXYZs, lidarXYZs, region, ...
     eleProfileResForEHataInM, libraryToUse, NTIA_EHATA_RELIABILITY, ...
-    numOfWorkers)
+    numOfWorkers, EHATA_VALID_DIST_RANGE_IN_M)
 %GENMEDIANBASICPROPLOSSMAPS Compute the median basic propogation loss via
 %the Extended Hata model (when appropriate) and the free-space path loss
 %model for a grid to form a map.
@@ -61,6 +61,8 @@ function [ medianBPLMap, medianBPLMapXLabels,  medianBPLMapYLabels] ...
 %   - numOfWorkers
 %     Additional. Default: 0. The number of parallel computing works to be
 %     used (e.g. 0 for non parellel and inf for as many as system allowed).
+%   - EHATA_VALID_DIST_RANGE_IN_M
+%     Distance range to use eHata instead of the LoS FSPL model.
 %
 % Outputs:
 %   - medianBPLMap
@@ -80,8 +82,11 @@ if ~exist('numOfWorkers', 'var')
     numOfWorkers = 0;
 end
 
-% According to the Matlab eHata library.
-EHATA_VALID_DIST_RANGE_IN_M = [1000, 100000];
+if ~exist('EHATA_VALID_DIST_RANGE_IN_M', 'var')
+    % According to the Matlab eHata library.
+    EHATA_VALID_DIST_RANGE_IN_M = [1000, 100000];
+end
+
 % According to Prof. Anderson.
 EHATA_MIN_BASE_ANT_H_IN_M = 20;
 % Any path loss above this will be considered as inf.
@@ -115,7 +120,7 @@ if isa(lidarXYZs, 'scatteredInterpolant') ...
     fetchLidarZs = lidarXYZs;
 elseif isa(lidarXYZs, 'double')
     % This approach is slower.
-    lidarXYZs = @(xs, ys) griddata( ...
+    fetchLidarZs = @(xs, ys) griddata( ...
         lidarXYZs(:,1), lidarXYZs(:,2), ...
         lidarXYZs(:,3), ...
         xs, ys);
@@ -129,12 +134,15 @@ ratioToReportProgress = 0.05;
 
 medianBPLMap = nan(numRxYs, numRxXs);
 
-if strcmpi(libraryToUse, 'cplusplus')
+if strcmpi(libraryToUse, 'cplusplus') ...
+        && (EHATA_VALID_DIST_RANGE_IN_M(2)>=EHATA_VALID_DIST_RANGE_IN_M(1))
     ExtendedHata_PropLoss_CPP = @(elePro, fsMHz, baseAntHeightInM, ...
         mobileAntHeightInM, regionInt8, reliability) ...
         calllib('ehata', 'ExtendedHata', ...
         elePro, fsMHz, baseAntHeightInM, ...
         mobileAntHeightInM, regionInt8, reliability);
+else
+    ExtendedHata_PropLoss_CPP = nan;
 end
 
 disp('    ------');
