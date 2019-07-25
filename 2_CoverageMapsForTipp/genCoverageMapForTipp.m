@@ -434,10 +434,6 @@ genPathLossMaps;
 
 combinePathLossMaps;
 
-%% Plot the Blockage Maps
-
-
-
 %% Clear Things Up if Necessary
 % This should be put at the very end of a script using the cpp ehata lib.
 if libisloaded('ehata')

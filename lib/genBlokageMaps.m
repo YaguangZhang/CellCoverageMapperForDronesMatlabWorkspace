@@ -144,20 +144,22 @@ for idxH = 1:numOfHs
                 'pathLossMaps', ...
                 'pathLossMapXLabels', ...
                 'pathLossMapYLabels', ...
-                'pathLossMapCompProgress');
+                'pathLossMapCompProgress', '-append');
             disp('                    Done!');
         end
     end
     
-    % Save the results.
-    towerPathLossMapsEHata{idxH} = pathLossMaps;
-    towerPathLossMapsEHataXLabels{idxH} = pathLossMapXLabels;
-    towerPathLossMapsEHataYLabels{idxH} = pathLossMapYLabels;
-    
-    save(ABS_PATH_TO_SAVE_COMP_PROGRESS, ...
-        'towerPathLossMapsEHata', ...
-        'towerPathLossMapsEHataXLabels', ...
-        'towerPathLossMapsEHataYLabels', '-append');
+    if ~boolResumeCompProg
+        % Save the results.
+        towerPathLossMapsEHata{idxH} = pathLossMaps;
+        towerPathLossMapsEHataXLabels{idxH} = pathLossMapXLabels;
+        towerPathLossMapsEHataYLabels{idxH} = pathLossMapYLabels;
+        
+        save(ABS_PATH_TO_SAVE_COMP_PROGRESS, ...
+            'towerPathLossMapsEHata', ...
+            'towerPathLossMapsEHataXLabels', ...
+            'towerPathLossMapsEHataYLabels', '-append');
+    end
 end
 
 disp('    Done!')
