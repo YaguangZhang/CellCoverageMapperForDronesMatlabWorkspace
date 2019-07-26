@@ -70,7 +70,7 @@ TERRAIN_RES_IN_M = 10; % Terrain profile resolution.
 CARRIER_FREQUENCY_IN_MHZ = 1900;
 
 % Rx heights for different algorithms to inspect.
-RX_ANT_HEIGHTS_IN_M_FOR_EHATA = [1.5; 10; 50; 100];
+RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 50; 100];
 
 switch lower(LIBRARY_TO_USE)
     case 'cplusplus'
@@ -368,7 +368,7 @@ disp(' ')
 disp('    Generating coverage maps ...')
 
 % Generate a propogation map for each height to inspect.
-numOfHs = length(RX_ANT_HEIGHTS_IN_M_FOR_EHATA);
+numOfHs = length(RX_ANT_HEIGHTS_TO_INSPECT_IN_M);
 [towerPathLossMapsEHata, towerPathLossMapsEHataXLabels, ...
     towerPathLossMapsEHataYLabels] ...
     = deal(cell(numOfHs, 1));
@@ -382,7 +382,7 @@ for idxH = 1:numOfHs
     disp('            Done!')
     disp(' ')
     
-    curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
+    curRxAntH = RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
     % Generate a propogation map for each cell tower. We will first
     % generate the path loss maps, one for each cell tower location.
     [pathLossMaps, pathLossMapXLabels, pathLossMapYLabels] ...
