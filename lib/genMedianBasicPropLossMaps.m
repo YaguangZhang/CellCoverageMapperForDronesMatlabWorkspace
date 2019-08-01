@@ -62,7 +62,10 @@ function [ medianBPLMap, medianBPLMapXLabels,  medianBPLMapYLabels] ...
 %     Additional. Default: 0. The number of parallel computing works to be
 %     used (e.g. 0 for non parellel and inf for as many as system allowed).
 %   - EHATA_VALID_DIST_RANGE_IN_M
-%     Distance range to use eHata instead of the LoS FSPL model.
+%     Distance range to only consider the eHata model. When the distance is
+%     too small, we will weigh in the free-space path loss (FSPL) model. If
+%     it is too big, we will skipping the evaluation and mark nan for the
+%     pass loss at that location.
 %
 % Outputs:
 %   - medianBPLMap
@@ -206,56 +209,90 @@ parfor (idxWorker = 1:maxNumOfWorkers, maxNumOfWorkers)
         %         (in meters)
         distTxToRx = norm(baseAntXY-[curRxX curRxY]);
         
-        % For generating the elevation/LiDAR z profile.
-        numPoints = ceil(distTxToRx./eleProfileResForEHataInM);
-        eleProfXs = linspace(baseAntXY(1), curRxX, numPoints)';
-        eleProfYs = linspace(baseAntXY(2), curRxY, numPoints)';
-        
-        % For the extended Hata model, the distance between transmitter and
-        % receiver should be in the valid distance range.
-        if (distTxToRx>=EHATA_VALID_DIST_RANGE_IN_M(1)) ...
-                &&(distTxToRx<=EHATA_VALID_DIST_RANGE_IN_M(2)) ...
-                &&(baseAntHeightInM>=EHATA_MIN_BASE_ANT_H_IN_M) %#ok<PFBNS>
+        % Only evaluate the path loss if the distance is not too big.
+        if distTxToRx<=EHATA_VALID_DIST_RANGE_IN_M(2)
+            % For generating the elevation/LiDAR z profile.
+            numPoints = ceil(distTxToRx./eleProfileResForEHataInM);
+            eleProfXs = linspace(baseAntXY(1), curRxX, numPoints)';
+            eleProfYs = linspace(baseAntXY(2), curRxY, numPoints)';
+            
+            % Path loss evaluation via eHata.
             curEleProfile = nan(numPoints+2, 1);
             curEleProfile(1) = numPoints-1;
             curEleProfile(2) = distTxToRx/(numPoints-1);
-            curEleProfile(3:end) ...
-                = fetchEles(eleProfXs, eleProfYs); %#ok<PFBNS>
+            
+            baseAntElePlusHeight ...
+                = baseAntHeightInM ...
+                + fetchEles(baseAntXY(1),baseAntXY(2)); %#ok<PFBNS>
+            mobileAntElePlusHeight ...
+                = mobileAntHeightInM + fetchEles(curRxX, curRxY);
+            % Inputs for the eHata model.
+            if baseAntElePlusHeight>=mobileAntElePlusHeight
+                txHeightInM = baseAntHeightInM;
+                rxHeightInM = mobileAntHeightInM;
+                curEleProfile(3:end) ...
+                    = fetchEles(eleProfXs, eleProfYs);
+                effectiveBaseAntHInM = baseAntHeightInM;
+            else
+                % Assuming reciprocal channels, we will flip TX and RX for
+                % cases where the mobile antenna is higher than the
+                % cellular tower antenna, because eHata is designed for
+                % higher TXs.
+                txHeightInM = mobileAntHeightInM;
+                rxHeightInM = baseAntHeightInM;
+                curEleProfile(3:end) ...
+                    = fetchEles(eleProfXs(end:-1:1), eleProfYs(end:-1:1));
+                effectiveBaseAntHInM = mobileAntHeightInM;
+            end
             
             switch lower(libraryToUse)
                 case 'cplusplus'
-                    curMedianBPL = ExtendedHata_PropLoss_CPP( ...
+                    curEHataMedianBPL = ExtendedHata_PropLoss_CPP( ...
                         curEleProfile, fsMHz, ...
-                        baseAntHeightInM, mobileAntHeightInM, ...
+                        txHeightInM, rxHeightInM, ...
                         int8(region), NTIA_EHATA_RELIABILITY);
                 case 'matlab'
-                    curMedianBPL = ExtendedHata_PropLoss( ...
-                        fsMHz, baseAntHeightInM, mobileAntHeightInM, ...
+                    curEHataMedianBPL = ExtendedHata_PropLoss( ...
+                        fsMHz, txHeightInM, rxHeightInM, ...
                         region, curEleProfile);
                 otherwise
                     error(['Unsupported library: ', model, '!'])
             end
             
-            if curMedianBPL <= MAX_MEDIAN_BPL_ALLOWED_IN_DB
-                curMedianBPLs(idxPixel) = curMedianBPL;
-            end
-        else
-            % Use the free-space path loss model, instead.
-            eleProfDists = linspace(0, distTxToRx, numPoints)';
-            
-            curLidarProfileZs ...
-                = fetchLidarZs(eleProfXs, eleProfYs); %#ok<PFBNS>
-            parsLoSPath = polyfit([0; distTxToRx], ...
-                [baseAntHeightInM+fetchEles(baseAntXY(1),baseAntXY(2)); ...
-                mobileAntHeightInM+fetchEles(curRxX, curRxY)], 1);
-            curLosPathHs = polyval(parsLoSPath, eleProfDists);
-            
-            % Make sure there is no obstacles blocking the LoS path
-            % according to the LiDAR data.
-            if all(curLosPathHs>=curLidarProfileZs)
-                curMedianBPLs(idxPixel) = fspl(distTxToRx, lambdaInM);
+            % For the extended Hata model, the distance between transmitter
+            % and receiver should be in the valid distance range.
+            if (distTxToRx>=EHATA_VALID_DIST_RANGE_IN_M(1)) ...
+                    &&(effectiveBaseAntHInM>=EHATA_MIN_BASE_ANT_H_IN_M)
+                % No need to consider the FSPL model.
+                if curEHataMedianBPL <= MAX_MEDIAN_BPL_ALLOWED_IN_DB
+                    curMedianBPLs(idxPixel) = curEHataMedianBPL;
+                end
+            else
+                % Consider the LoS FSPL model and weigh it in when its
+                % evaluation is valid.
+                eleProfDists = linspace(0, distTxToRx, numPoints)';
+                
+                curLidarProfileZs ...
+                    = fetchLidarZs(eleProfXs, eleProfYs); 
+                
+                parsLoSPath = polyfit([0; distTxToRx], ...
+                    [baseAntElePlusHeight; mobileAntElePlusHeight], 1);
+                curLosPathHs = polyval(parsLoSPath, eleProfDists);
+                
+                % Make sure there is no obstacles blocking the LoS path
+                % according to the LiDAR data.
+                if all(curLosPathHs>=curLidarProfileZs)
+                    curFsplMedianBPL = fspl(distTxToRx, lambdaInM);
+                    
+                    ratioForEHata ...
+                        = distTxToRx./EHATA_VALID_DIST_RANGE_IN_M(1);
+                    curMedianBPLs(idxPixel) ...
+                        = ratioForEHata.*curEHataMedianBPL ...
+                        +(1-ratioForEHata).*curFsplMedianBPL;
+                end
             end
         end
+        
         numPixsProcessed = numPixsProcessed+1;
     end
     

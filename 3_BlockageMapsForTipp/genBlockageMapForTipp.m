@@ -80,7 +80,7 @@ CARRIER_FREQUENCY_IN_MHZ = 1900;
 DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
 
 % Rx heights for different algorithms to inspect.
-RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 50; 100]; % [1.5; (10:10:100)'];
+RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 30; 50; 70; 90; 100];
 
 % For coordinating the color used in plot3k.
 EXPECTED_PL_RANGE_IN_DB = [35, 200];

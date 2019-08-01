@@ -85,7 +85,7 @@ CARRIER_FREQUENCY_IN_MHZ = 1900;
 DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
 
 % Rx heights for different algorithms to inspect.
-RX_ANT_HEIGHTS_IN_M_FOR_EHATA = [1.5; 10; 50; 100];
+RX_ANT_HEIGHTS_IN_M_FOR_EHATA = [1.5; 10; 30; 50; 70; 90; 100];
 
 switch lower(LIBRARY_TO_USE)
     case 'cplusplus'

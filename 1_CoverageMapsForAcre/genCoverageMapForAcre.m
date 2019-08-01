@@ -70,7 +70,7 @@ TERRAIN_RES_IN_M = 10; % Terrain profile resolution.
 CARRIER_FREQUENCY_IN_MHZ = 1900;
 
 % Rx heights for different algorithms to inspect.
-RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 50; 100];
+RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 30; 50; 70; 90; 100];
 
 switch lower(LIBRARY_TO_USE)
     case 'cplusplus'

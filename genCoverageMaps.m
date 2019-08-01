@@ -21,4 +21,8 @@ genCoverageMapForTipp;
 addpath(fullfile(pwd, '3_BlockageMapsForTipp'));
 genBlockageMapForTipp;
 
+%% 4_PerformanceComparison: Compare the Maps
+addpath(fullfile(pwd, '4_PerformanceComparison'));
+evaluatePerformance;
+
 % EOF
