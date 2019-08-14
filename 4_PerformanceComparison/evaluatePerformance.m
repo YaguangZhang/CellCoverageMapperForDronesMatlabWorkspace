@@ -1,6 +1,10 @@
 % EVALUATEPERORMANCE Evaluate and compare performance for different
 % coverage maps.
 %
+% Note that the empirical CDF is essentially coverage ratio, so just the
+% first plot generated in this script is good enough for performance
+% comparison.
+%
 % Yaguang Zhang, Purdue, 07/26/2019
 
 clear; clc; close all;
@@ -19,10 +23,16 @@ fileNameHintRuler = hintScriptName(curFileName);
 setPath;
 
 % Paths to saved maps to be processed and their label.
-foldersToProcessDic = containers.Map({'acre', ...
-    'tipp_pathloss', 'tipp_blockage'}, ...
-    {'1_CoverageMapsForAcre', ...
-    '2_CoverageMapsForTipp', '3_BlockageMapsForTipp'});
+flagTest = false;
+if flagTest
+    foldersToProcessDic = containers.Map({'acre'}, ...
+        {'1_CoverageMapsForAcre'});
+else
+    foldersToProcessDic = containers.Map({'acre', ...
+        'tipp_pathloss', 'tipp_blockage'}, ...
+        {'1_CoverageMapsForAcre', ...
+        '2_CoverageMapsForTipp', '3_BlockageMapsForTipp'});
+end
 
 %% Before Processing the Data
 
@@ -132,7 +142,7 @@ for idxFolder = 1:numFoldersToProcess
 end
 
 % Redo the evaluation with a path loss upper bound.
-maxValidPathLoss = 145;
+maxValidPathLoss = 120;
 for idxFolder = 1:numFoldersToProcess
     curLabel = dirLabels{idxFolder};
     curParentFolderName = dirsToProcess{idxFolder};
@@ -219,6 +229,82 @@ for idxFolder = 1:numFoldersToProcess
     
     saveas(hCurCdf, curPngFile);
 end
+
+% Coverage ratio vs max allowable path loss.
+maxAllowablePathLosses = 50:150;
+
+% We will use these path loss thresholds as the x axis.
+curXs = maxAllowablePathLosses;
+numCurXs = length(curXs);
+for idxFolder = 1:numFoldersToProcess
+    curLabel = dirLabels{idxFolder};
+    curParentFolderName = dirsToProcess{idxFolder};
+    curDirToProcess = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+        'PostProcessingResults', curParentFolderName);
+    
+    curMapFile = rdir(fullfile(curDirToProcess, '*_CoverageMaps.mat'));
+    
+    if isempty(curMapFile)
+        error(['No coverage map file found for ', curLabel, '!']);
+    elseif length(curMapFile)~=1
+        error(['Multiple coverage map files found for ', curLabel, '!']);
+    end
+    
+    coverageMapsInfo = load(curMapFile.name);
+    heightsInspected = coverageMapsInfo.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
+    maps = coverageMapsInfo.coverageMapsEHata;
+    
+    % For coverage ratios.
+    numMaps = length(maps);
+    [rxHeightInM, totalNumsOfPixels] ...
+        = deal(nan(numMaps, 1));
+    coverageRatios = cell(numMaps, 1);
+    
+    for idxMap = 1:numMaps        
+        curCovRats = zeros(numCurXs, 1);
+        
+        rxHeightInM(idxMap) = heightsInspected(idxMap);
+        totalNumsOfPixels(idxMap) = length(curM(:));
+        
+        curM = maps{idxMap};
+        for curIdxX = 1:numCurXs
+            curMaxAllowedPL = curXs(curIdxX);
+            
+            curCovRats(curIdxX) ...
+                = sum(curM(:)<=curMaxAllowedPL)./totalNumsOfPixels(idxMap);
+        end
+        coverageRatios{idxMap} = curCovRats;
+    end
+    
+    % For exporting results.
+    curFileToSaveResults = fullfile(pathToSaveResults, ...
+        [curLabel, '_performance']);
+    
+    % Output coverage information to a figure.
+    curPngFile = [curFileToSaveResults, ...
+        '_coverageVsMaxAllowablePL.png'];
+    hsCovRat = nan(1, numMaps);
+    
+    hCurCovRat = figure; hold on;
+    for idxMap = 1:numMaps
+        curMarker = markers{mod(idxMap-1, numOfMarkers)+1};        
+
+        xs = curXs;
+        ys = coverageRatios{idxMap};
+        hsCovRat(idxMap) = plot(xs, ys, ...
+            curMarker, 'LineWidth', lineWidth);
+    end
+    axis tight;
+    grid on; grid minor;
+    xlabel('Path Loss (dB)'); ylabel('Coverage Ratio');
+    legend(hsCovRat, ...
+        arrayfun(@(n) ['RX at ', num2str(n), ' m'], heightsInspected, ...
+        'UniformOutput', false), ...
+        'Location', 'NorthWest');
+    
+    saveas(hCurCovRat, curPngFile);
+end
+
 
 disp('    Done!');
 

@@ -7,6 +7,7 @@ clear; clc; close all;
 
 %% Configurations
 
+dataTimeStrStart = datestr(datetime('now'));
 timerValueStart = tic;
 
 % Locate the current working directory.
@@ -444,5 +445,9 @@ end
 disp(fileNameHintRuler);
 
 toc(timerValueStart);
+
+%% Log Execution Time
+
+logExecTimeForCovMapGen;
 
 % EOF

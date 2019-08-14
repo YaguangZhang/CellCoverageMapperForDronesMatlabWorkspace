@@ -1,5 +1,5 @@
-% GENBLOCKAGEMAPFORTIPP Generate the blockage maps for
-% Tippecanoe County, Indiana.
+% GENBLOCKAGEMAPFORTIPP Generate the blockage maps for Tippecanoe County,
+% Indiana.
 %
 % Yaguang Zhang, Purdue, 06/19/2019
 
@@ -7,6 +7,7 @@ clear; clc; close all;
 
 %% Configurations
 
+dataTimeStrStart = datestr(datetime('now'));
 timerValueStart = tic;
 
 % Locate the current working directory.
@@ -60,7 +61,7 @@ STATE_PLANE_CODE_TIPP = 'indiana west';
 %   80 => resolution: ~121.92 m;
 %    25 => resolution: ~38.1 m;
 %   10 => resolution: ~15.24 m.
-LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE = 10; 
+LIDAR_DOWN_SAMPLE_FACTOR_PER_SIDE = 10;
 
 % The area of interest in terms of (minLat, maxLat, minLon, maxLon) for
 % generating the coverage maps. This is a little smaller than the whole
@@ -412,7 +413,7 @@ disp('    Done!')
 
 % Note that we are still generating the blockage maps via the path loss map
 % generation approach, with LoS FSPL model used.
-genBlokageMaps;
+genBlockageMaps;
 
 %% Combine Path Loss Maps
 
@@ -430,5 +431,9 @@ end
 disp(fileNameHintRuler);
 
 toc(timerValueStart);
+
+%% Log Execution Time
+
+logExecTimeForCovMapGen;
 
 % EOF

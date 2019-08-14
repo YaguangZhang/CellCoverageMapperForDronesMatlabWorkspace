@@ -1,4 +1,5 @@
-function [ medianBPLMap, medianBPLMapXLabels,  medianBPLMapYLabels] ...
+function [ medianBPLMap, medianBPLMapXLabels,  medianBPLMapYLabels, ...
+    numOfAvailableWorkers] ...
     = genMedianBasicPropLossMaps(fsMHz, ...
     baseAntXY, baseAntHeightInM, ...
     rxLocXs, rxLocYs, mobileAntHeightInM, ...
@@ -152,23 +153,23 @@ disp('    ------');
 
 % Pre-assign pixels to workers to avoid unnecessary data copying.
 localCluster = gcp;
-maxNumOfWorkers = min(localCluster.NumWorkers, numOfWorkers);
+numOfAvailableWorkers = min(localCluster.NumWorkers, numOfWorkers);
 
-indicesRxXsYsForAllWorkers = cell(maxNumOfWorkers, 1);
+indicesRxXsYsForAllWorkers = cell(numOfAvailableWorkers, 1);
 
 pixelCnt = 0;
 for idxRxX= 1:numRxXs
     for idxRxY = 1:numRxYs
-        indicesRxXsYsForAllWorkers{mod(pixelCnt, maxNumOfWorkers)+1} = ...
+        indicesRxXsYsForAllWorkers{mod(pixelCnt, numOfAvailableWorkers)+1} = ...
             [indicesRxXsYsForAllWorkers{ ...
-            mod(pixelCnt, maxNumOfWorkers)+1}; ...
+            mod(pixelCnt, numOfAvailableWorkers)+1}; ...
             idxRxX idxRxY];
         pixelCnt = pixelCnt+1;
     end
 end
 
-allMedianBPLs = cell(maxNumOfWorkers,1);
-parfor (idxWorker = 1:maxNumOfWorkers, maxNumOfWorkers)
+allMedianBPLs = cell(numOfAvailableWorkers,1);
+parfor (idxWorker = 1:numOfAvailableWorkers, numOfAvailableWorkers)
     % Load the NTIA eHata library first, if necessary, to avoid the "unable
     % to find ehata" error.
     if strcmpi(libraryToUse, 'cplusplus') && (~libisloaded('ehata'))
@@ -188,7 +189,7 @@ parfor (idxWorker = 1:maxNumOfWorkers, maxNumOfWorkers)
 end
 
 % Output the results.
-for idxW = 1:maxNumOfWorkers
+for idxW = 1:numOfAvailableWorkers
     % Note the order for indices (row, col) is different from that for UTM
     % labels (x, y).
     medianBPLMap(sub2ind(size(medianBPLMap), ...

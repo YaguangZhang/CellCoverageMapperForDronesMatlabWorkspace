@@ -95,45 +95,51 @@ for idxPixel = 1:curNumOfPixs
                 effectiveBaseAntHInM = mobileAntHeightInM;
             end
             
+            curFsplMedianBPL = fspl(distTxToRx, lambdaInM);
+            
             switch lower(libraryToUse)
-                case 'cplusplus'
+                case 'cplusplus'    % C++ eHata
                     curEHataMedianBPL = ExtendedHata_PropLoss_CPP( ...
                         curEleProfile, fsMHz, ...
                         txHeightInM, rxHeightInM, ...
                         int8(region), NTIA_EHATA_RELIABILITY);
-                case 'matlab'
+                case 'matlab'       % Matlab eHata
                     curEHataMedianBPL = ExtendedHata_PropLoss( ...
                         fsMHz, txHeightInM, rxHeightInM, ...
                         region, curEleProfile);
+                case 'fspl'         % LoS FSPL
+                    eleProfDists = linspace(0, distTxToRx, numPoints)';
+                    
+                    curLidarProfileZs ...
+                        = fetchLidarZs(eleProfXs, eleProfYs);
+                    
+                    parsLoSPath = polyfit([0; distTxToRx], ...
+                        [baseAntElePlusHeight; mobileAntElePlusHeight], 1);
+                    curLosPathHs = polyval(parsLoSPath, eleProfDists);
+                    
+                    % Make sure there is no obstacles blocking the LoS path
+                    % according to the LiDAR data.
+                    if all(curLosPathHs>=curLidarProfileZs)
+                        curMedianBPLs(idxPixel) = curFsplMedianBPL;
+                    end
                 otherwise
                     error(['Unsupported library: ', libraryToUse, '!'])
             end
             
-            % For the extended Hata model, the distance between transmitter
-            % and receiver should be in the valid distance range.
-            if (distTxToRx>=EHATA_VALID_DIST_RANGE_IN_M(1)) ...
-                    &&(effectiveBaseAntHInM>=EHATA_MIN_BASE_ANT_H_IN_M)
-                % No need to consider the FSPL model.
-                if curEHataMedianBPL <= MAX_MEDIAN_BPL_ALLOWED_IN_DB
-                    curMedianBPLs(idxPixel) = curEHataMedianBPL;
-                end
-            else
-                % Consider the LoS FSPL model and weigh it in when its
-                % evaluation is valid.
-                eleProfDists = linspace(0, distTxToRx, numPoints)';
-                
-                curLidarProfileZs ...
-                    = fetchLidarZs(eleProfXs, eleProfYs);
-                
-                parsLoSPath = polyfit([0; distTxToRx], ...
-                    [baseAntElePlusHeight; mobileAntElePlusHeight], 1);
-                curLosPathHs = polyval(parsLoSPath, eleProfDists);
-                
-                % Make sure there is no obstacles blocking the LoS path
-                % according to the LiDAR data.
-                if all(curLosPathHs>=curLidarProfileZs)
-                    curFsplMedianBPL = fspl(distTxToRx, lambdaInM);
-                    
+            if strcmpi(libraryToUse, 'cplusplus') ...
+                    || strcmpi(libraryToUse, 'matlab')
+                % For the extended Hata model, the distance between
+                % transmitter and receiver should be in the valid distance
+                % range.
+                if (distTxToRx>=EHATA_VALID_DIST_RANGE_IN_M(1)) ...
+                        &&(effectiveBaseAntHInM>=EHATA_MIN_BASE_ANT_H_IN_M)
+                    % No need to consider the FSPL model.
+                    if curEHataMedianBPL <= MAX_MEDIAN_BPL_ALLOWED_IN_DB
+                        curMedianBPLs(idxPixel) = curEHataMedianBPL;
+                    end
+                else
+                    % Consider the LoS FSPL model and weigh it in when its
+                    % evaluation is valid.                    
                     ratioForEHata ...
                         = distTxToRx./EHATA_VALID_DIST_RANGE_IN_M(1);
                     curMedianBPLs(idxPixel) ...
