@@ -1,6 +1,9 @@
 % GENBLOCKAGEMAPFORTIPP Generate the blockage maps for Tippecanoe County,
 % Indiana.
 %
+% If new simulation is needed, please delete previous result files to avoid
+% progress recovery.
+%
 % Yaguang Zhang, Purdue, 06/19/2019
 
 clear; clc; close all;
@@ -92,6 +95,8 @@ EXPECTED_PL_RANGE_IN_DB = [35, 200];
 if exist(pathToSaveResults, 'dir')~=7
     mkdir(pathToSaveResults);
 end
+
+flagProcessInterrupted = false;
 
 %% Load the Lidar Data
 

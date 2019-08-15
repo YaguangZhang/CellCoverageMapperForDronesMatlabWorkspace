@@ -517,6 +517,8 @@ toc(timerValueStart);
 
 %% Log Execution Time
 
-logExecTimeForCovMapGen;
+if ~flagProcessInterrupted
+    logExecTimeForCovMapGen;
+end
 
 % EOF

@@ -3,14 +3,14 @@
 %
 % Yaguang Zhang, Purdue, 08/14/2019
 
-% Collect execution information.
-execTimeInSec = toc(timerValueStart);
+if ~exist('flagProcessInterrupted', 'var')
+    flagProcessInterrupted = false;
+end
 
 numOfHsInspected = length(towerPathLossMapsEHata);
 numOfCellAntsObserved = length(towerPathLossMapsEHata{1});
 
 numOfMapsGenerated = numOfHsInspected.*numOfCellAntsObserved;
-aveTimePerMapInSec = execTimeInSec./numOfMapsGenerated;
 
 numOfPixelsCovered = 0;
 for idxH = 1:numOfHsInspected
@@ -23,11 +23,9 @@ for idxH = 1:numOfHsInspected
     end
 end
 
-aveTimePerPixInSec = execTimeInSec./numOfPixelsCovered;
-
-% Log the information to a txt file.
 pathToSaveExecTime = fullfile(pathToSaveResults, ...
     'executionTime.txt');
+% Log the information to a txt file.
 logFileId = fopen(pathToSaveExecTime,'wt');
 
 fprintf(logFileId, '%s\n', fileNameHintRuler);
@@ -52,20 +50,31 @@ fprintf(logFileId, '%s\n', ...
 fprintf(logFileId, '%s\n', ...
     ['Num of pixels (path loss values) evaluated: ', ...
     num2str(numOfPixelsCovered)]);
-
 fprintf(logFileId, '\n');
-fprintf(logFileId, '%s\n', ['Total time used: ', ...
-    num2str(execTimeInSec), ' seconds']);
-fprintf(logFileId, '%s\n', ['    (', ...
-    seconds2human(execTimeInSec), ')']);
-fprintf(logFileId, '%s\n', ['Average time used per map: ', ...
-    num2str(aveTimePerMapInSec), ' seconds']);
-fprintf(logFileId, '%s\n', ['    (', ...
-    seconds2human(aveTimePerMapInSec), ')']);
-fprintf(logFileId, '%s\n', ['Average time used per pixel: ', ...
-    num2str(aveTimePerPixInSec), ' seconds']);
-fprintf(logFileId, '%s\n', ['    (', ...
-    seconds2human(aveTimePerPixInSec), ')']);
+
+if flagProcessInterrupted
+    fprintf(logFileId, '%s\n', ...
+        'Current session was resumed from history progress data.');
+else
+    % Collect execution time information.
+    execTimeInSec = toc(timerValueStart);
+    aveTimePerMapInSec = execTimeInSec./numOfMapsGenerated;
+    aveTimePerPixInSec = execTimeInSec./numOfPixelsCovered;
+    
+    
+    fprintf(logFileId, '%s\n', ['Total time used: ', ...
+        num2str(execTimeInSec), ' seconds']);
+    fprintf(logFileId, '%s\n', ['    (', ...
+        seconds2human(execTimeInSec), ')']);
+    fprintf(logFileId, '%s\n', ['Average time used per map: ', ...
+        num2str(aveTimePerMapInSec), ' seconds']);
+    fprintf(logFileId, '%s\n', ['    (', ...
+        seconds2human(aveTimePerMapInSec), ')']);
+    fprintf(logFileId, '%s\n', ['Average time used per pixel: ', ...
+        num2str(aveTimePerPixInSec), ' seconds']);
+    fprintf(logFileId, '%s\n', ['    (', ...
+        seconds2human(aveTimePerPixInSec), ')']);
+end
 
 fprintf(logFileId, '%s\n', fileNameHintRuler);
 fclose(logFileId);

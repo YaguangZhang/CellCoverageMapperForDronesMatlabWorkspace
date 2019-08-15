@@ -12,6 +12,7 @@ if exist(ABS_PATH_TO_SAVE_COMP_PROGRESS, 'file')==2
     disp('        Loading previous results ...')
     load(ABS_PATH_TO_SAVE_COMP_PROGRESS);
     boolResumeCompProg = true;
+    flagProcessInterrupted = true;
 else
     pathLossMapCompProgress = cell(numOfHs,1);
     % Initializing the labels.
@@ -171,7 +172,8 @@ for idxH = 1:numOfHs
                     'pathLossMaps', ...
                     'pathLossMapXLabels', ...
                     'pathLossMapYLabels', ...
-                    'pathLossMapCompProgress');
+                    'pathLossMapCompProgress', ...
+                    'dataTimeStrStart', 'timerValueStart');
             end
             
             disp('                    Done!');
