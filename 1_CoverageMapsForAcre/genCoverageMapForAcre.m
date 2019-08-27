@@ -501,7 +501,6 @@ disp('    Done!')
 %% Combine Path Loss Maps
 
 cellAntsLatLon = cellAntsLatLonAlt(:, 1:2);
-RX_ANT_HEIGHTS_IN_M_FOR_EHATA = RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
 combinePathLossMaps;
 
 %% Clear Things Up if Necessary

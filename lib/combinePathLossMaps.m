@@ -12,7 +12,7 @@ disp('        Combinning path loss maps ...')
 minPathLossValueToShow = inf;
 maxPathLossValueToShow = -inf;
 for idxH = 1:numOfHs
-    curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
+    curRxAntH = RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
     
     [coverageMapsEHata{idxH}, coverageMapsEHataXLabels{idxH}, ...
         coverageMapsEHataYLabels{idxH}] = combineTowerPathLossMaps( ...
@@ -32,7 +32,7 @@ if FLAG_GEN_FIGS
         ceil(maxPathLossValueToShow)];
     
     for idxH = 1:numOfHs
-        curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
+        curRxAntH = RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
         
         % Generate a figure on Google map to show the path loss map.
         [curXs, curYs] ...

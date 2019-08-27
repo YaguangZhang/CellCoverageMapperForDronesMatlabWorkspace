@@ -438,6 +438,7 @@ genPathLossMaps;
 
 %% Combine Path Loss Maps
 
+RX_ANT_HEIGHTS_TO_INSPECT_IN_M = RX_ANT_HEIGHTS_IN_M_FOR_EHATA;
 combinePathLossMaps;
 
 %% Clear Things Up if Necessary
