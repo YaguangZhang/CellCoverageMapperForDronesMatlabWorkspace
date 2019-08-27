@@ -28,12 +28,15 @@ end
 
 disp(' ')
 disp('        Computing path loss via the extended Hata model ...')
+execTimeInSecForAllHs = nan(numOfHs,1);
 for idxH = 1:numOfHs
     disp(' ')
     disp('            Closing figures to save RAM ...')
     close all;
     disp('            Done!')
     disp(' ')
+    
+    curExecTimeInSecStart = tic;
     
     curRxAntH = RX_ANT_HEIGHTS_IN_M_FOR_EHATA(idxH);
     
@@ -190,6 +193,12 @@ for idxH = 1:numOfHs
             'towerPathLossMapsEHata', ...
             'towerPathLossMapsEHataXLabels', ...
             'towerPathLossMapsEHataYLabels', '-append');
+    end
+    
+    if isnan(execTimeInSecForAllHs(idxH))
+        execTimeInSecForAllHs(idxH) = toc(curExecTimeInSecStart);
+        save(ABS_PATH_TO_SAVE_COMP_PROGRESS, ...
+            'execTimeInSecForAllHs', '-append');
     end
 end
 

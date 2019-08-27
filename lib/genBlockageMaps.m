@@ -33,12 +33,15 @@ end
 
 disp(' ')
 disp('        Ray tracing via terrian profiles ...')
+execTimeInSecForAllHs = nan(numOfHs,1);
 for idxH = 1:numOfHs
     disp(' ')
     disp('            Closing figures to save RAM ...')
     close all;
     disp('            Done!')
     disp(' ')
+    
+    curExecTimeInSecStart = tic;
     
     curRxAntH = RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
     
@@ -172,6 +175,12 @@ for idxH = 1:numOfHs
             'towerPathLossMapsEHata', ...
             'towerPathLossMapsEHataXLabels', ...
             'towerPathLossMapsEHataYLabels', '-append');
+    end
+    
+    if isnan(execTimeInSecForAllHs(idxH))
+        execTimeInSecForAllHs(idxH) = toc(curExecTimeInSecStart);
+        save(ABS_PATH_TO_SAVE_COMP_PROGRESS, ...
+            'execTimeInSecForAllHs', '-append');
     end
 end
 

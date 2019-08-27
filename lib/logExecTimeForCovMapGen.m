@@ -13,13 +13,17 @@ numOfCellAntsObserved = length(towerPathLossMapsEHata{1});
 numOfMapsGenerated = numOfHsInspected.*numOfCellAntsObserved;
 
 numOfPixelsCovered = 0;
+numOfPixelsCoveredForHs = zeros(numOfHsInspected, 1);
 for idxH = 1:numOfHsInspected
     assert(numOfCellAntsObserved==length(towerPathLossMapsEHata{idxH}), ...
         'The same number of cell towers should be observed for all maps!');
     for idxC = 1:numOfCellAntsObserved
         % Cound the number of pixels in each side of the map.
         [pixM, pixN] = size(towerPathLossMapsEHata{idxH}{idxC});
-        numOfPixelsCovered = numOfPixelsCovered+pixM.*pixN;
+        curNumOfPixels = pixM.*pixN;
+        numOfPixelsCoveredForHs(idxH) = numOfPixelsCoveredForHs(idxH) ...
+            + curNumOfPixels;
+        numOfPixelsCovered = numOfPixelsCovered + curNumOfPixels;
     end
 end
 
@@ -74,6 +78,27 @@ else
         num2str(aveTimePerPixInSec), ' seconds']);
     fprintf(logFileId, '%s\n', ['    (', ...
         seconds2human(aveTimePerPixInSec), ')']);
+end
+
+for idxH = 1:numOfHsInspected
+    curHExecTimeInSec = execTimeInSecForAllHs(idxH);
+    curHAveTimePerMapInSec = curHExecTimeInSec./numOfCellAntsObserved;
+    curHAveTimePerPixInSec ...
+        = curHExecTimeInSec./numOfPixelsCoveredForHs(idxH);
+    
+    fprintf(logFileId, '\n%s\n', ['For RX height # ', num2str(idxH), ':']);
+    fprintf(logFileId, '%s\n', ['    Total time used: ', ...
+        num2str(curHExecTimeInSec), ' seconds']);
+    fprintf(logFileId, '%s\n', ['        (', ...
+        seconds2human(curHExecTimeInSec), ')']);
+    fprintf(logFileId, '%s\n', ['    Average time used per map: ', ...
+        num2str(curHAveTimePerMapInSec), ' seconds']);
+    fprintf(logFileId, '%s\n', ['        (', ...
+        seconds2human(curHAveTimePerMapInSec), ')']);
+    fprintf(logFileId, '%s\n', ['    Average time used per pixel: ', ...
+        num2str(curHAveTimePerPixInSec), ' seconds']);
+    fprintf(logFileId, '%s\n', ['        (', ...
+        seconds2human(curHAveTimePerPixInSec), ')']);
 end
 
 fprintf(logFileId, '%s\n', fileNameHintRuler);
