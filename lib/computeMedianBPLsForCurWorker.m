@@ -17,7 +17,13 @@ function curMedianBPLs = computeMedianBPLsForCurWorker(idxWorker, ...
 % Yaguang Zhang, Purdue, 08/06/2019
 
 % For progress feedback.
-ratioToReportProgress = 0.05;
+ratioToReportProgress = 0.05; % One feedback per 5% progress.
+
+% The clearance ratio of the first Fresnel zone for a LoS path: at least
+% this ratio of the first Fresnel zone needs to be clear for a path to be
+% considered as "line of sight" (LoS); we expect it to be larger or equal
+% to 50%.
+LOS_FIRST_FRES_CLEAR_RATIO = 0.6;
 
 [curNumOfPixs,~] = size(indicesRxXsYsForAllWorkers{idxWorker});
 
@@ -62,6 +68,13 @@ for idxPixel = 1:curNumOfPixs
         
         % Only evaluate the path loss if the distance is not too big.
         if distTxToRx<=EHATA_VALID_DIST_RANGE_IN_M(2)
+            % Here we need to construct the following parameters for the
+            % eHata model:
+            % 	- txHeightInM, rxHeightInM
+            %     Elevation + antenna height for the TX and RX,
+            %     respectively.
+            %   - curEleProfile
+            %     The terrain profile between the TX and the RX.
             eleProfXs = linspace(baseAntXY(1), curRxX, numPoints)';
             eleProfYs = linspace(baseAntXY(2), curRxY, numPoints)';
             
@@ -108,19 +121,63 @@ for idxPixel = 1:curNumOfPixs
                         fsMHz, txHeightInM, rxHeightInM, ...
                         region, curEleProfile);
                 case 'fspl'         % LoS FSPL
-                    eleProfDists = linspace(0, distTxToRx, numPoints)';
+                    % Make sure there is no obstacles blocking the LoS path
+                    % too much according to the LiDAR data. Note that here
+                    % we always conider the profiles with the cellular
+                    % tower as the start point and the mobile device as the
+                    % end point.
                     
+                    % We only need to compare the points between the
+                    % cellular tower and the mobile device.
                     curLidarProfileZs ...
-                        = fetchLidarZs(eleProfXs, eleProfYs);
+                        = fetchLidarZs(eleProfXs(2:(end-1)), ...
+                        eleProfYs(2:(end-1)));
+                    
+                    lidarProfDists = linspace(0, distTxToRx, numPoints)';
+                    lidarProfDists = lidarProfDists(2:(end-1));
                     
                     parsLoSPath = polyfit([0; distTxToRx], ...
                         [baseAntElePlusHeight; mobileAntElePlusHeight], 1);
-                    curLosPathHs = polyval(parsLoSPath, eleProfDists);
+                    curLosPathHs = polyval(parsLoSPath, lidarProfDists);                    
                     
-                    % Make sure there is no obstacles blocking the LoS path
-                    % according to the LiDAR data.
                     if all(curLosPathHs>=curLidarProfileZs)
-                        curMedianBPLs(idxPixel) = curFsplMedianBPL;
+                        % A 50-percent clearance is now ensured. We need to
+                        % consider the first Fresnel zone here to more
+                        % accurately determine the LoS paths.
+                        
+                        % Distance between the celluar tower and the lidar
+                        % z locations.
+                        d1s = vecnorm( ...
+                            [lidarProfDists(:)'; ...
+                            curLidarProfileZs(:)'-baseAntElePlusHeight]);
+                        % Distance between the lidar z locations and the
+                        % mobile device.
+                        d2s = vecnorm( ...
+                            [distTxToRx - lidarProfDists(:)'; ...
+                            curLidarProfileZs(:)'-mobileAntElePlusHeight]);
+                        % First Fresnel zone radii for the lidar z
+                        % locations.
+                        firstFresRadii ...
+                            = (sqrt( ...
+                            (lambdaInM .* d1s .* d2s)./(d1s + d2s)))';
+                        
+                        % The distances between the lidar z locations and
+                        % the TX-RX direct path.
+                        distsToDirectPath ...
+                            = point_to_line_distance( ...
+                            [lidarProfDists(:), curLidarProfileZs(:)], ...
+                            [0, baseAntElePlusHeight], ...
+                            [distTxToRx, mobileAntElePlusHeight]);
+                        
+                        % The extra clearance ratio respective to the first
+                        % Fresnel zone radius for LoS paths.
+                        extraClearRatioVsR ...
+                            = (LOS_FIRST_FRES_CLEAR_RATIO-0.5)*2;                        
+                        
+                        if all(distsToDirectPath ...
+                                -((1-extraClearRatioVsR)*firstFresRadii)>0)
+                            curMedianBPLs(idxPixel) = curFsplMedianBPL;
+                        end
                     end
                 otherwise
                     error(['Unsupported library: ', libraryToUse, '!'])
@@ -138,8 +195,7 @@ for idxPixel = 1:curNumOfPixs
                         curMedianBPLs(idxPixel) = curEHataMedianBPL;
                     end
                 else
-                    % Consider the LoS FSPL model and weigh it in when its
-                    % evaluation is valid.                    
+                    % Consider the FSPL model.                    
                     ratioForEHata ...
                         = distTxToRx./EHATA_VALID_DIST_RANGE_IN_M(1);
                     curMedianBPLs(idxPixel) ...
