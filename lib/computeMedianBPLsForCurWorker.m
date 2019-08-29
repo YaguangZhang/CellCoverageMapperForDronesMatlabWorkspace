@@ -138,7 +138,7 @@ for idxPixel = 1:curNumOfPixs
                     
                     parsLoSPath = polyfit([0; distTxToRx], ...
                         [baseAntElePlusHeight; mobileAntElePlusHeight], 1);
-                    curLosPathHs = polyval(parsLoSPath, lidarProfDists);                    
+                    curLosPathHs = polyval(parsLoSPath, lidarProfDists);
                     
                     if all(curLosPathHs>=curLidarProfileZs)
                         % A 50-percent clearance is now ensured. We need to
@@ -172,10 +172,10 @@ for idxPixel = 1:curNumOfPixs
                         % The extra clearance ratio respective to the first
                         % Fresnel zone radius for LoS paths.
                         extraClearRatioVsR ...
-                            = (LOS_FIRST_FRES_CLEAR_RATIO-0.5)*2;                        
+                            = (LOS_FIRST_FRES_CLEAR_RATIO-0.5)*2;
                         
                         if all(distsToDirectPath ...
-                                -((1-extraClearRatioVsR)*firstFresRadii)>0)
+                                -extraClearRatioVsR*firstFresRadii>0)
                             curMedianBPLs(idxPixel) = curFsplMedianBPL;
                         end
                     end
@@ -195,7 +195,7 @@ for idxPixel = 1:curNumOfPixs
                         curMedianBPLs(idxPixel) = curEHataMedianBPL;
                     end
                 else
-                    % Consider the FSPL model.                    
+                    % Consider the FSPL model.
                     ratioForEHata ...
                         = distTxToRx./EHATA_VALID_DIST_RANGE_IN_M(1);
                     curMedianBPLs(idxPixel) ...
