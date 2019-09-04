@@ -23,12 +23,13 @@ else
     [towerPathLossMapsEHata, towerPathLossMapsEHataXLabels, ...
         towerPathLossMapsEHataYLabels] ...
         = deal(cell(numOfHs, 1));
+    execTimeInSecForAllHs = nan(numOfHs,1);
     boolResumeCompProg = false;
 end
 
 disp(' ')
 disp('        Computing path loss via the extended Hata model ...')
-execTimeInSecForAllHs = nan(numOfHs,1);
+
 for idxH = 1:numOfHs
     disp(' ')
     disp('            Closing figures to save RAM ...')
