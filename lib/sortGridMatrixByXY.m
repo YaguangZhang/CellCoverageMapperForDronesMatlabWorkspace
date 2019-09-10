@@ -19,6 +19,12 @@ function [ XsSorted, YsSorted, gridMatSorted ] ...
 %
 % Yaguang Zhang, Purdue, 06/11/2019
 
+% Make sure there are no duplicate data for any given location.
+[Xs, indicesUniqueXs] = unique(Xs); 
+gridMat = gridMat(:, indicesUniqueXs);
+[Ys, indicesUniqueYs] = unique(Ys); 
+gridMat = gridMat(indicesUniqueYs, :);
+
 gridMatSorted = [Xs'; gridMat];
 gridMatSorted = sortrows(gridMatSorted', 1)';
 XsSorted = gridMatSorted(1, :)';
