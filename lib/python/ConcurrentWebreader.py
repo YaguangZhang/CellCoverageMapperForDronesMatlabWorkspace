@@ -4,7 +4,6 @@
 
 import threading
 import urllib.request
-import queue
 import ssl
 
 # Ignore SSL certificate errors
@@ -12,8 +11,8 @@ ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
-def fetch_url(url):
-    return urllib.request.urlopen(url, context=ctx).read()
+def fetch_url(url, htmls, idx):
+    htmls[idx] = urllib.request.urlopen(url, context=ctx).read()
 
 def concurrent_fetch_urls(urls):
     numOfUrls = len(urls)
@@ -21,19 +20,13 @@ def concurrent_fetch_urls(urls):
     threads = [None] * numOfUrls
     htmls = [None] * numOfUrls
 
-    results = queue.Queue(numOfUrls)
-
     for idx in range(numOfUrls):
-        threads[idx] = threading.Thread(target=lambda q, fctArgs: q.put((idx, fetch_url(fctArgs))), \
-            args=(results, urls[idx]))
+        threads[idx] = threading.Thread(target=fetch_url, \
+            args=(urls[idx], htmls, idx))
         threads[idx].start()
 
     for thread in threads:
         thread.join()
-
-    for idx in range(results.qsize()):
-        (idx, html) = results.get()
-        htmls[idx] = html 
 
     return htmls
 
