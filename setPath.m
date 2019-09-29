@@ -9,14 +9,20 @@ addpath(genpath(fullfile(pwd, 'lib')));
 % The absolute path to the shared folder holding the data and code. Please
 % make sure it is correct for the machine to run this script.
 %  - On (quite powerful) Windows Artsy:
-absPathWinArtsy = ['D:\One Drive - Purdue\OneDrive - purdue.edu', ...
-    '\OATS\CellCoverageMapper'];
-%  - Local copy on Windows Dell:
-absPathWinDell = ['C:\Users\Zyglabs\OneDrive - purdue.edu', ...
+absHomePathWinArtsy = ['D:\One Drive - Purdue\OneDrive - purdue.edu', ...
     '\OATS\CellCoverageMapper'];
 %  - Local copy on the computer cluster at Purdue:
-absPathWinDell = ['/home/coverage', ...
+absHomePathLinuxCoverage = ['/home/coverage', ...
     '/CellCoverageMapper'];
+
+% The absolute path to Python 3. Please make sure it is correct for the
+% machine to run this script.
+%  - On (quite powerful) Windows Artsy:
+absPythonPathWinArtsy ...
+    = ['C:\Users\Yaguang Zhang\AppData\Local\Programs', ...
+    '\Python\Python37\python.exe'];
+%  - Local copy on the computer cluster at Purdue:
+absPythonPathLinuxCoverage = ['/usr/bin/python3.7'];
 
 unknownComputerErrorMsg = ...
     ['Compute not recognized... \n', ...
@@ -27,13 +33,12 @@ unknownComputerErrorId = 'setPath:computerNotKnown';
 switch strtrim(curHostname)
     case 'Artsy'
         % ZYG's lab desktop.
-        ABS_PATH_TO_SHARED_FOLDER = absPathWinArtsy;
-    case 'ZygLabs-Dell'
-        % ZYG's Dell laptop.
-        ABS_PATH_TO_SHARED_FOLDER = absPathWinDell;
-    case 'coverage-compute'
+        ABS_PATH_TO_SHARED_FOLDER = absHomePathWinArtsy;
+        ABS_PATH_TO_PYTHON = absPythonPathWinArtsy;
+    case 'coverage-compute-big'
         % The computer cluster at Purdue.
-        ABS_PATH_TO_SHARED_FOLDER = absPathWinDell;
+        ABS_PATH_TO_SHARED_FOLDER = absHomePathLinuxCoverage;
+        ABS_PATH_TO_PYTHON = absPythonPathLinuxCoverage;
     otherwise
         error(unknownComputerErrorId, unknownComputerErrorMsg);
 end
@@ -45,4 +50,29 @@ elseif isunix
     rmpath(fullfile(pwd, 'lib', 'ext', 'eHataNtia'));
 end
 
+% Make sure Python and its lib folder is added to path. Make sure Python is
+% available. Make sure Python is available.
+curPythonVersion = pyversion;
+if isempty(curPythonVersion) || (~strcmp(curPythonVersion(1:3), '3.7'))
+    pyversion(ABS_PATH_TO_PYTHON);
+end
+% Check the version again.
+curPythonVersion = pyversion;
+if ~strcmp(curPythonVersion(1:3), '3.7')
+    error(['Loaded Python is not version 3.7.', ...
+        ' Please restart Matlab and try again!']);
+end
+try
+    py_addpath(fullfile(pwd, 'lib', 'python'));
+catch err
+    warning(['Error identifier: ', err.identifier]);
+    warning(['Error message: ',err.message]);
+    errorMsg = 'Unable to set Python path! ';
+    if isunix
+        errorMsg = [errorMsg, ...
+            'Please make sure both python3.7 and ', ...
+            'python3.7-dev are installed!']; 
+    end
+    error(errorMsg);
+end
 % EOF

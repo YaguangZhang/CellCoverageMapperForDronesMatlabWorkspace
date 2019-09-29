@@ -1,6 +1,6 @@
 function [ lidarZs ] = genRasterLidarZGetter( ...
     getLiDarZFromStatePlaneXYFct, fctLonLatToLidarStatePlaneXY, ...
-    xs, ys, utmZone)
+    xs, ys, utmZoneOrUtmToDegFct)
 %GENRASTERLIDARZGETTER A helper function to generate the function
 %   [zs] = getLiDarZFromXYFct(xs, ys).
 %
@@ -13,10 +13,13 @@ function [ lidarZs ] = genRasterLidarZGetter( ...
 %     A function to convert (lons, lats) to state plane coordinates (spXs,
 %     spYs):
 %           [spXs, spYs] = fctLonLatToLidarStatePlaneXY(lons, lats).
-%   - xs, ys, utmZone
-%     The UTM coordinates (xs,ys), in the form of column vectors, and their
-%     zone string for the target locations where we will estimate the
-%     output elevations according to the know elevation data.
+%   - xs, ys
+%     The UTM coordinates (xs,ys), in the form of column vectors for the
+%     target locations where we will estimate the output elevations
+%     according to the know elevation data.
+%   - utmZoneOrUtmToDegFct
+%     Either the zone string for (xs, ys), or a function to convert UTM
+%     (xs, ys) to (lat, lon).
 %
 % Output:
 %   - eles
@@ -26,7 +29,16 @@ function [ lidarZs ] = genRasterLidarZGetter( ...
 %
 % Yaguang Zhang, Purdue, 06/13/2019
 
-[lats, lons] = utm2deg(xs, ys, repmat(utmZone, length(xs), 1));
+switch class(utmZoneOrUtmToDegFct)
+    case 'function_handle'
+        [lats, lons] = utmZoneOrUtmToDegFct(xs, ys);
+    case 'char'
+        [lats, lons] = utm2deg(xs, ys, ...
+            repmat(utmZoneOrUtmToDegFct, length(xs), 1));
+    otherwise
+        error('Unsupported type of input utmZoneOrUtmToDegFct!');
+end
+
 [spXs, spYs] = fctLonLatToLidarStatePlaneXY(lons, lats);
 lidarZs = getLiDarZFromStatePlaneXYFct(spXs, spYs);
 

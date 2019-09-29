@@ -1,5 +1,5 @@
 function [ eles ] = genUtmEleGetter(elevDataLats, elevDataLons, ...
-    elevDataEles, xs, ys, utmZone)
+    elevDataEles, xs, ys, utmZoneOrUtmToDegFct)
 %GENUTMELEGETTER A helper function to generate the function
 %   [eles] = getEleFromXYFct(xs, ys).
 %
@@ -11,10 +11,13 @@ function [ eles ] = genUtmEleGetter(elevDataLats, elevDataLons, ...
 %     is elevDataLons(m,n). Also, elevDataLats and elevDataLons should be
 %     generated via meshgrid from grid vectors that are strictly
 %     increasing.
-%   - xs, ys, utmZone
-%     The UTM coordinates (xs,ys), in the form of column vectors, and their
-%     zone string for the target locations where we will estimate the
-%     output elevations according to the know elevation data.
+%   - xs, ys
+%     The UTM coordinates (xs,ys), in the form of column vectors for the
+%     target locations where we will estimate the output elevations
+%     according to the know elevation data.
+%   - utmZoneOrUtmToDegFct
+%     Either the zone string for (xs, ys), or a function to convert UTM
+%     (xs, ys) to (lat, lon).
 %
 % Output:
 %   - eles
@@ -24,9 +27,18 @@ function [ eles ] = genUtmEleGetter(elevDataLats, elevDataLons, ...
 %
 % Yaguang Zhang, Purdue, 06/13/2019
 
-[lats, lons] = utm2deg(xs, ys, repmat(utmZone, length(xs), 1));
+switch class(utmZoneOrUtmToDegFct)
+    case 'function_handle'
+        [lats, lons] = utmZoneOrUtmToDegFct(xs, ys);
+    case 'char'
+        [lats, lons] = utm2deg(xs, ys, ...
+            repmat(utmZoneOrUtmToDegFct, length(xs), 1));
+    otherwise
+        error('Unsupported type of input utmZoneOrUtmToDegFct!');
+end
 
 eles = interp2(elevDataLons, ...
     elevDataLats, elevDataEles, lons, lats);
+
 end
 % EOF

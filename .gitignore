@@ -32,3 +32,6 @@ octave-workspace
 
 # Usgs data cache.
 usgsdata/
+
+# Python cache files.
+*.pyc
