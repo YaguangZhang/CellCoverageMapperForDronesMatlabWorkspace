@@ -6,6 +6,11 @@ cd(fileparts(mfilename('fullpath')));
 addpath(fullfile(pwd));
 addpath(genpath(fullfile(pwd, 'lib')));
 
+% A workaround for making Matlab R2019b work. If
+% preprocessIndianaLidarDataSet.m is in the path, it has trouble using
+% loaded functions as they are, even though R2019a works anyway.
+rmpath(fullfile(pwd, 'lib', 'lidar'));
+
 % The absolute path to the shared folder holding the data and code. Please
 % make sure it is correct for the machine to run this script.
 %  - On (quite powerful) Windows Artsy:
