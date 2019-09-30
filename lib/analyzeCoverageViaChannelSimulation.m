@@ -286,6 +286,10 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
             loadlibrary('ehata');
         end
         
+        % Load our Python module.
+        py_addpath(fullfile(pwd, 'lib', 'python'));
+        
+        % For recording and estimating processing time.
         curExecTimeInSecStart = tic;
         
         curWorkerPixCnt = 0;

@@ -55,8 +55,9 @@ elseif isunix
     rmpath(fullfile(pwd, 'lib', 'ext', 'eHataNtia'));
 end
 
-% Make sure Python and its lib folder is added to path. Make sure Python is
-% available. Make sure Python is available.
+% Make sure Python and its lib folder is added to path. 
+
+% Make sure Python is available.
 curPythonVersion = pyversion;
 if isempty(curPythonVersion) || (~strcmp(curPythonVersion(1:3), '3.7'))
     pyversion(ABS_PATH_TO_PYTHON);
@@ -67,6 +68,7 @@ if ~strcmp(curPythonVersion(1:3), '3.7')
     error(['Loaded Python is not version 3.7.', ...
         ' Please restart Matlab and try again!']);
 end
+% Make sure our Python module is available. 
 try
     py_addpath(fullfile(pwd, 'lib', 'python'));
 catch err
@@ -80,4 +82,5 @@ catch err
     end
     error(errorMsg);
 end
+
 % EOF
