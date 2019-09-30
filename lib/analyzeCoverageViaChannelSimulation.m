@@ -293,7 +293,19 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
         curExecTimeInSecStart = tic;
         
         curWorkerPixCnt = 0;
+        curWorkerNumPixs = length(locIndicesForAllWorkers{idxWorker});
+        curWorkerNumPixsToReportProgress = ceil(curWorkerNumPixs ...
+            .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT); %#ok<PFBNS>
         for idxDroneLoc = locIndicesForAllWorkers{idxWorker}
+            
+            % Report progress when necessary.
+            if mod(curWorkerPixCnt, curWorkerNumPixsToReportProgress)==0
+                disp(['        Worker #', num2str(idxWorker), ...
+                    '/', num2str(numOfWorkers), ' (', ...
+                    num2str(curWorkerPixCnt/curWorkerNumPixs ...
+                    /numOfRxHeightToInspect*100, ...
+                    '%.2f'), '%) ...']);
+            end
             
             % Drone location.
             curDroneXY = simState.mapGridXYPts(idxDroneLoc, :); %#ok<PFBNS>
@@ -314,7 +326,7 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
                 .MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M), ...
                 '_CelLocIdx_', num2str(idxEffeCellAnt), ...
                 '_DroLocIdx_', num2str(idxDroneLoc), ...
-                '.mat']; %#ok<PFBNS>
+                '.mat'];
             if ~exist(absPathToCacheProfilesDir, 'dir')
                 mkdir(absPathToCacheProfilesDir);
             end
@@ -366,6 +378,13 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
                 curExecTimeInSecStart = tic;
             end
         end
+        
+        % Final progress report which is expected to be 100% done.
+        disp(['        Worker #', num2str(idxWorker), ...
+            '/', num2str(numOfWorkers), ' (', ...
+            num2str(curWorkerPixCnt/curWorkerNumPixs ...
+            /numOfRxHeightToInspect*100, ...
+            '%.2f'), '%) ...']);
         
         % Clean up the library.
         if libisloaded('ehata')

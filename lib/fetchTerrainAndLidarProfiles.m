@@ -49,6 +49,9 @@ function [terrainProfile, lidarProfile] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
+% Suppress warning from generateProfileSamps.
+warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+
 if exist(absPathToCacheMatFile, 'file')
     cachedResults = load(absPathToCacheMatFile, ...
         'terrainProfile', 'lidarProfile');
@@ -108,5 +111,9 @@ else
     save(absPathToCacheMatFile, ...
         'terrainProfile', 'lidarProfile');
 end
+
+% Turn suppressed warning back on.
+warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+
 end
 % EOF

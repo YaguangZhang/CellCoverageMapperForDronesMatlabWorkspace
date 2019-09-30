@@ -146,6 +146,9 @@ utm2deg_speZone = @(x, y) minvtran(utmstruct_speZone, x, y);
 simConfigs.deg2utm_speZone = deg2utm_speZone;
 simConfigs.utm2deg_speZone = utm2deg_speZone;
 
+%   - For adjusting the feedback frequency in parfor workers.
+simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.2;
+
 %% Preprocessing LiDAR Data
 
 [LIDAR_DATA_SET_TO_USE] = verifyLidarDataSetToUse( ...
