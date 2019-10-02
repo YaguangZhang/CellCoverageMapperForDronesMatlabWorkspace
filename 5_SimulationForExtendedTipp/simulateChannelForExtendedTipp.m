@@ -3,8 +3,15 @@
 % the Wabash Heartland Innovation Network, with an extended area to
 % consider cellular towers around.
 %
+% This simulator has configuration presets available for carrying out
+% simulation with different area of interest. Please adjust the value of
+% the viable PRESET below to choose the target simulation.
+%
 % If new simulation is needed, please delete previous result files to avoid
 % progress recovery.
+%
+% Matlab R2019b or newer is required to utilize the custom Python module
+% for downloading elevation data from USGS concurrently.
 %
 % Yaguang Zhang, Purdue, 08/28/2019
 
@@ -17,8 +24,8 @@ curFileName = mfilename;
 prepareSimulationEnv;
 
 % Change PRESET to run the code for different areas.
-SUPPORTED_PRESETS = {'ACRE', 'Tipp', 'Tipp_Extended'};
-PRESET = 'ACRE';
+SUPPORTED_PRESETS = {'ACRE', 'Tipp', 'ExtendedTipp', 'IN'};
+PRESET = 'ExtendedTipp';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
@@ -44,27 +51,25 @@ switch PRESET
     case 'Tipp'
         pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'PostProcessingResults', '5_2_SimulationForTipp');
-    case 'Tipp_Extended'
+    case 'ExtendedTipp'
         pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'PostProcessingResults', '5_3_SimulationForExtendedTipp');
+    case 'IN'
+        pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'PostProcessingResults', '5_4_SimulationForIn');
 end
 
 %% Simulation Configurations
 
-% We will organize all the necessary configurations into a structure.
+% We will organize all the necessary configurations into a structure called
+% simConfigs.
 %   - A string label to identify this simulation.
-switch PRESET
-    case 'ACRE'
-        simConfigs.CURRENT_SIMULATION_TAG = 'ACRE';
-    case 'Tipp'
-        simConfigs.CURRENT_SIMULATION_TAG = 'Tipp';
-    case 'Tipp_Extended'
-        simConfigs.CURRENT_SIMULATION_TAG = 'ExtendedTipp';
-end
+simConfigs.CURRENT_SIMULATION_TAG = PRESET;
 
 %   - The UTM (x, y) polygon boundary vertices representing the area of
-%   interest for generating the coverage maps; this is default to the range
-%   covered by the availabe LiDAR data set when it is empty.
+%   interest for generating the coverage maps; for presets ExtendedTipp and
+%   IN, this is default to the range covered by the availabe LiDAR data set
+%   for the corresponding area of interest when it is empty.
 switch PRESET
     case 'ACRE'
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
@@ -76,7 +81,9 @@ switch PRESET
             = constructUtmRectanglePolyMat(...
             [40.216047, -87.093700; ...
             40.562743, -86.695913]);
-    case 'Tipp_Extended'
+    case 'ExtendedTipp'
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
+    case 'IN'
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
 end
 
@@ -151,6 +158,10 @@ simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.2;
 
 %% Preprocessing LiDAR Data
 
+% Make sure the chosen LiDAR dataset to use in the simulation is indeed
+% available, and if it is not specified (LIDAR_DATA_SET_TO_USE = ''),
+% default to the bigger LiDAR dataset that has been preprocessed before for
+% better coverage.
 [LIDAR_DATA_SET_TO_USE] = verifyLidarDataSetToUse( ...
     LIDAR_DATA_SET_TO_USE, ABS_PATH_TO_SHARED_FOLDER);
 
@@ -186,13 +197,34 @@ cellAntsXYH(:,3) = DEFAULT_TX_ANT_HEIGHT_IN_M;
 
 disp('    Done!')
 
+%% Validate Area of Interest
+% Generate the area of interest according to the corresponding LiDAR
+% dataset for that area (indicated by PRESET), regardless of what LiDAR
+% dataset to be used in the simulator for terrain/LiDAR profile generation.
+% This will ensure an accurate polygon representation of the area of
+% interest, while retaining the option of using other LiDAR data for the
+% simulation, e.g. a big comprehensive local LiDAR data set on a powerful
+% cluster machine to save time used in data fetching.
+
+if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
+    assert(any(strcmp({'ExtendedTipp', 'IN'}, PRESET)), ...
+    ['No raw Indiana LiDAR data available for ', PRESET, ...
+    ' to generate the area of interest polygon!'])
+
+    areaOfInterestLidarDataset = PRESET;
+    % The only case when the LiDAR dataset folder is different from the
+    % simulation tag is for the extended Tippecanoe area.
+    if strcmp(PRESET, 'ExtendedTipp')
+        areaOfInterestLidarDataset = 'Tipp_Extended';
+    end
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+        = generateUtmXyBoundaryOfLidarDataset( ...
+        fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+        'Lidar', areaOfInterestLidarDataset), simConfigs);
+end
+
 %% Simulation
 
-% We need Python for concurrent HTTP requests to get elevation data from
-% USGS faster.
-if isempty(pyversion)
-    pyversion(ABS_PATH_TO_PYTHON);
-end
 % Generate coverage and blockage maps.
 [simState, simConfigs] ...
     = analyzeCoverageViaChannelSimulation(pathToSaveResults, ...

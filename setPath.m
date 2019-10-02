@@ -55,7 +55,8 @@ elseif isunix
     rmpath(fullfile(pwd, 'lib', 'ext', 'eHataNtia'));
 end
 
-% Make sure Python and its lib folder is added to path. 
+% We need Python for concurrent HTTP requests to get elevation data from
+% USGS faster. Make sure Python and its lib folder is added to path.
 
 % Make sure Python is available.
 curPythonVersion = pyversion;

@@ -2,6 +2,19 @@ function [LIDAR_DATA_SET_TO_USE] ...
     = verifyLidarDataSetToUse(lidarDataToUse, ABS_PATH_TO_SHARED_FOLDER)
 %VERIFYLIDARDATASETTOUSE Verify the label for the LiDAR data set to use.
 %
+% This function verifies that the LiDAR dataset chosen by the user is
+% indeed available. Note:
+%   - Valid LiDAR datasets
+%     Currently, we support two LiDAR datasets, the smaller ten-county
+%     Wabash Heartland Innovation Network (WHIN) area LiDAR data and the
+%     bigger Indiana State LiDAR dataset, cooresponding to input
+%     lidarDataToUse = 'Tipp_Extended' and 'IN', respectively.
+%   - Default dataset to use
+%     If the input variable lidarDataToUse is emtpy (''), we will check
+%     whether local results from preprocessing the LiDAR dataset (by
+%     preprocessIndianaLidarDataSet.m) are available, and default to choose
+%     the bigger LiDAR dataset that has been preprocessed.
+%
 % Inputs:
 %   - lidarDataToUse
 %     The user defined label for the LiDAR data set to use.
@@ -38,7 +51,7 @@ switch lower(lidarDataToUse)
         LIDAR_DATA_SET_TO_USE = 'IN';
     otherwise
         error(['Unsupported LIDAR_DATA_SET_TO_USE ', ...
-            LIDAR_DATA_SET_TO_USE, '!']);
+            lidarDataToUse, '!']);
 end
 
 end
