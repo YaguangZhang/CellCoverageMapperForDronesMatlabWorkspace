@@ -56,10 +56,10 @@ function [ simState, simConfigs ] ...
 % Output:
 %   - simState
 %     A structure for the state of the simulation, including fields
-%       - mapGridXYPts
-%         The UTM (x,y) locations for the map grid points. Note that the
-%         shape of the map is determined by
-%         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST.
+%       - mapGridXYPts, mapGridLatLonPts
+%         The UTM (x,y) and GPS (lat, lon) locations for the map grid
+%         points, respectively. Note that the shape of the map is
+%         determined by simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST.
 %       - blockageMapsForEachCell, coverageMapsForEachCell
 %         Two cells for the blockage and coverage maps (for all cell
 %         antennas affecting the simulation for all drone heights),
@@ -83,6 +83,14 @@ function [ simState, simConfigs ] ...
 %         will be way longer than for other heights, because for the other
 %         heights, we will reuse the terrain profiles generated for the
 %         first height.
+%       - CellAntsXyhAll, CellAntsXyhEffective
+%         For debugging and plotting, we record the location information
+%         for the cellular towers and those that are close enough to the
+%         area of interest to affect the final results.
+%       - MaxAllowedPathlossInDb
+%         For plotting, we need an expected value for the maximum allowed
+%         path loss. With 20 MHz bandwidth, 9 dB RX noise figure, and 100 W
+%         TX power, we have a maximum path loss of ~142 dB.
 %
 % Yaguang Zhang, Purdue, 09/10/2019
 
@@ -163,6 +171,11 @@ boolsMapGridPtsToKeep = inpolygon(mapXs(:), mapYs(:), ...
 simState.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
     mapYs(boolsMapGridPtsToKeep)];
 
+% Convert UTM (x, y) to (lat, lon).
+[mapGridLats, mapGridLons] = simConfigs.utm2deg_speZone( ...
+    simState.mapGridXYPts(:,1), simState.mapGridXYPts(:,2));
+simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
+
 % Plot.
 hFigAreaOfInterest = figure; hold on;
 hAreaOfInterest = plot( ...
@@ -197,7 +210,11 @@ boolsCellAntsToKeep ...
 % Effective cellular towers.
 effeCellAntsXYH = cellAntsXYH(boolsCellAntsToKeep, :);
 
-% Plot.
+% Save information for cells.
+simState.CellAntsXyhAll = cellAntsXYH;
+simState.CellAntsXyhEffective = effeCellAntsXYH;
+
+% Overview plot in UTM (x, y).
 hFigCellOverview = figure; hold on;
 hEffeCells = plot(effeCellAntsXYH(:,1), ...
     effeCellAntsXYH(:,2), '.', 'Color', darkBlue);
@@ -206,11 +223,11 @@ hAreaOfInterest = plot( ...
     polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
     'FaceColor', areaOfInterestColor);
 axis equal; view(2); grid on; grid minor;
-axisToSet = axis;
+axisXYToSet = axis;
 hAllCells = plot(cellAntsXYH(:,1), ...
     cellAntsXYH(:,2), '.', 'Color', 'yellow');
 uistack(hAllCells, 'bottom'); uistack(hEffeCells, 'top');
-axis(axisToSet);
+axis(axisXYToSet); xlabel('UTM x (m)'); ylabel('UTM y (m)');
 legend([hAreaOfInterest, hEffeCells], ...
     'Area of interest', 'Cellular towers to consider', ...
     'Location', 'SouthWest');
@@ -218,6 +235,55 @@ transparentizeCurLegends;
 
 curDirToSave = fullfile(pathToSaveResults, ...
     'Overview_CellularTowersToConsider.png');
+saveas(hFigCellOverview, curDirToSave);
+
+% Overview plot in GPS (lon, lat).
+[effeCellAntsLats, effeCellAntsLons] ...
+    = simConfigs.utm2deg_speZone(effeCellAntsXYH(:,1), ...
+    effeCellAntsXYH(:,2));
+[gpsLatsBoundaryToKeepCellTowers, gpsLonsBoundaryToKeepCellTowers] ...
+    = simConfigs.utm2deg_speZone(utmXYBoundaryToKeepCellTowers(:,1), ...
+    utmXYBoundaryToKeepCellTowers(:,2));
+[gpsLatsBoundaryOfInterest, gpsLonsBoundaryOfInterest] ...
+    = simConfigs.utm2deg_speZone( ...
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+[cellAntsLats, cellAntsLons] ...
+    = simConfigs.utm2deg_speZone(cellAntsXYH(:,1), ...
+    cellAntsXYH(:,2));
+[axisLatMin, axisLonMin] = simConfigs.utm2deg_speZone( ...
+    axisXYToSet(1), axisXYToSet(3));
+[axisLatMax, axisLonMax] = simConfigs.utm2deg_speZone( ...
+    axisXYToSet(2), axisXYToSet(4));
+axisLonLatToSet = [axisLonMin axisLonMax axisLatMin axisLatMax];
+
+hFigCellOverview = figure; hold on;
+hAllCells = plot(cellAntsLons, ...
+    cellAntsLats, '.', 'Color', 'yellow');
+plot(polyshape([gpsLonsBoundaryToKeepCellTowers, ...
+    gpsLatsBoundaryToKeepCellTowers]));
+hAreaOfInterest = plot( ...
+    polyshape([gpsLonsBoundaryOfInterest, gpsLatsBoundaryOfInterest]), ...
+    'FaceColor', areaOfInterestColor);
+hEffeCells = plot(effeCellAntsLons, effeCellAntsLats, ...
+    '.', 'Color', darkBlue);
+view(2); axis(axisLonLatToSet); 
+plot_google_map;
+grid on; grid minor;
+xlabel('Longitude'); ylabel('Latitude');
+xticks([]); yticks([]);
+legend([hAreaOfInterest, hEffeCells], ...
+    'Area of interest', 'Cellular towers to consider', ...
+    'Location', 'SouthWest');
+transparentizeCurLegends;
+
+curDirToSave = fullfile(pathToSaveResults, ...
+    'Overview_CellularTowersToConsider_RoadMap.png');
+saveas(hFigCellOverview, curDirToSave);
+
+plot_google_map('MapType', 'satellite');
+curDirToSave = fullfile(pathToSaveResults, ...
+    'Overview_CellularTowersToConsider_SatelliteMap.png');
 saveas(hFigCellOverview, curDirToSave);
 
 disp('    Done!')
@@ -230,10 +296,10 @@ numOfRxHeightToInspect = length(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M);
 
 lidarMatFileAbsDirs = cellfun(@(d) regexprep(d, '\.img$', '.mat'), ...
     lidarFileAbsDirs, 'UniformOutput', false);
-
+plotIndicesForAllWorkers
 [simState.blockageMapsForEachCell, simState.coverageMapsForEachCell, ...
     simState.TimeUsedInSForEachPixel] ...
-    = deal(cell(numOfEffeCellAnts, 1));
+    = deal(cellAntH(numOfEffeCellAnts, 1));
 
 % We will use multiple works to churn through the drone locations. To avoid
 % repeative environment set up and data transfer, here we pre-assign the
@@ -257,6 +323,13 @@ proMonFloatFomatter = '%.2f';
 disp(' ')
 disp('    Computing path losses ...')
 
+% Path to cache computation results.
+absPathToCacheProfilesDir ...
+    = fullfile(pathToSaveResults, 'CachedTerrainProfiles');
+if exist(absPathToCacheProfilesDir, 'dir')~=7
+    mkdir(absPathToCacheProfilesDir);
+end
+
 % Get the number of workers available for estimating progress.
 localCluster = parcluster('local');
 numOfWorkersInLocalCluster = localCluster.NumWorkers;
@@ -273,7 +346,7 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
     % results from one worker into one matrix with each row being:
     % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
     % idxDroneHeightInM].
-    resultsFromWorkersCell = cell(numOfWorkers,1);
+    resultsFromWorkersCell = cellAntH(numOfWorkers,1);
     for idxWorker = 1:numOfWorkers
         resultsFromWorkersCell{idxWorker} ...
             = nan(length(locIndicesForAllWorkers{idxWorker}) ...
@@ -312,8 +385,6 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
             curDroneXY = simState.mapGridXYPts(idxDroneLoc, :); %#ok<PFBNS>
             
             % A unqiue .mat directory for caching the profiles.
-            absPathToCacheProfilesDir ...
-                = fullfile(pathToSaveResults, 'CachedTerrainProfiles');
             uniqueMatFileName = ['Task_', ...
                 simConfigs.CURRENT_SIMULATION_TAG, ...
                 '_LidarSet_', simConfigs.LIDAR_DATA_SET_TO_USE, ...
@@ -328,9 +399,6 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
                 '_CelLocIdx_', num2str(idxEffeCellAnt), ...
                 '_DroLocIdx_', num2str(idxDroneLoc), ...
                 '.mat'];
-            if ~exist(absPathToCacheProfilesDir, 'dir')
-                mkdir(absPathToCacheProfilesDir);
-            end
             absPathToCacheMatFile ...
                 = fullfile(absPathToCacheProfilesDir, uniqueMatFileName);
             
@@ -446,68 +514,124 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
 end
 disp('    Done!')
 
-%% Plot Maps for Each Cellular Tower
+%% Plot Some Maps for Each Cellular Tower
 % We will plot the path losses to generate both the blockage maps and the
-% coverage maps for each cellular tower and each inspected height.
+% coverage maps for each cellular tower and each inspected height. We will
+% only plot a randomly chosen subset of all the figures to save Google Maps
+% quota.
+
+numOfFigToGen = 50;
 
 disp(' ')
 disp('    Plotting maps for each cellular tower ...')
 
-parfor idxWorker = 1:numOfWorkers
-    curFigFileName = [ ...
-        'CellTowerPathLoss_RxHeight_', ...
-        num2str(curRxAntH), ...
-        '_TxCell_', num2str(idxCellAntenna), ...
-        '_eHataLib_', LIBRARY_TO_USE, ...
-        '_Terrain_', REGION];
+% Path to save maps for single celluar towers.
+dirToSaveMapsForSingleCellTowers = fullfile(pathToSaveResults, ...
+    'MapsForSingleCellularTowers');
+% Create directories if necessary.
+if exist(dirToSaveMapsForSingleCellTowers, 'dir')~=7
+    mkdir(dirToSaveMapsForSingleCellTowers);
+end
+
+totalNumOfFigs = numOfEffeCellAnts.*numOfRxHeightToInspect;
+% Randomly choose a subset of all the figures to plot if necessary.
+if totalNumOfFigs>numOfFigToGen
+    s = RandStream('mlfg6331_64'); 
+    indicesOfFigTasks = randsample(s,totalNumOfFigs,numOfFigToGen);
+    indicesOfFigTasks = sort(indicesOfFigTasks);
+else
+    indicesOfFigTasks = 1:numOfFigToGen;
+end
+
+[effeCellIndices, rxHeightIndices] ...
+    = meshgrid(1:numOfEffeCellAnts, 1:numOfRxHeightToInspect);
+matEffeCellIdRxHId = [effeCellIndices(:), rxHeightIndices(:)];
+
+matEffeCellIdRxHIdToDraw = matEffeCellIdRxHId(indicesOfFigTasks,:);
+[totalNumOfFigsToDraw,~] = size(matEffeCellIdRxHIdToDraw);
+
+% Pre-assign the plot tasks to workers.
+plotIndicesForAllWorkers ...
+    = preassignTaskIndicesToWorkers(totalNumOfFigsToDraw, 1);
+% plotIndicesForAllWorkers ...
+%     = preassignTaskIndicesToWorkers(totalNumOfFigsToDraw);
+numOfWorkers = length(plotIndicesForAllWorkers);
+
+matEffeCellIdRxHIdForAllWorders = cell(numOfWorkers,1);
+for idxWorker = 1:numOfWorkers
+    matEffeCellIdRxHIdForAllWorders{idxWorker} ...
+        = matEffeCellIdRxHIdToDraw(plotIndicesForAllWorkers{idxWorker}, :);
+end
+
+% Blockage and coverage maps. 
+%   Bug: plot_google_maps not working in parfor.
+for idxWorker = 1:numOfWorkers
+    curEffeCellIds = matEffeCellIdRxHIdForAllWorders{idxWorker}(:, 1);
+    curRxHIds = matEffeCellIdRxHIdForAllWorders{idxWorker}(:, 2);
     
-    if FLAG_GEN_FIGS
-        % Generate a figure on Google map to show the path loss map.
-        [curXs, curYs] ...
-            = meshgrid(pathLossMapXLabels{idxCellAntenna}, ...
-            pathLossMapYLabels{idxCellAntenna});
-        curBoolsToShow ...
-            = pathLossMaps{idxCellAntenna}(:) ...
-            >=EXPECTED_PL_RANGE_IN_DB(1) ...
-            & pathLossMaps{idxCellAntenna}(:) ...
-            <=EXPECTED_PL_RANGE_IN_DB(2);
-        [curLatsToShow, curLonsToShow] ...
-            = utm2deg(curXs(curBoolsToShow), ...
-            curYs(curBoolsToShow), ...
-            repmat(UTM_ZONE, sum(curBoolsToShow), 1));
+    [curWorkerNumFigSets, ~] ...
+        = size(matEffeCellIdRxHIdForAllWorders{idxWorker});
+    curWorkerNumFigSetsToReportProgress = ceil(curWorkerNumFigSets ...
+        .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT);
+    
+    for idxFigSet = 1:curWorkerNumFigSets
+        % Report progress when necessary.
+        if mod(idxFigSet-1, curWorkerNumFigSetsToReportProgress)==0
+            disp(['        Worker #', num2str(idxWorker), '/', ...
+                num2str(numOfWorkers), ': ', ...
+                num2str(idxFigSet),'/', ...
+                num2str(curWorkerNumFigSets), ' (', ...
+                num2str((idxFigSet-1)/curWorkerNumFigSets*100, ...
+                '%.2f'), '%) ...']);
+        end
         
-        hCurPLMap = figure;
-        plot3k([curLonsToShow curLatsToShow ...
-            pathLossMaps{idxCellAntenna}(curBoolsToShow)], ...
-            'Labels', {'', ...
-            'Longitude (degrees)', 'Latitude (degrees)', ...
-            '', 'Path Loss (dB)'}, ...
-            'ColorRange', EXPECTED_PL_RANGE_IN_DB);
-        grid on; view(2); axis tight;
-        plotGoogleMapAfterPlot3k(gcf, 'satellite');
+        idxEffeCell = curEffeCellIds(idxFigSet);
+        idxH = curRxHIds(idxFigSet);
         
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            [curFigFileName, '.png']);
-        saveas(hCurPLMap, pathToSaveFig);
+        % Fetch simulation results for the current cellular tower at the
+        % current inspected RX height.
+        locType = 'GPS';
         
-        hCurTransPLMap = figure;
-        curAlpha = 0.95;
-        curDotSize = 15;
-        scatter(curLonsToShow, curLatsToShow, ...
-            curDotSize.*ones(length(curLatsToShow),1), ...
-            pathLossMaps{idxCellAntenna}(curBoolsToShow), ...
-            'Marker', '.', ...
-            'MarkerEdgeAlpha', curAlpha);
-        curCB = colorbar; curCB.Label.String = 'Path Loss (dB)';
-        xlabel('Longitude (degrees)');
-        ylabel('Latitude (degrees)')
-        grid on; view(2); axis tight;
-        plot_google_map('MapType', 'satellite');
+        % Blockage map.
+        mapType = 'Blockage';
+        [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
+            = fetchPathlossResultsFromSimState(simState, ...
+            idxEffeCell, idxH, mapType, simConfigs, locType);
         
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            [curFigFileName, '_Transparent.png']);
-        saveas(hCurTransPLMap, pathToSaveFig);
+        [ hCurPLMap ] ...
+            = plotPathLossMap(matRxLonLatWithPathloss, ...
+            cellAntLonLat, simConfigs);
+        
+        pathToSaveFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
+            ['CellTowerPathLoss_Type_', mapType, ...
+            '_RxHeight_', num2str(rxAntH), ...
+            '_EffeCellId_', num2str(idxEffeCell), '.png']);
+        saveas(hCurPLMap,  pathToSaveFig);
+        close(hCurPLMap);
+        
+        % Coverage map.
+        mapType = 'Coverage';
+        [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
+            = fetchPathlossResultsFromSimState(simState, ...
+            idxEffeCell, idxH, mapType, simConfigs, locType);        
+        
+        [ hCurPLMap ] ...
+            = plotPathLossMap(matRxLonLatWithPathloss, ...
+            cellAntLonLat, simConfigs, false);
+        
+        pathToSaveFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
+            ['CellTowerPathLoss_Type_', mapType, ...
+            '_RxHeight_', num2str(rxAntH), ...
+            '_EffeCellId_', num2str(idxEffeCell), '.png']);
+        saveas(hCurPLMap,  pathToSaveFig);
+        close(hCurPLMap);
     end
+    
+    disp(['        Worker #', num2str(idxWorker), ': ', ...
+    num2str(idxFigSet),'/', ...
+    num2str(curWorkerNumFigSets), ' (', ...
+    num2str(idxFigSet/curWorkerNumFigSets*100, ...
+    '%.2f'), '%) ...']);
 end
 
 disp('    Done!')

@@ -112,7 +112,7 @@ simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 50;
 %   profiles.
 simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 
-%   - Rx heights for different algorithms to inspect.
+%   - Rx heights for the simulator to inspect.
 simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 30; 50; 70; 90; 100];
 
 %   - The maximum radius that a cellular tower can cover; we will use this
@@ -155,6 +155,11 @@ simConfigs.utm2deg_speZone = utm2deg_speZone;
 
 %   - For adjusting the feedback frequency in parfor workers.
 simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.2;
+
+%   - For plotting, we need an expected value for the maximum allowed path
+%   loss. With 20 MHz bandwidth, 9 dB RX noise figure, and 100 W TX power,
+%   we have a maximum path loss of ~142 dB.
+simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 
 %% Preprocessing LiDAR Data
 
