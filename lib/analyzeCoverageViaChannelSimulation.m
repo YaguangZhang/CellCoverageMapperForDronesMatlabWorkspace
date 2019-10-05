@@ -140,7 +140,7 @@ if ~(simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M>0)
     % of the earth): D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
     simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M ...
         = 3.57*(sqrt(max(cellAntsXYH(:,3)))...
-        +sqrt(max(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M)))*1000;
+        +sqrt(min(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M)))*1000;
 end
 
 % For plotting.
