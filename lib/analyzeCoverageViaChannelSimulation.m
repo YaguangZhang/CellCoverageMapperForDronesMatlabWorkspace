@@ -304,7 +304,7 @@ lidarMatFileAbsDirs = cellfun(@(d) regexprep(d, '\.img$', '.mat'), ...
     lidarFileAbsDirs, 'UniformOutput', false);
 [simState.blockageMapsForEachCell, simState.coverageMapsForEachCell, ...
     simState.TimeUsedInSForEachPixel] ...
-    = deal(cellAntH(numOfEffeCellAnts, 1));
+    = deal(cell(numOfEffeCellAnts, 1));
 
 % We will use multiple works to churn through the drone locations. To avoid
 % repeative environment set up and data transfer, here we pre-assign the
@@ -351,7 +351,7 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
     % results from one worker into one matrix with each row being:
     % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
     % idxDroneHeightInM].
-    resultsFromWorkersCell = cellAntH(numOfWorkers,1);
+    resultsFromWorkersCell = cell(numOfWorkers,1);
     for idxWorker = 1:numOfWorkers
         resultsFromWorkersCell{idxWorker} ...
             = nan(length(locIndicesForAllWorkers{idxWorker}) ...
