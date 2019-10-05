@@ -65,7 +65,9 @@ function [ simState, simConfigs ] ...
 %         information, like locations mapGridXYPts and mapGridLatLonPts,
 %         are stored sequentially.
 %       - blockageMaps, coverageMaps
-%         Two cells
+%         Two cells holding the final aggregated path loss maps, for the
+%         blockage maps and the coverage maps, respectively, for all the RX
+%         height that have been inspected.
 %       - blockageMapsForEachCell, coverageMapsForEachCell
 %         Two cells for the blockage and coverage maps (for all cell
 %         antennas affecting the simulation for all drone heights),
@@ -727,6 +729,9 @@ disp('    Done!')
 
 %% Figures for Computation Time Statistics
 
+disp(' ')
+disp('    Plotting processing time statistics ...')
+
 % Processing time for all pixels.
 curFlagGenFigsSilently = true;
 curPlotType = 'Pixels';
@@ -779,8 +784,42 @@ if curFlagGenFigsSilently
     close(curProcTimeHistFig);
 end
 
+disp('    Done!')
+
 %% Empirical CDFs
 
+disp(' ')
+disp('    Plotting empirical CDFs ...')
+
+% For blockage maps.
+curFlagGenFigsSilently = true;
+mapType = 'Blockage';
+
+[curEmpCdfFig, simState.blockageMapsCovRatioMeta] ...
+    = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+    mapType, ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['EmpiricalCdf_', mapType, '.png']);
+saveas(curEmpCdfFig,  pathToSaveFig);
+if curFlagGenFigsSilently
+    close(curEmpCdfFig);
+end
+
+% For coverage maps.
+mapType = 'Coverage';
+
+[curEmpCdfFig, simState.coverageMapsCovRatioMeta] ...
+    = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+    mapType, ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['EmpiricalCdf_', mapType, '.png']);
+saveas(curEmpCdfFig,  pathToSaveFig);
+if curFlagGenFigsSilently
+    close(curEmpCdfFig);
+end
+
+disp('    Done!')
 
 end
+
 % EOF

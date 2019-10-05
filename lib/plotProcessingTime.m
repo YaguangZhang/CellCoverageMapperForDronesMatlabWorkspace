@@ -5,7 +5,21 @@ function [ hProcTimeFig, hProcTimeHistFig ] = plotProcessingTime( ...
 %
 % Inputs:
 %   - simState
-%     The struct for the simulation results. We need fields:
+%     The struct for the simulation results. We need field:
+%       - TimeUsedInSForEachPixel
+%         For debugging and evaluating computation performance of the
+%         simulator, we also record the time used in second for each map
+%         pixel. For example,
+%               simState.TimeUsedInSForEachPixel{idxCell}{idxDroneHeight}
+%         is the processing time vector (for locations in
+%         simState.mapGridXYPts) for the idxCell-th cellular tower that has
+%         effect on the simulation, at the idxDroneHeight-th drone height
+%         that needs to be inspected.
+%
+%         We expect the time used for a pixel at its first drone height
+%         will be way longer than for other heights, because for the other
+%         heights, we will reuse the terrain profiles generated for the
+%         first height.
 %   - plotType
 %     A case-insensitive string controling what type of plot to generate.
 %     Currently support: 'pixels' for pixel-wise processing time;
@@ -79,7 +93,7 @@ else
 end
 
 hProcTimeFig = figure('Visible', flagVisible); hold on;
-hYs = plot(xs, ys, '.'); 
+hYs = plot(xs, ys, '.');
 hAverage = plot([0; length(ys)], ones(2,1).*mean(ys));
 legend([hYs, hAverage], 'Records', 'Average');
 xlabel('Index'); ylabel(['Processing Time (', ysUnit, ')']); ...
@@ -88,7 +102,7 @@ axis tight; title(titleToSet);
 
 hProcTimeHistFig = figure('Visible', flagVisible);
 hist(ys, NUM_OF_HIST_BINS);
-xlabel(['Processing Time (', ysUnit, ')']); ylabel('Occurrence'); 
+xlabel(['Processing Time (', ysUnit, ')']); ylabel('Occurrence');
 grid on; grid minor;
 title(titleToSet);
 
