@@ -1,6 +1,6 @@
 function [hCurPLMap, hCurHandleTxs] ...
     = plotPathLossMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
-    simConfigs, flagVisible)
+    simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs)
 %PLOTPATHLOSSMAP Plot the path loss map.
 %
 % Generate a figure on Google map to show the path loss map.
@@ -13,7 +13,7 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     The (lon, lat) coordinates for the cellular antenna.
 %   - simConfigs
 %     The configuration struct for the simulation. We need fields:
-%       - ALLOWED_PATH_LOSS_RANGE_IN_DB 
+%       - ALLOWED_PATH_LOSS_RANGE_IN_DB
 %         Color mapping limits for plot4k. A two element vector specifying
 %         the values that map to the first and last colors. This is useful
 %         for generating a series of plots with identical coloring. The
@@ -27,6 +27,12 @@ function [hCurPLMap, hCurHandleTxs] ...
 %         when it is empty.
 %   - flagVisible
 %     An optional boolean to control whether to show the plot or not.
+%   - flagZoomIn
+%     An optional boolean to control whether to zoom in to fit the area of
+%     the input path loss map or not.
+%   - flagCmdToPlotPLs
+%     An optional string to control what command to use in plotting the
+%     path loss map. Currently support: 'plot3k' and 'surf'.
 %
 % Outputs:
 %   - hCurPLMap
@@ -36,9 +42,20 @@ function [hCurPLMap, hCurHandleTxs] ...
 %
 % Yaguang Zhang, Purdue, 10/02/2019
 
+% We support: 'plot3k' and 'surf'(default).
+if ~exist('flagCmdToPlotPLs', 'var')
+    flagCmdToPlotPLs = 'surf';
+end
+
 % By default, show the plot.
 if ~exist('flagVisible', 'var')
     flagVisible = true;
+end
+
+% By default, do not zoom in to the path loss map, so that all TXs will be
+% shown.
+if ~exist('flagZoomIn', 'var')
+    flagZoomIn = false;
 end
 
 colorRange = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB;
@@ -50,7 +67,14 @@ hold on;
 [areaOfInterestLats, areaOfInterestLons] = simConfigs.utm2deg_speZone( ...
     simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
     simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
-plot(polyshape(areaOfInterestLons, areaOfInterestLats));
+plot(polyshape(areaOfInterestLons, areaOfInterestLats), ...
+    'FaceColor', 'white');
+
+if flagZoomIn
+    axis tight;
+    zoomInAxisToSet = axis;
+    axis auto;
+end
 
 % TX.
 hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
@@ -61,21 +85,51 @@ hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
 % Simulation results.
 boolsPathLossesToShow = (matRxLonLatWithPathLoss(:,3)>= colorRange(1)) ...
     & (matRxLonLatWithPathLoss(:,3)<= colorRange(2));
+
 hRxs = nan;
 if any(boolsPathLossesToShow)
-    hRxs = plot3k(matRxLonLatWithPathLoss(boolsPathLossesToShow, :), ...
-        'Labels', {'', ...
-        'Longitude (degrees)', 'Latitude (degrees)', ...
-        '', 'Path Loss (dB)'}, ...
-        'ColorRange', colorRange);
+    xLabelToSet = 'Longitude (degrees)';
+    yLabelToSet = 'Latitude (degrees)';
+    cLabelToSet = 'Path Loss (dB)';
+    switch lower(flagCmdToPlotPLs)
+        case 'plot3k'
+            hRxs = plot3k( ...
+                matRxLonLatWithPathLoss(boolsPathLossesToShow, :), ...
+                'Labels', {'', ...
+                xLabelToSet, yLabelToSet, ...
+                '', cLabelToSet}, ...
+                'ColorRange', colorRange);
+        case 'surf'
+            set(gca, 'fontWeight', 'bold');
+            
+            % Create meshgrid for surf.
+            sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE;
+            x = matRxLonLatWithPathLoss(boolsPathLossesToShow, 1);
+            y = matRxLonLatWithPathLoss(boolsPathLossesToShow, 2);
+            z = matRxLonLatWithPathLoss(boolsPathLossesToShow, 3);
+            [xi,yi] = meshgrid( ...
+                linspace(min(x), max(x), sufNumPtsPerSide), ...
+                linspace(min(y), max(y), sufNumPtsPerSide));
+            zi = griddata(x,y,z,xi,yi);
+            hRxs = surf( xi,yi,zi, ...
+                'FaceAlpha',0.5, 'EdgeColor', 'none');
+            caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
+            hCB = colorbar; ylabel(hCB, cLabelToSet);
+            [c,h] = contour(xi,yi,zi);
+            clabel(c,h);
+    end
 end
-legend(hCurHandleTxs, 'TXs', 'Location', 'SouthEast');
-if ishandle(hRxs)
+
+legend(hCurHandleTxs, 'TXs', 'Location', 'SouthEast'); view(2);
+if flagZoomIn
+    axis(zoomInAxisToSet);
+end
+
+if strcmpi(flagCmdToPlotPLs, 'plot3k') && ishandle(hRxs)
     plotGoogleMapAfterPlot3k(gcf, 'satellite');
 else
     plot_google_map('MapType', 'satellite');
 end
-view(2);
 
 end
 % EOF

@@ -59,7 +59,13 @@ function [ simState, simConfigs ] ...
 %       - mapGridXYPts, mapGridLatLonPts
 %         The UTM (x,y) and GPS (lat, lon) locations for the map grid
 %         points, respectively. Note that the shape of the map is
-%         determined by simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST.
+%         determined by simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST. This means
+%         that depending on the specificed area of interest, the shape of
+%         all the grid points may be arbitrary, so all the grid point
+%         information, like locations mapGridXYPts and mapGridLatLonPts,
+%         are stored sequentially.
+%       - blockageMaps, coverageMaps
+%         Two cells
 %       - blockageMapsForEachCell, coverageMapsForEachCell
 %         Two cells for the blockage and coverage maps (for all cell
 %         antennas affecting the simulation for all drone heights),
@@ -267,7 +273,7 @@ hAreaOfInterest = plot( ...
     'FaceColor', areaOfInterestColor);
 hEffeCells = plot(effeCellAntsLons, effeCellAntsLats, ...
     '.', 'Color', darkBlue);
-view(2); axis(axisLonLatToSet); 
+view(2); axis(axisLonLatToSet);
 plot_google_map;
 grid on; grid minor;
 xlabel('Longitude'); ylabel('Latitude');
@@ -296,7 +302,6 @@ numOfRxHeightToInspect = length(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M);
 
 lidarMatFileAbsDirs = cellfun(@(d) regexprep(d, '\.img$', '.mat'), ...
     lidarFileAbsDirs, 'UniformOutput', false);
-plotIndicesForAllWorkers
 [simState.blockageMapsForEachCell, simState.coverageMapsForEachCell, ...
     simState.TimeUsedInSForEachPixel] ...
     = deal(cellAntH(numOfEffeCellAnts, 1));
@@ -536,7 +541,7 @@ end
 totalNumOfFigs = numOfEffeCellAnts.*numOfRxHeightToInspect;
 % Randomly choose a subset of all the figures to plot if necessary.
 if totalNumOfFigs>numOfFigToGen
-    s = RandStream('mlfg6331_64'); 
+    s = RandStream('mlfg6331_64');
     indicesOfFigTasks = randsample(s,totalNumOfFigs,numOfFigToGen);
     indicesOfFigTasks = sort(indicesOfFigTasks);
 else
@@ -563,7 +568,7 @@ for idxWorker = 1:numOfWorkers
         = matEffeCellIdRxHIdToDraw(plotIndicesForAllWorkers{idxWorker}, :);
 end
 
-% Blockage and coverage maps. 
+% Blockage and coverage maps.
 %   Bug: plot_google_maps not working in parfor.
 for idxWorker = 1:numOfWorkers
     curEffeCellIds = matEffeCellIdRxHIdForAllWorders{idxWorker}(:, 1);
@@ -591,6 +596,7 @@ for idxWorker = 1:numOfWorkers
         % Fetch simulation results for the current cellular tower at the
         % current inspected RX height.
         locType = 'GPS';
+        curFlagGenFigsSilently = true;
         
         % Blockage map.
         mapType = 'Blockage';
@@ -600,7 +606,7 @@ for idxWorker = 1:numOfWorkers
         
         [ hCurPLMap ] ...
             = plotPathLossMap(matRxLonLatWithPathloss, ...
-            cellAntLonLat, simConfigs);
+            cellAntLonLat, simConfigs, ~curFlagGenFigsSilently);
         
         pathToSaveFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
             ['CellTowerPathLoss_Type_', mapType, ...
@@ -613,11 +619,11 @@ for idxWorker = 1:numOfWorkers
         mapType = 'Coverage';
         [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
             = fetchPathlossResultsFromSimState(simState, ...
-            idxEffeCell, idxH, mapType, simConfigs, locType);        
+            idxEffeCell, idxH, mapType, simConfigs, locType);
         
         [ hCurPLMap ] ...
             = plotPathLossMap(matRxLonLatWithPathloss, ...
-            cellAntLonLat, simConfigs, false);
+            cellAntLonLat, simConfigs, ~curFlagGenFigsSilently);
         
         pathToSaveFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
             ['CellTowerPathLoss_Type_', mapType, ...
@@ -628,18 +634,152 @@ for idxWorker = 1:numOfWorkers
     end
     
     disp(['        Worker #', num2str(idxWorker), ': ', ...
-    num2str(idxFigSet),'/', ...
-    num2str(curWorkerNumFigSets), ' (', ...
-    num2str(idxFigSet/curWorkerNumFigSets*100, ...
-    '%.2f'), '%) ...']);
+        num2str(idxFigSet),'/', ...
+        num2str(curWorkerNumFigSets), ' (', ...
+        num2str(idxFigSet/curWorkerNumFigSets*100, ...
+        '%.2f'), '%) ...']);
 end
 
 disp('    Done!')
 
 %% Combine Pathloss Results
 
+disp(' ')
+disp('    Plotting aggregated path loss maps ...')
 
-%% Clear Things Up
+% Fetch all maps for each cell at this height, and aggregate them using
+% pixel-wise min.
+[simState.blockageMaps, simState.coverageMaps] ...
+    = deal(cell(1, numOfRxHeightToInspect));
+for idxH = 1:numOfRxHeightToInspect
+    simState.blockageMaps{idxH} ...
+        = fetchPathlossResultsFromSimState(simState, ...
+        1, idxH, 'Blockage', simConfigs, 'utm');
+    simState.coverageMaps{idxH} ...
+        = fetchPathlossResultsFromSimState(simState, ...
+        1, idxH, 'Coverage', simConfigs, 'utm');
+    
+    for idxEffeCell = 2:numOfEffeCellAnts
+        simState.blockageMaps{idxH} = min(simState.blockageMaps{idxH}, ...
+            fetchPathlossResultsFromSimState(simState, ...
+            idxEffeCell, idxH, 'Blockage', simConfigs, 'utm'));
+        simState.coverageMaps{idxH} = min(simState.coverageMaps{idxH}, ...
+            fetchPathlossResultsFromSimState(simState, ...
+            idxEffeCell, idxH, 'Coverage', simConfigs, 'utm'));
+    end
+    
+    % Discard the location information in the aggregated path loss maps.
+    simState.blockageMaps{idxH} = simState.blockageMaps{idxH}(:,3);
+    simState.coverageMaps{idxH} = simState.coverageMaps{idxH}(:,3);
+end
+
+% Plotting.
+curFlagGenFigsSilently = true;
+curCmdToPlotPLMaps = 'surf';
+
+[effeCellAntLats, effeCellAntLons] = simConfigs.utm2deg_speZone( ...
+    simState.CellAntsXyhEffective(:, 1), ...
+    simState.CellAntsXyhEffective(:, 2));
+effeCellAntLonLats = [effeCellAntLons, effeCellAntLats];
+mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
+
+% Overview for settings.
+[numOfPixels, ~] = size(simState.blockageMaps{1});
+[ hCurPLMap ] = plotPathLossMap( ...
+    [mapGridLonLats, nan(numOfPixels, 1)], ...
+    effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, false, ...
+    curCmdToPlotPLMaps);
+
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'Overview_SimulationSetup.png');
+saveas(hCurPLMap,  pathToSaveFig);
+close(hCurPLMap);
+
+for idxH = 1:numOfRxHeightToInspect
+    rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
+    
+    curFlagZoomIn = true;
+    
+    [ hCurPLMap ] ...
+        = plotPathLossMap( ...
+        [mapGridLonLats, simState.blockageMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn, curCmdToPlotPLMaps);
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageMap_RxHeight_', num2str(rxAntH), '.png']);
+    saveas(hCurPLMap,  pathToSaveFig);
+    close(hCurPLMap);
+    
+    [ hCurPLMap ] ...
+        = plotPathLossMap( ...
+        [mapGridLonLats, simState.coverageMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn, curCmdToPlotPLMaps);
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['CoverageMap_RxHeight_', num2str(rxAntH), '.png']);
+    saveas(hCurPLMap,  pathToSaveFig);
+    close(hCurPLMap);
+end
+
+disp('    Done!')
+
+%% Figures for Computation Time Statistics
+
+% Processing time for all pixels.
+curFlagGenFigsSilently = true;
+curPlotType = 'Pixels';
+
+[curProcTimeFig, curProcTimeHistFig] ...
+    = plotProcessingTime(simState, curPlotType, ...
+    ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['ProcessingTime_', curPlotType, '.png']);
+saveas(curProcTimeFig,  pathToSaveFig);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['ProcessingTime_', curPlotType, '_Hist.png']);
+saveas(curProcTimeHistFig,  pathToSaveFig);
+if curFlagGenFigsSilently
+    close(curProcTimeFig);
+    close(curProcTimeHistFig);
+end
+
+% Processing time for all cellular towers.
+curPlotType = 'MapSets';
+
+[curProcTimeFig, curProcTimeHistFig] ...
+    = plotProcessingTime(simState, curPlotType, ...
+    ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['ProcessingTime_', curPlotType, '.png']);
+saveas(curProcTimeFig,  pathToSaveFig);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['ProcessingTime_', curPlotType, '_Hist.png']);
+saveas(curProcTimeHistFig,  pathToSaveFig);
+if curFlagGenFigsSilently
+    close(curProcTimeFig);
+    close(curProcTimeHistFig);
+end
+
+% Processing time for all cellular towers.
+curPlotType = 'CellTowers';
+
+[curProcTimeFig, curProcTimeHistFig] ...
+    = plotProcessingTime(simState, curPlotType, ...
+    ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['ProcessingTime_', curPlotType, '.png']);
+saveas(curProcTimeFig,  pathToSaveFig);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['ProcessingTime_', curPlotType, '_Hist.png']);
+saveas(curProcTimeHistFig,  pathToSaveFig);
+if curFlagGenFigsSilently
+    close(curProcTimeFig);
+    close(curProcTimeHistFig);
+end
+
+%% Empirical CDFs
 
 
 end
