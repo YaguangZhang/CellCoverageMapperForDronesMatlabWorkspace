@@ -491,13 +491,14 @@ for idxEffeCellAnt = 1:numOfEffeCellAnts
     end
     
     latestEstiPixExecTimeInS = mean(resultsFromWorkersMat(:,3));
-    latestEstiTowerExecTimeInS = sum(resultsFromWorkersMat(:,3));
+    latestEstiTowerExecTimeInS = sum(resultsFromWorkersMat(:,3)) ...
+        ./numOfWorkersInLocalCluster;
     proMonPixCnt = proMonPixCnt+numOfResultsFromWorkers;
     
     disp(' ')
     disp(['        Finished cellular tower #', ...
         num2str(idxEffeCellAnt), '/', num2str(numOfEffeCellAnts)]);
-    disp(['            Times used for this tower: ', ...
+    disp(['            Estimated time used for this tower: ', ...
         num2str(latestEstiTowerExecTimeInS, proMonFloatFomatter), ...
         ' seconds']);
     if ~isnan(latestEstiTowerExecTimeInS)
