@@ -29,6 +29,10 @@ if strcmpi(language, 'Python')
     if isempty(curPythonVersion)
         pyversion(evalin('base', 'ABS_PATH_TO_PYTHON'));
     end
+    
+    % Limit the number of concurrent HTTP requests to reduce the number of
+    % failures.
+    MAX_NUM_OF_CONCURRENT_REQUESTS = 100;
 end
 
 numToStrFormatter = '%.12f';
@@ -43,10 +47,11 @@ urls = arrayfun(@(idx) sprintf( ...
     num2str(lats(idx), numToStrFormatter)), 1:numQueryPts, ...
     'UniformOutput', false);
 
+eles = nan(size(lats));
+numPts = length(eles);
 switch lower(language)
     case 'matlab'
-        eles = nan(size(lats));
-        
+        % Sequentially fetch the elevation data from USGS point by point.
         for idxPt = 1:numQueryPts
             ctnTrials = 0;
             while ctnTrials<maxNumOfTrials
@@ -76,15 +81,28 @@ switch lower(language)
         while ctnTrials<maxNumOfTrials
             ctnTrials = ctnTrials+1;
             try
-                fetchedPyJsons = py.ConcurrentWebreader ...
-                    .concurrent_fetch_urls( ...
-                    py.list(urls));
-                fetchedJsons = cellfun(@(jo) ...
-                    jsondecode(native2unicode(jo)), ...
-                    cell(fetchedPyJsons));
-                eles = arrayfun(@(resp) resp ...
-                    .USGS_Elevation_Point_Query_Service ...
-                    .Elevation_Query.Elevation, fetchedJsons');
+                % Concurrently fetch the elevation data from USGS via
+                % Python with a maximum batch size.
+                while(any(isnan(eles)))
+                    curIdxStart = find(isnan(eles), 1);
+                    if (numPts-curIdxStart+1) ...
+                            <=MAX_NUM_OF_CONCURRENT_REQUESTS
+                        curIdxEnd = numPts;
+                    else
+                        curIdxEnd ...
+                            = curIdxStart+MAX_NUM_OF_CONCURRENT_REQUESTS-1;
+                    end
+                    fetchedPyJsons = py.ConcurrentWebreader ...
+                        .concurrent_fetch_urls( ...
+                        py.list(urls(curIdxStart:curIdxEnd)));
+                    fetchedJsons = cellfun(@(jo) ...
+                        jsondecode(native2unicode(jo)), ...
+                        cell(fetchedPyJsons));
+                    eles(curIdxStart:curIdxEnd) = arrayfun(@(resp) resp ...
+                        .USGS_Elevation_Point_Query_Service ...
+                        .Elevation_Query.Elevation, fetchedJsons');
+                end
+                
                 eles(eles==usgsNanValue) = nan;
                 ctnTrials = inf;
             catch err
