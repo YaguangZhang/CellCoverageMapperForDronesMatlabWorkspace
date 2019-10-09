@@ -32,7 +32,7 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     the input path loss map or not.
 %   - flagCmdToPlotPLs
 %     An optional string to control what command to use in plotting the
-%     path loss map. Currently support: 'plot3k' and 'surf'. 
+%     path loss map. Currently support: 'plot3k' and 'surf'.
 %
 %     If 'surf' is chosen, we will need a new meshgrid for the plot. In
 %     this case, to obtain the z values for points in the new grid, we will
@@ -48,6 +48,9 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     The handle to the cellular tower.
 %
 % Yaguang Zhang, Purdue, 10/02/2019
+
+% The location of the legend.
+LEGEND_LOC = 'NorthEast';
 
 % We support: 'plot3k' and 'surf'(default).
 if ~exist('flagCmdToPlotPLs', 'var')
@@ -120,11 +123,11 @@ if any(boolsPathLossesToShow)
             zi = griddata(x,y,z,xi,yi);
             
             maskMapEdge = zeros(size(zi));
-            maskMapEdge(1,:) = 1; maskMapEdge(end,:) = 1; 
-            maskMapEdge(:,1) = 1; maskMapEdge(:,end) = 1; 
+            maskMapEdge(1,:) = 1; maskMapEdge(end,:) = 1;
+            maskMapEdge(:,1) = 1; maskMapEdge(:,end) = 1;
             maskNanMapEdgePts = isnan(zi)&maskMapEdge;
             
-            ziNearest = griddata(x,y,z,xi,yi, 'Nearest');
+            ziNearest = griddata(x,y,z,xi,yi,'Nearest');
             zi(maskNanMapEdgePts) = ziNearest(maskNanMapEdgePts);
             
             hRxs = surf( xi,yi,zi, ...
@@ -136,7 +139,7 @@ if any(boolsPathLossesToShow)
     end
 end
 
-legend(hCurHandleTxs, 'TXs', 'Location', 'SouthEast'); view(2);
+legend(hCurHandleTxs, 'TXs', 'Location', LEGEND_LOC); view(2);
 if flagZoomIn
     axis(zoomInAxisToSet);
 end

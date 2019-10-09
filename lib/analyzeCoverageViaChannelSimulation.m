@@ -109,11 +109,6 @@ if exist(pathToSaveResults, 'dir')~=7
     mkdir(pathToSaveResults);
 end
 
-% We will save simState for recovery from interrupted simulation processes
-% when necessary.
-ABS_PATH_TO_SAVE_COMP_PROGRESS = fullfile(pathToSaveResults, ...
-    [simConfigs.CURRENT_SIMULATION_TAG, '_SimState.mat']);
-
 % Overall boundries for the area covered by the LiDAR data set in UTM.
 lidarFilesXYCoveragePolyshape ...
     = mergePolygonsForAreaOfInterest(lidarFileXYCoveragePolyshapes, 1);
@@ -185,7 +180,7 @@ simState.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
 simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
 
 % Plot.
-hFigAreaOfInterest = figure; hold on;
+hFigAreaOfInterest = figure; hold on; set(gca, 'fontWeight', 'bold');
 hAreaOfInterest = plot( ...
     polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
     'FaceColor', areaOfInterestColor);
@@ -193,9 +188,8 @@ hGridPts = plot(simState.mapGridXYPts(:,1), ...
     simState.mapGridXYPts(:,2), '.b', 'MarkerSize', 3, 'Color', darkBlue);
 axis equal; view(2); grid on; grid minor;
 legend([hAreaOfInterest, hGridPts], ...
-    'Area of interest', 'RX location grid points', ...
-    'Location', 'SouthWest');
-transparentizeCurLegends;
+    'Area of interest', 'RX location grid points');
+xlabel('UTM x (m)'); ylabel('UTM y (m)')
 
 curDirToSave = fullfile(pathToSaveResults, 'Overview_RxLocGrid.png');
 saveas(hFigAreaOfInterest, curDirToSave);
@@ -223,7 +217,7 @@ simState.CellAntsXyhAll = cellAntsXYH;
 simState.CellAntsXyhEffective = effeCellAntsXYH;
 
 % Overview plot in UTM (x, y).
-hFigCellOverview = figure; hold on;
+hFigCellOverview = figure; hold on; set(gca, 'fontWeight', 'bold');
 hEffeCells = plot(effeCellAntsXYH(:,1), ...
     effeCellAntsXYH(:,2), '.', 'Color', darkBlue);
 plot(polyshape(utmXYBoundaryToKeepCellTowers));
@@ -265,7 +259,7 @@ saveas(hFigCellOverview, curDirToSave);
     axisXYToSet(2), axisXYToSet(4));
 axisLonLatToSet = [axisLonMin axisLonMax axisLatMin axisLatMax];
 
-hFigCellOverview = figure; hold on;
+hFigCellOverview = figure; hold on; set(gca, 'fontWeight', 'bold');
 hAllCells = plot(cellAntsLons, ...
     cellAntsLats, '.', 'Color', 'yellow');
 plot(polyshape([gpsLonsBoundaryToKeepCellTowers, ...
@@ -281,9 +275,7 @@ grid on; grid minor;
 xlabel('Longitude'); ylabel('Latitude');
 xticks([]); yticks([]);
 legend([hAreaOfInterest, hEffeCells], ...
-    'Area of interest', 'Cellular towers to consider', ...
-    'Location', 'SouthWest');
-transparentizeCurLegends;
+    'Area of interest', 'Cellular towers to consider');
 
 curDirToSave = fullfile(pathToSaveResults, ...
     'Overview_CellularTowersToConsider_RoadMap.png');
@@ -543,7 +535,7 @@ end
 
 totalNumOfFigs = numOfEffeCellAnts.*numOfRxHeightToInspect;
 % Randomly choose a subset of all the figures to plot if necessary.
-if totalNumOfFigs>numOfFigToGen
+if totalNumOfFigs>numOfFigToGen %#ok<BDSCI>
     s = RandStream('mlfg6331_64');
     indicesOfFigTasks = randsample(s,totalNumOfFigs,numOfFigToGen);
     indicesOfFigTasks = sort(indicesOfFigTasks);
@@ -676,7 +668,8 @@ for idxH = 1:numOfRxHeightToInspect
     simState.coverageMaps{idxH} = simState.coverageMaps{idxH}(:,3);
 end
 
-% Plotting.
+%% Plots for Aggregated Maps
+
 curFlagGenFigsSilently = true;
 curCmdToPlotPLMaps = 'surf';
 
@@ -710,9 +703,20 @@ for idxH = 1:numOfRxHeightToInspect
         curFlagZoomIn, curCmdToPlotPLMaps);
     
     pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageMap_RxHeight_', num2str(rxAntH), '.png']);
+        ['PathLossMap_Blockage_RxHeight_', num2str(rxAntH), '.png']);
     saveas(hCurPLMap,  pathToSaveFig);
     close(hCurPLMap);
+    
+    [ hCurBlMap ] ...
+        = plotBlockageMap( ...
+        [mapGridLonLats, simState.blockageMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn);
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageMap_RxHeight_', num2str(rxAntH), '.png']);
+    saveas(hCurBlMap,  pathToSaveFig);
+    close(hCurBlMap);
     
     [ hCurPLMap ] ...
         = plotPathLossMap( ...
@@ -721,7 +725,7 @@ for idxH = 1:numOfRxHeightToInspect
         curFlagZoomIn, curCmdToPlotPLMaps);
     
     pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['CoverageMap_RxHeight_', num2str(rxAntH), '.png']);
+        ['PathLossMap_Coverage_RxHeight_', num2str(rxAntH), '.png']);
     saveas(hCurPLMap,  pathToSaveFig);
     close(hCurPLMap);
 end
