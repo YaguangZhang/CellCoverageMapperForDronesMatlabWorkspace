@@ -32,7 +32,14 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     the input path loss map or not.
 %   - flagCmdToPlotPLs
 %     An optional string to control what command to use in plotting the
-%     path loss map. Currently support: 'plot3k' and 'surf'.
+%     path loss map. Currently support: 'plot3k' and 'surf'. 
+%
+%     If 'surf' is chosen, we will need a new meshgrid for the plot. In
+%     this case, to obtain the z values for points in the new grid, we will
+%     use triangulation-based linear interpolation (which may cause NaN
+%     values for the edge points) for all grid points first, and use
+%     triangulation-based nearest neighbor interpolation for the grid edge
+%     points with NaN values.
 %
 % Outputs:
 %   - hCurPLMap
@@ -111,6 +118,15 @@ if any(boolsPathLossesToShow)
                 linspace(min(x), max(x), sufNumPtsPerSide), ...
                 linspace(min(y), max(y), sufNumPtsPerSide));
             zi = griddata(x,y,z,xi,yi);
+            
+            maskMapEdge = zeros(size(zi));
+            maskMapEdge(1,:) = 1; maskMapEdge(end,:) = 1; 
+            maskMapEdge(:,1) = 1; maskMapEdge(:,end) = 1; 
+            maskNanMapEdgePts = isnan(zi)&maskMapEdge;
+            
+            ziNearest = griddata(x,y,z,xi,yi, 'Nearest');
+            zi(maskNanMapEdgePts) = ziNearest(maskNanMapEdgePts);
+            
             hRxs = surf( xi,yi,zi, ...
                 'FaceAlpha',0.5, 'EdgeColor', 'none');
             caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
