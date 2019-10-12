@@ -84,23 +84,42 @@ set(gca, 'fontWeight', 'bold');
 
 % Create meshgrid for surf. We will increase the grid density by a factor
 % of 10 to better show the blockage areas.
-sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE.*10;
-x = matRxLonLatWithPathLoss(:, 1);
-y = matRxLonLatWithPathLoss(:, 2);
-z = matRxLonLatWithPathLoss(:, 3);
+upSampFactor = 10;
+sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE.*upSampFactor;
+lons = matRxLonLatWithPathLoss(:, 1);
+lats = matRxLonLatWithPathLoss(:, 2);
+zs = matRxLonLatWithPathLoss(:, 3);
 
 % Set blockage area to 1 and other areas to 0.
-boolsBlocked = isnan(z);
-z(boolsBlocked) = 1;
-z(~boolsBlocked) = 0;
+boolsBlocked = isnan(zs);
+zs(boolsBlocked) = 1;
+zs(~boolsBlocked) = 0;
 
-[xi,yi] = meshgrid( ...
-    linspace(min(x), max(x), sufNumPtsPerSide), ...
-    linspace(min(y), max(y), sufNumPtsPerSide));
-zi = griddata(x,y,z,xi,yi,'Nearest');
+% Find the ranges for the boundary of interet (BoI) to build a new grid for
+% showing the results.
+[latsBoI, lonsBoI] = simConfigs.utm2deg_speZone( ...
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+lonMinBoI = min(lonsBoI);
+lonMaxBoI = max(lonsBoI);
+latMinBoI = min(latsBoI);
+latMaxBoI = max(latsBoI);
+
+[lonsNew, latsNew] = meshgrid( ...
+    linspace(lonMinBoI, lonMaxBoI, sufNumPtsPerSide), ...
+    linspace(latMinBoI, latMaxBoI, sufNumPtsPerSide));
+zsNew = griddata(lons,lats,zs,lonsNew,latsNew,'Nearest');
+
+% Ignore points out of the area of interest by seting the z values for them
+% to NaN.
+[in,on] = inpolygon(lonsNew(:), latsNew(:), lonsBoI, latsBoI);
+boolsPtsToIgnore = ~(in|on);
+if any(boolsPtsToIgnore)
+    zsNew(boolsPtsToIgnore) = nan;
+end
 
 % Plot the blockage areas.
-hRxs = surf(xi,yi,zi, ...
+hRxs = surf(lonsNew,latsNew,zsNew, ...
     'FaceAlpha',0.5, 'EdgeColor', 'none');
 curColormap = colormap(COLORMAP_TO_USE);
 hClear = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(1, :));

@@ -113,28 +113,51 @@ if any(boolsPathLossesToShow)
             set(gca, 'fontWeight', 'bold');
             
             % Create meshgrid for surf.
-            sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE;
-            x = matRxLonLatWithPathLoss(boolsPathLossesToShow, 1);
-            y = matRxLonLatWithPathLoss(boolsPathLossesToShow, 2);
-            z = matRxLonLatWithPathLoss(boolsPathLossesToShow, 3);
-            [xi,yi] = meshgrid( ...
-                linspace(min(x), max(x), sufNumPtsPerSide), ...
-                linspace(min(y), max(y), sufNumPtsPerSide));
-            zi = griddata(x,y,z,xi,yi);
+            upSampFactor = 10;
+            sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
+                .*upSampFactor;
+            lons = matRxLonLatWithPathLoss(boolsPathLossesToShow, 1);
+            lats = matRxLonLatWithPathLoss(boolsPathLossesToShow, 2);
+            zs = matRxLonLatWithPathLoss(boolsPathLossesToShow, 3);
             
-            maskMapEdge = zeros(size(zi));
-            maskMapEdge(1,:) = 1; maskMapEdge(end,:) = 1;
-            maskMapEdge(:,1) = 1; maskMapEdge(:,end) = 1;
-            maskNanMapEdgePts = isnan(zi)&maskMapEdge;
+            % Find the ranges for the boundary of interet (BoI) to build a
+            % new grid for showing the results.
+            [latsBoI, lonsBoI] = simConfigs.utm2deg_speZone( ...
+                simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+                simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+            lonMinBoI = min(lonsBoI);
+            lonMaxBoI = max(lonsBoI);
+            latMinBoI = min(latsBoI);
+            latMaxBoI = max(latsBoI);
             
-            ziNearest = griddata(x,y,z,xi,yi,'Nearest');
-            zi(maskNanMapEdgePts) = ziNearest(maskNanMapEdgePts);
+            [lonsNew, latsNew] = meshgrid( ...
+                linspace(lonMinBoI, lonMaxBoI, sufNumPtsPerSide), ...
+                linspace(latMinBoI, latMaxBoI, sufNumPtsPerSide));
+            zsNew = griddata(lons,lats,zs,lonsNew,latsNew);
             
-            hRxs = surf( xi,yi,zi, ...
+            maskMapEdge = zeros(size(zsNew));
+            maskMapEdge(1:upSampFactor,:) = 1; 
+            maskMapEdge((end-upSampFactor+1):end,:) = 1;
+            maskMapEdge(:,1:upSampFactor) = 1; 
+            maskMapEdge(:,(end-upSampFactor+1):end) = 1;
+            maskNanMapEdgePts = isnan(zsNew)&maskMapEdge;
+            
+            ziNearest = griddata(lons,lats,zs,lonsNew,latsNew,'Nearest');
+            zsNew(maskNanMapEdgePts) = ziNearest(maskNanMapEdgePts);
+            
+            % Ignore points out of the area of interest by seting the z
+            % values for them to NaN.
+            [in,on] = inpolygon(lonsNew(:), latsNew(:), lonsBoI, latsBoI);
+            boolsPtsToIgnore = ~(in|on);
+            if any(boolsPtsToIgnore)
+                zsNew(boolsPtsToIgnore) = nan;
+            end
+            
+            hRxs = surf( lonsNew,latsNew,zsNew, ...
                 'FaceAlpha',0.5, 'EdgeColor', 'none');
             caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
             hCB = colorbar; ylabel(hCB, cLabelToSet);
-            [c,h] = contour(xi,yi,zi);
+            [c,h] = contour(lonsNew,latsNew,zsNew);
             clabel(c,h);
     end
 end
