@@ -135,11 +135,12 @@ if any(boolsPathLossesToShow)
                 linspace(latMinBoI, latMaxBoI, sufNumPtsPerSide));
             zsNew = griddata(lons,lats,zs,lonsNew,latsNew);
             
+            numOfMapEdgePixels = ceil(upSampFactor.*1.5);
             maskMapEdge = zeros(size(zsNew));
-            maskMapEdge(1:upSampFactor,:) = 1; 
-            maskMapEdge((end-upSampFactor+1):end,:) = 1;
-            maskMapEdge(:,1:upSampFactor) = 1; 
-            maskMapEdge(:,(end-upSampFactor+1):end) = 1;
+            maskMapEdge(1:numOfMapEdgePixels,:) = 1; 
+            maskMapEdge((end-numOfMapEdgePixels+1):end,:) = 1;
+            maskMapEdge(:,1:numOfMapEdgePixels) = 1; 
+            maskMapEdge(:,(end-numOfMapEdgePixels+1):end) = 1;
             maskNanMapEdgePts = isnan(zsNew)&maskMapEdge;
             
             ziNearest = griddata(lons,lats,zs,lonsNew,latsNew,'Nearest');
@@ -162,7 +163,7 @@ if any(boolsPathLossesToShow)
     end
 end
 
-legend(hCurHandleTxs, 'TXs', 'Location', LEGEND_LOC); view(2);
+legend(hCurHandleTxs, 'Cell towers', 'Location', LEGEND_LOC); view(2);
 if flagZoomIn
     axis(zoomInAxisToSet);
 end

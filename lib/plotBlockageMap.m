@@ -126,7 +126,8 @@ hClear = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(1, :));
 hBlocked = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(end, :));
 caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
 
-legend([hCurHandleTxs, hClear, hBlocked], 'TXs', 'Clear', 'Blocked', ...
+legend([hCurHandleTxs, hClear, hBlocked], ...
+    'Cell towers', 'Clear', 'Blocked', ...
     'Location', LEGEND_LOC); view(2);
 
 if flagZoomIn
