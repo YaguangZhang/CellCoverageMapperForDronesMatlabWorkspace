@@ -230,12 +230,25 @@ end
 
 %% Simulation
 
-% Generate coverage and blockage maps.
-[simState, simConfigs] ...
-    = analyzeCoverageViaChannelSimulation(pathToSaveResults, ...
-    lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
-    cellAntsXYH, simConfigs);
-save(fullfile(pathToSaveResults, 'simResults.mat'), ...
-    'simConfigs', 'simState');
+disp(' ')
+disp('    Conducting simulation ...')
+disp(' ')
+
+pathToSaveSimResults = fullfile(pathToSaveResults, 'simResults.mat');
+if exist(pathToSaveSimResults, 'file')
+    disp('    Loading history results ...')
+    load(pathToSaveSimResults)
+else
+    % Computing coverage and blockage maps.    
+    [simState, simConfigs] ...
+        = analyzeCoverageViaChannelSimulation(pathToSaveResults, ...
+        lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
+        cellAntsXYH, simConfigs);
+    save(pathToSaveSimResults, 'simConfigs', 'simState');
+end
+disp('    Done!')
+
+% Plots.
+plotCoverageSimulationResults(pathToSaveResults, simState, simConfigs);
 
 % EOF
