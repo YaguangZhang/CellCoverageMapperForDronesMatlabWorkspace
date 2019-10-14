@@ -116,9 +116,11 @@ if any(boolsPathLossesToShow)
             upSampFactor = 10;
             sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
                 .*upSampFactor;
-            lons = matRxLonLatWithPathLoss(boolsPathLossesToShow, 1);
-            lats = matRxLonLatWithPathLoss(boolsPathLossesToShow, 2);
-            zs = matRxLonLatWithPathLoss(boolsPathLossesToShow, 3);
+            lons = matRxLonLatWithPathLoss(:, 1);
+            lats = matRxLonLatWithPathLoss(:, 2);
+            zs = matRxLonLatWithPathLoss(:, 3);
+            % Set points not to show to NaN.
+            zs(~boolsPathLossesToShow) = nan;
             
             % Find the ranges for the boundary of interet (BoI) to build a
             % new grid for showing the results.
@@ -135,16 +137,15 @@ if any(boolsPathLossesToShow)
                 linspace(latMinBoI, latMaxBoI, sufNumPtsPerSide));
             zsNew = griddata(lons,lats,zs,lonsNew,latsNew);
             
-            numOfMapEdgePixels = ceil(upSampFactor.*1.5);
-            maskMapEdge = zeros(size(zsNew));
-            maskMapEdge(1:numOfMapEdgePixels,:) = 1; 
-            maskMapEdge((end-numOfMapEdgePixels+1):end,:) = 1;
-            maskMapEdge(:,1:numOfMapEdgePixels) = 1; 
-            maskMapEdge(:,(end-numOfMapEdgePixels+1):end) = 1;
-            maskNanMapEdgePts = isnan(zsNew)&maskMapEdge;
-            
+            % Replace the resulting NaN grid data points with nearest
+            % neighbor's value in the original dataset.
             ziNearest = griddata(lons,lats,zs,lonsNew,latsNew,'Nearest');
-            zsNew(maskNanMapEdgePts) = ziNearest(maskNanMapEdgePts);
+            boolsZsNewIsNan = isnan(zsNew);
+            zsNew(boolsZsNewIsNan) = ziNearest(boolsZsNewIsNan);
+            
+            % For positions with NaN values in ziNearest, zsNew should also
+            % have NaN.
+            zsNew(isnan(ziNearest)) = nan;
             
             % Ignore points out of the area of interest by seting the z
             % values for them to NaN.
