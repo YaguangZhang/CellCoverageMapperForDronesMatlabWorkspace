@@ -142,7 +142,7 @@ end
 
 % For plotting.
 areaOfInterestColor = [0.9290 0.6940 0.1250];
-lightBlue = [0.3010 0.7450 0.9330];
+lightBlue = [0.3010 0.7450 0.9330]; %#ok<NASGU>
 darkBlue = [0 0.4470 0.7410];
 
 %% Create the Map Grid
@@ -261,7 +261,7 @@ axisLonLatToSet = [axisLonMin axisLonMax axisLatMin axisLatMax];
 
 hFigCellOverview = figure; hold on; set(gca, 'fontWeight', 'bold');
 hAllCells = plot(cellAntsLons, ...
-    cellAntsLats, '.', 'Color', 'yellow');
+    cellAntsLats, '.', 'Color', 'yellow'); %#ok<NASGU>
 plot(polyshape([gpsLonsBoundaryToKeepCellTowers, ...
     gpsLatsBoundaryToKeepCellTowers]));
 hAreaOfInterest = plot( ...
@@ -311,10 +311,14 @@ if exist(pathToHistoryWorkspace, 'file')
     
     load(pathToHistoryWorkspace); %#ok<LOAD>
 else
+    disp(' ')
+    disp('    Computing path losses ...')
+    disp(' ')
+    disp('        Closing figures to save RAM ...')
+    close all;
+    disp('        Done!')
+    
     [numOfEffeCellAnts, ~] = size(effeCellAntsXYH);
-    [numOfDroneLocs, ~] = size(simState.mapGridXYPts);
-    numOfRxHeightToInspect ...
-        = length(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M);
     
     lidarMatFileAbsDirs = cellfun(@(d) regexprep(d, '\.img$', '.mat'), ...
         lidarFileAbsDirs, 'UniformOutput', false);
@@ -330,12 +334,56 @@ else
     % Progress monitor (proMon): for reporting progress and estimating the
     % remaining simulation time.
     proMonPixCnt = 0;
-    proMonNumOfPixToProcess ...
-        = numOfEffeCellAnts.*numOfDroneLocs.*numOfRxHeightToInspect;
     proMonFloatFomatter = '%.2f';
+    proMonNumOfPixToProcess = 0;
     
-    disp(' ')
-    disp('    Computing path losses ...')
+    % For each effective cellular tower, find grid pixels that are within
+    % the coverage range and pre-assign them to workers. Also, initialize
+    % result cells and count the total number of pixels to be processed for
+    % progress monitoring.
+    locIndicesForAllWorkersForAllCellsEff = cell(numOfEffeCellAnts,1);
+    % For initializing results.
+    numOfRxHeightToInspect ...
+        = length(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M);
+    [numPixelsPerMap, ~] = size(simState.mapGridXYPts);
+    for idxEffeCellAnt = 1:numOfEffeCellAnts
+        % Cellular location.
+        curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);
+        
+        % Find drone locations that are within the current cellular tower's
+        % coverage range in the UTM (x,y) system.
+        curTxToRxDistsInM ...
+            = vecnorm(simState.mapGridXYPts-curCellXYH(1:2), 2, 2);
+        curIndicesRxLocsToConsider ...
+            = find(curTxToRxDistsInM ...
+            < simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
+        
+        % We will use multiple works to churn through the drone locations.
+        % To avoid repeative environment set up and data transfer, here we
+        % pre-assign the pixels to be processed by each worker. Pre-assign
+        % pixels to workers to avoid unnecessary data copying.
+        locIndicesForAllWorkers ...
+            = preassignTaskIndicesToWorkers( ...
+            length(curIndicesRxLocsToConsider));
+        locIndicesForAllWorkersForAllCellsEff{idxEffeCellAnt} ...
+            = cellfun(@(indices) ...
+            curIndicesRxLocsToConsider(indices)', ...
+            locIndicesForAllWorkers, 'UniformOutput', false);
+        
+        % Initialize results.
+        for idxDroneHeightInM = 1:numOfRxHeightToInspect
+            simState.blockageMapsForEachCell{idxEffeCellAnt} ...
+                {idxDroneHeightInM} = nan(1, numPixelsPerMap);
+            simState.coverageMapsForEachCell{idxEffeCellAnt} ...
+                {idxDroneHeightInM} = nan(1, numPixelsPerMap);
+            simState.TimeUsedInSForEachPixel{idxEffeCellAnt} ...
+                {idxDroneHeightInM} = zeros(1, numPixelsPerMap);
+        end
+    
+        % Update the total number of pixels to be processed.
+        proMonNumOfPixToProcess = proMonNumOfPixToProcess ...
+            + length(curIndicesRxLocsToConsider);
+    end
     
     % Path to cache computation results.
     absPathToCacheProfilesDir ...
@@ -348,32 +396,12 @@ else
     localCluster = parcluster('local');
     numOfWorkersInLocalCluster = localCluster.NumWorkers;
     for idxEffeCellAnt = 1:numOfEffeCellAnts
-        disp(' ')
-        disp('        Closing figures to save RAM ...')
-        close all;
-        disp('        Done!')
-        
         % Cellular location.
-        curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);        
+        curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);
         
-        % Find drone locations that are within the current cellular tower's
-        % coverage range in the UTM (x,y) system.
-        curTxToRxDistsInM ...
-            = vecnorm(simState.mapGridXYPts-curCellXYH(1:2), 2, 2);
-        curIndicesRxLocsToConsider ...
-            = find(curTxToRxDistsInM ...
-            < simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
-        
-        % We will use multiple works to churn through the drone locations. To
-        % avoid repeative environment set up and data transfer, here we
-        % pre-assign the pixels to be processed by each worker. Pre-assign
-        % pixels to workers to avoid unnecessary data copying.
+        % Load the task assignment results.
         locIndicesForAllWorkers ...
-            = preassignTaskIndicesToWorkers( ...
-            length(curIndicesRxLocsToConsider));
-        locIndicesForAllWorkers = cellfun(@(indices) ...
-            curIndicesRxLocsToConsider(indices)', ...
-            locIndicesForAllWorkers, 'UniformOutput', false);
+            = locIndicesForAllWorkersForAllCellsEff{idxEffeCellAnt};
         numOfWorkers = length(locIndicesForAllWorkers);
         
         % Pre-allocate space. To make sure parfor works, we will store all
@@ -385,7 +413,7 @@ else
             resultsFromWorkersCell{idxWorker} ...
                 = nan(length(locIndicesForAllWorkers{idxWorker}) ...
                 .*numOfRxHeightToInspect, 5);
-        end        
+        end
         
         parfor idxWorker = 1:numOfWorkers
             % Load the NTIA eHata library first, if necessary, to avoid the
