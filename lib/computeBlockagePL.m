@@ -21,10 +21,12 @@ function [ blockagePL ] = computeBlockagePL(txXYAlt, rxXYAlt, ...
 %   - simConfigs
 %     A structure holding basic parameters of the simulation; we need here:
 %       - simConfigs.LOS_FIRST_FRES_CLEAR_RATIO
-%         The clearance ratio of the first Fresnel zone for a LoS path: at
-%         least this ratio of the first Fresnel zone needs to be clear for
-%         a path to be considered as "line of sight" (LoS); we expect the
-%         value to be larger or equal to 50%.
+%         The clearance ratio of the first Fresnel zone around the direct
+%         path to ensure stable communication links: at least this ratio of
+%         the first Fresnel zone needs to be clear for a path to be
+%         considered as "line of sight" (LoS); we expect the value to be at
+%         least 60% (80% is recommended; for solid system designs, it is
+%         not rare to have the full 1st Fresnel zone clear).
 %       - simConfigs.CARRIER_WAVELENGTH_IN_M
 %         Carrier wavelength in meters.
 % Output:
@@ -52,8 +54,8 @@ parsLoSPath = polyfit([0; distTxToRx], ...
 % LoS path height at the LiDAR profile sample locations.
 losPathHs = polyval(parsLoSPath, obsLidarProfDists);
 
-if all(losPathHs>=lbsLidarProfileZs)
-    % A 50-percent clearance is now ensured. We need to consider the first
+if all(losPathHs>lbsLidarProfileZs)
+    % The direct path is now ensured clear. We need to consider the first
     % Fresnel zone here to more accurately determine the LoS paths.
     
     % Distance between the celluar tower and the lidar z locations.
@@ -79,11 +81,8 @@ if all(losPathHs>=lbsLidarProfileZs)
     
     % The extra clearance ratio respective to the first Fresnel zone radius
     % for LoS paths.
-    extraClearRatioVsR ...
-        = (simConfigs.LOS_FIRST_FRES_CLEAR_RATIO-0.5)*2;
-    
     if all(distsToDirectPath ...
-            -extraClearRatioVsR*firstFresRadii>0)
+            > simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadii)
         blockagePL = fspl(distTxToRx, simConfigs.CARRIER_WAVELENGTH_IN_M);
     end
 end
