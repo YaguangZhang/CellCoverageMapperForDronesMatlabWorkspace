@@ -322,14 +322,6 @@ else
         simState.TimeUsedInSForEachPixel] ...
         = deal(cell(numOfEffeCellAnts, 1));
     
-    % We will use multiple works to churn through the drone locations. To
-    % avoid repeative environment set up and data transfer, here we
-    % pre-assign the pixels to be processed by each worker. Pre-assign
-    % pixels to workers to avoid unnecessary data copying.
-    locIndicesForAllWorkers ...
-        = preassignTaskIndicesToWorkers(numOfDroneLocs);
-    numOfWorkers = length(locIndicesForAllWorkers);
-    
     % Suppress this warning in the cluster to get clearer feedbacks from
     % the program.
     parfevalOnAll(gcp(), ...
@@ -362,7 +354,27 @@ else
         disp('        Done!')
         
         % Cellular location.
-        curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);
+        curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);        
+        
+        % Find drone locations that are within the current cellular tower's
+        % coverage range in the UTM (x,y) system.
+        curTxToRxDistsInM ...
+            = vecnorm(simState.mapGridXYPts-curCellXYH(1:2), 2, 2);
+        curIndicesRxLocsToConsider ...
+            = find(curTxToRxDistsInM ...
+            < simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
+        
+        % We will use multiple works to churn through the drone locations. To
+        % avoid repeative environment set up and data transfer, here we
+        % pre-assign the pixels to be processed by each worker. Pre-assign
+        % pixels to workers to avoid unnecessary data copying.
+        locIndicesForAllWorkers ...
+            = preassignTaskIndicesToWorkers( ...
+            length(curIndicesRxLocsToConsider));
+        locIndicesForAllWorkers = cellfun(@(indices) ...
+            curIndicesRxLocsToConsider(indices), ...
+            locIndicesForAllWorkers, 'UniformOutput', false);
+        numOfWorkers = length(locIndicesForAllWorkers);
         
         % Pre-allocate space. To make sure parfor works, we will store all
         % results from one worker into one matrix with each row being:
@@ -373,7 +385,7 @@ else
             resultsFromWorkersCell{idxWorker} ...
                 = nan(length(locIndicesForAllWorkers{idxWorker}) ...
                 .*numOfRxHeightToInspect, 5);
-        end
+        end        
         
         parfor idxWorker = 1:numOfWorkers
             % Load the NTIA eHata library first, if necessary, to avoid the
