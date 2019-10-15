@@ -98,7 +98,7 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 50;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
@@ -116,12 +116,32 @@ simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 30; 50; 70; 90; 100];
 
 %   - The maximum radius that a cellular tower can cover; we will use this
-%   to limit the area to consider for each cellular tower in the
-%   simulation; by default (when it is not a positive scalar) it will be
-%   set to be the distance that one can see at the top of the highest cell
-%   tower to the highest RX above the horizon (i.e. without blockage of the
-%   earth): D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
+%   to find the cellular towers that are effective and limit the area to
+%   consider for each effective cellular tower during the simulation; by
+%   default (when it is not a positive scalar) it will be set to be the
+%   distance that one can see at the top of the highest/lowest cell tower
+%   to the highest/lowest RX above the horizon (i.e. without blockage of
+%   the earth): D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)). Please
+%   see the field 'MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY' for more
+%   information.
 simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M = nan;
+
+%   - Optional field (with a string value of 'LowestAntennas' or
+%   'HighestAntennas'; default to 'LowestAntennas') to control how
+%   simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M is computed automatically, if
+%   the value of that radius is not valid. The radius will be computed
+%   using the lowest (heightest) cell tower and the lowest (heightest)
+%   receiver if this flag is set to 'LowestAntennas' ('HighestAntennas').
+%   One can choose 'HighestAntennas' to consider more towers which may be
+%   able to see the heightest receiver at some spot in the area of
+%   interest for accuracy, or 'LowestAntennas' to speed up the simulation.
+simConfigs.MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY = 'HighestAntennas';
+
+%   - The function to calculate, according to the TX and RX heights, the
+%   distance that one can see the RX from the TX above the horizon:
+%   D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
+simConfigs.getCellCoverageRadiusInM = @(TxHeightInM, RxHeightInM) ...
+    3.57*(sqrt(TxHeightInM)+sqrt(RxHeightInM))*1000;
 
 %   - The clearance ratio of the first Fresnel zone for a LoS path: at
 %   least this ratio of the first Fresnel zone needs to be clear for a path
