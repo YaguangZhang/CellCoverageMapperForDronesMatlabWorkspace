@@ -578,7 +578,9 @@ else
         latestEstiPixExecTimeInS = mean(resultsFromWorkersMat(:,3));
         latestEstiTowerExecTimeInS = sum(resultsFromWorkersMat(:,3)) ...
             ./numOfWorkersInLocalCluster;
-        proMonPixCnt = proMonPixCnt+numOfResultsFromWorkers;
+        % Take into account all the heights inspected.
+        proMonPixCnt = proMonPixCnt ...
+            + numOfResultsFromWorkers./numOfRxHeightToInspect;
         
         disp(' ')
         disp(['        Finished cellular tower #', ...
