@@ -36,7 +36,7 @@ if strcmpi(language, 'Python')
 end
 
 numToStrFormatter = '%.12f';
-maxNumOfTrials = 10;
+maxNumOfTrials = 100;
 urlUsgsEpqs = 'https://nationalmap.gov/epqs/pqs.php';
 usgsNanValue = -1000000;
 
@@ -73,6 +73,9 @@ switch lower(language)
                         ' Trial #', num2str(ctnTrials), '/', ...
                         num2str(maxNumOfTrials), ')!'])
                     dispErr(err);
+                    if ctnTrials == maxNumOfTrials
+                        error('Run out of allowed number of trials!');
+                    end
                 end
             end
         end
@@ -112,6 +115,9 @@ switch lower(language)
                     ' Trial #', num2str(ctnTrials), '/', ...
                     num2str(maxNumOfTrials), ')!'])
                 dispErr(err);
+                if ctnTrials == maxNumOfTrials
+                    error('Run out of allowed number of trials!');
+                end
             end
         end
     otherwise
