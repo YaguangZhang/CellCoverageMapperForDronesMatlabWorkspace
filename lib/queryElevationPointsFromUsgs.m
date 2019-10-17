@@ -74,7 +74,8 @@ switch lower(language)
                         num2str(maxNumOfTrials), ')!'])
                     dispErr(err);
                     if ctnTrials == maxNumOfTrials
-                        error('Run out of allowed number of trials!');
+                        save('errorWorkspaceInQuerryEle.mat');
+                        error('Run out of allowed number of trials!');                        
                     end
                 end
             end
@@ -116,6 +117,7 @@ switch lower(language)
                     num2str(maxNumOfTrials), ')!'])
                 dispErr(err);
                 if ctnTrials == maxNumOfTrials
+                    save('errorWorkspaceInQuerryEle.mat');
                     error('Run out of allowed number of trials!');
                 end
             end
