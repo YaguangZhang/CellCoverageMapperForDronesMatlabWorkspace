@@ -313,5 +313,28 @@ end
 
 disp('    Done!')
 
+%% Coverage Ratio vs Drone Height
+
+disp(' ')
+disp(['    Plotting coverage ratio vs drone height ', ...
+    'for the blocakge maps...'])
+
+[curCovRatioVsHFig, curCovRatios] ...
+    = plotCovRatioVsInspectedHeight(simState.blockageMaps, ...
+    simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'CoverageRatioVsDroneHeight_Blockage.png');
+saveas(curCovRatioVsHFig,  pathToSaveFig);
+if curFlagGenFigsSilently
+    close(curCovRatioVsHFig);
+end
+
+CoverageRatio = curCovRatios;
+UavHeight = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
+
+disp(table(UavHeight, CoverageRatio));
+
+disp('    Done!')
+
 end
 % EOF

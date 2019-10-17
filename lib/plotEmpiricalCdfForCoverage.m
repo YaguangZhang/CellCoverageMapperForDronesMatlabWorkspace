@@ -21,7 +21,7 @@ function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
 %     An optional boolean for whether to show the resultant figure or not.
 %     Default to true.
 %
-% Output:
+% Outputs:
 %   - hFigCdf
 %     The handle to the resultant CDF figure.
 %   - cdfMeta
