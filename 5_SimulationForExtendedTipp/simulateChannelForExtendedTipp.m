@@ -133,8 +133,8 @@ simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M = nan;
 %   using the lowest (heightest) cell tower and the lowest (heightest)
 %   receiver if this flag is set to 'LowestAntennas' ('HighestAntennas').
 %   One can choose 'HighestAntennas' to consider more towers which may be
-%   able to see the heightest receiver at some spot in the area of
-%   interest for accuracy, or 'LowestAntennas' to speed up the simulation.
+%   able to see the heightest receiver at some spot in the area of interest
+%   for accuracy, or 'LowestAntennas' to speed up the simulation.
 % simConfigs.MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY = 'HighestAntennas';
 
 %   - The function to calculate, according to the TX and RX heights, the
@@ -233,9 +233,9 @@ disp('    Done!')
 
 if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
     assert(any(strcmp({'ExtendedTipp', 'IN'}, PRESET)), ...
-    ['No raw Indiana LiDAR data available for ', PRESET, ...
-    ' to generate the area of interest polygon!'])
-
+        ['No raw Indiana LiDAR data available for ', PRESET, ...
+        ' to generate the area of interest polygon!'])
+    
     areaOfInterestLidarDataset = PRESET;
     % The only case when the LiDAR dataset folder is different from the
     % simulation tag is for the extended Tippecanoe area.
@@ -259,7 +259,7 @@ if exist(pathToSaveSimResults, 'file')
     disp('    Loading history results ...')
     load(pathToSaveSimResults)
 else
-    % Computing coverage and blockage maps.    
+    % Computing coverage and blockage maps.
     [simState, simConfigs] ...
         = analyzeCoverageViaChannelSimulation(pathToSaveResults, ...
         lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...

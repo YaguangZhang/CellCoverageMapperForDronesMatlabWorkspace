@@ -157,14 +157,14 @@ if ~(simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M>0)
         = simConfigs.getCellCoverageRadiusInM( ...
         fctMaxCellCoverageRadiusGenStrategy(cellAntsXYH(:,3)), ...
         fctMaxCellCoverageRadiusGenStrategy( ...
-        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M)); 
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M));
 end
 
 % For plotting.
 areaOfInterestColor = [0.9290 0.6940 0.1250];
 lightBlue = [0.3010 0.7450 0.9330]; %#ok<NASGU>
 darkBlue = [0 0.4470 0.7410];
-colorEffectiveTowers = 'b'; 
+colorEffectiveTowers = 'b';
 markerEffectiveTowers = '.';
 markerSizeEffectiveTowers = 12;
 colorIneffectiveTowers = 'r';
@@ -314,7 +314,7 @@ hEffeCells = plot(effeCellAntsLons, effeCellAntsLats, ...
     markerEffectiveTowers, ...
     'MarkerSize', markerSizeEffectiveTowers, ...
     'Color', colorEffectiveTowers);
-adjustFigSizeByContent(hFigCellOverview, axisXYToSet); 
+adjustFigSizeByContent(hFigCellOverview, axisXYToSet);
 view(2); axis(axisLonLatToSet);
 plot_google_map;
 grid on; grid minor;
@@ -426,7 +426,7 @@ else
             simState.TimeUsedInSForEachPixel{idxEffeCellAnt} ...
                 {idxDroneHeightInM} = zeros(1, numPixelsPerMap);
         end
-    
+        
         % Update the total number of pixels to be processed.
         proMonNumOfPixToProcess = proMonNumOfPixToProcess ...
             + length(curIndicesRxLocsToConsider);
