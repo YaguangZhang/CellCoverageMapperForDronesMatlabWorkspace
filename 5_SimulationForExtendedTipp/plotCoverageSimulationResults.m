@@ -332,7 +332,12 @@ end
 CoverageRatio = curCovRatios;
 UavHeight = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
 
-disp(table(UavHeight, CoverageRatio));
+curCovRatioTable = table(UavHeight, CoverageRatio);
+disp(curCovRatioTable);
+
+pathToSaveTab = fullfile(pathToSaveResults, ...
+    'CoverageRatioVsDroneHeight_Blockage.csv');
+writetable(curCovRatioTable, pathToSaveTab);
 
 disp('    Done!')
 
