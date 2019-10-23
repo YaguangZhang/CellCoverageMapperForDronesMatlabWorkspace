@@ -1,6 +1,6 @@
 function [hCurPLMap, hCurHandleTxs] ...
     = plotPathLossMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
-    simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs)
+    simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs, customFigSize)
 %PLOTPATHLOSSMAP Plot the path loss map.
 %
 % Generate a figure on Google map to show the path loss map.
@@ -14,7 +14,7 @@ function [hCurPLMap, hCurHandleTxs] ...
 %   - simConfigs
 %     The configuration struct for the simulation. We need fields:
 %       - ALLOWED_PATH_LOSS_RANGE_IN_DB
-%         Color mapping limits for plot4k. A two element vector specifying
+%         Color mapping limits for plot3k. A two element vector specifying
 %         the values that map to the first and last colors. This is useful
 %         for generating a series of plots with identical coloring. The
 %         colormap but not the colorbar) is flipped upside down if
@@ -40,6 +40,10 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     values for the edge points) for all grid points first, and use
 %     triangulation-based nearest neighbor interpolation for the grid edge
 %     points with NaN values.
+%   - customFigSize
+%     An optional boolean to specify the desired figure size. The resultant
+%     figure will start with this size and be adjusted according to the
+%     figure content.
 %
 % Outputs:
 %   - hCurPLMap
@@ -49,13 +53,19 @@ function [hCurPLMap, hCurHandleTxs] ...
 %
 % Yaguang Zhang, Purdue, 10/02/2019
 
+colorMap = 'jet';
+legendBackgroundColor = ones(1,3).*0.8;
+minPathLossInDbExpected = 80;
+flagRiseTxToTop = true;
+
+% For plotting.
+colorTowers = 'w';
+markerTowers = 'x';
+markerSizeTowers = 6;
+lineWidthTowers = 1;
+
 % The location of the legend.
 LEGEND_LOC = 'NorthEast';
-
-% We support: 'plot3k' and 'surf'(default).
-if ~exist('flagCmdToPlotPLs', 'var')
-    flagCmdToPlotPLs = 'surf';
-end
 
 % By default, show the plot.
 if ~exist('flagVisible', 'var')
@@ -68,10 +78,29 @@ if ~exist('flagZoomIn', 'var')
     flagZoomIn = false;
 end
 
-colorRange = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB;
+% We support: 'plot3k' and 'surf'(default).
+if ~exist('flagCmdToPlotPLs', 'var')
+    flagCmdToPlotPLs = 'surf';
+end
 
-hCurPLMap = figure('visible', flagVisible);
+if ~exist('customFigSize', 'var')
+    customFigSize = [500, 500].*0.7;
+end
+
+hCurPLMap = figure('visible', flagVisible, ...
+    'Position', [0,0,customFigSize]);
+hCurPLMap.InvertHardcopy = 'off';
+hCurPLMap.Color = 'none';
+
 hold on;
+
+if strcmpi(colorMap, 'hot')
+    curCM = colormap('hot');
+    cMtoSet = curCM(end:-1:1, :);
+    colormap(cMtoSet);
+else
+    colormap(colorMap);
+end
 
 % Area of interest.
 [areaOfInterestLats, areaOfInterestLons] = simConfigs.utm2deg_speZone( ...
@@ -81,25 +110,48 @@ plot(polyshape(areaOfInterestLons, areaOfInterestLats), ...
     'FaceColor', 'white');
 
 if flagZoomIn
-    axis tight;
-    zoomInAxisToSet = axis;
-    axis auto;
+    extensionFactor = 0.05;
+else
+    % Extend the content by a constant factor in the UTM system.
+    extensionFactor = 0.2;
+    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'ExtendedTipp')
+        extensionFactor = 0.25;
+    end
+end
+
+[axisToSet, weightForWidth] ...
+    = extendLonLatAxisByFactor( ...
+    [min(areaOfInterestLons), max(areaOfInterestLons), ...
+    min(areaOfInterestLats), max(areaOfInterestLats)], ...
+    extensionFactor, simConfigs);
+
+% Check color range with simulation results.
+colorRange = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB;
+boolsPathLossesToShow = (matRxLonLatWithPathLoss(:,3)>= colorRange(1)) ...
+    & (matRxLonLatWithPathLoss(:,3)<= colorRange(2));
+if min(matRxLonLatWithPathLoss(boolsPathLossesToShow,3)) ...
+        >minPathLossInDbExpected
+    colorRange(1) = minPathLossInDbExpected;
 end
 
 % TX.
-hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
-    ones(length(cellAntLonLats(:,1)), 1)...
-    .*(colorRange(2)+1), ...
-    'xr', 'LineWidth', 1.5);
+if flagRiseTxToTop
+    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1).*(colorRange(2)+1);
+else
+    zsToPlotTx = zeros(length(cellAntLonLats(:,1)), 1);
+end
 
-% Simulation results.
-boolsPathLossesToShow = (matRxLonLatWithPathLoss(:,3)>= colorRange(1)) ...
-    & (matRxLonLatWithPathLoss(:,3)<= colorRange(2));
+hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
+    zsToPlotTx, ...
+    markerTowers, ...
+    'MarkerSize', markerSizeTowers, ...
+    'Color', colorTowers, ...
+    'LineWidth', lineWidthTowers);
 
 hRxs = nan;
 if any(boolsPathLossesToShow)
-    xLabelToSet = 'Longitude (degrees)';
-    yLabelToSet = 'Latitude (degrees)';
+    xLabelToSet = 'Longitude';
+    yLabelToSet = 'Latitude';
     cLabelToSet = 'Path Loss (dB)';
     switch lower(flagCmdToPlotPLs)
         case 'plot3k'
@@ -158,16 +210,25 @@ if any(boolsPathLossesToShow)
             hRxs = surf( lonsNew,latsNew,zsNew, ...
                 'FaceAlpha',0.5, 'EdgeColor', 'none');
             caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
-            hCB = colorbar; ylabel(hCB, cLabelToSet);
+            hCb = colorbar; % ylabel(hCb, cLabelToSet); 
+            title(hCb, cLabelToSet);
             [c,h] = contour(lonsNew,latsNew,zsNew);
             clabel(c,h);
     end
+    
+    % Put an empty title to avoid tightfig cutting out the clabel.
+    title(' ');
 end
 
-legend(hCurHandleTxs, 'Cell towers', 'Location', LEGEND_LOC); view(2);
-if flagZoomIn
-    axis(zoomInAxisToSet);
-end
+hLeg = legend(hCurHandleTxs, 'Cell towers', 'Location', LEGEND_LOC);
+set(hLeg, 'color', legendBackgroundColor);
+set(hCurPLMap, 'Color', 'w');
+
+view(2); xticks([]); yticks([]);
+xticks([]); yticks([]);
+
+adjustFigSizeByContent(hCurPLMap, axisToSet, ...
+    'height', weightForWidth*1.05);
 
 if strcmpi(flagCmdToPlotPLs, 'plot3k') && ishandle(hRxs)
     plotGoogleMapAfterPlot3k(gcf, 'satellite');

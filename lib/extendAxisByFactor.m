@@ -1,5 +1,5 @@
-function [newAxis] = exendAxisByFactor(curAxis, factorExtend)
-%EXENDAXISBYFACTOR Extend the axis area by the specified factor (for each
+function [newAxis] = extendAxisByFactor(curAxis, factorExtend)
+%EXTENDAXISBYFACTOR Extend the axis area by the specified factor (for each
 %side).
 %
 % Yaguang Zhang, Purdue, 10/17/2019

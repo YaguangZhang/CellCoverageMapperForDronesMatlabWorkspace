@@ -28,6 +28,12 @@ set(0, 'currentfigure', hFig);
 curFigureColor = get(gcf,'Color');
 set(gcf, 'Color', 'white');
 
+% Fix ticks.
+curXTicks = xticks; 
+curYTicks = yticks; 
+xticks('manual'); xticks(curXTicks); 
+yticks('manual'); yticks(curYTicks); 
+
 export_fig(epsFullPathToSave, '-eps'); 
 export_fig(pngFullPathToSave, '-png', '-transparent');
 

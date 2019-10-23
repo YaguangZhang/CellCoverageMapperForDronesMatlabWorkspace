@@ -1,6 +1,6 @@
 function [hCurBlockageMap, hCurHandleTxs] ...
     = plotBlockageMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
-    simConfigs, flagVisible, flagZoomIn)
+    simConfigs, flagVisible, flagZoomIn, customFigSize)
 %PLOTBLOCKAGEMAP Plot the blockage map.
 %
 % Generate a figure on Google map to show the blockage areas. We will use
@@ -27,6 +27,10 @@ function [hCurBlockageMap, hCurHandleTxs] ...
 %   - flagZoomIn
 %     An optional boolean to control whether to zoom in to fit the area of
 %     the input path loss map or not.
+%   - customFigSize
+%     An optional boolean to specify the desired figure size. The resultant
+%     figure will start with this size and be adjusted according to the
+%     figure content.
 %
 % Outputs:
 %   - hCurBlockageMap
@@ -36,11 +40,23 @@ function [hCurBlockageMap, hCurHandleTxs] ...
 %
 % Yaguang Zhang, Purdue, 10/02/2019
 
+legendBackgroundColor = ones(1,3).*0.8;
+
+% For plotting.
+colorTowers = 'w';
+markerTowers = 'x';
+markerSizeTowers = 6;
+lineWidthTowers = 1;
+
 % We will use the first color for clearance and the last color for
 % blockage.
 COLORMAP_TO_USE = 'jet';
 % The location of the legend.
 LEGEND_LOC = 'NorthEast';
+
+if ~exist('customFigSize', 'var')
+    customFigSize = [500, 500].*0.7;
+end
 
 % By default, show the plot.
 if ~exist('flagVisible', 'var')
@@ -55,7 +71,10 @@ end
 
 colorRange = [0,1];
 
-hCurBlockageMap = figure('visible', flagVisible);
+hCurBlockageMap = figure('visible', flagVisible, ...
+    'Position', [0,0,customFigSize]);
+hCurBlockageMap.InvertHardcopy = 'off';
+hCurBlockageMap.Color = 'none';
 hold on;
 
 % Area of interest.
@@ -66,19 +85,32 @@ plot(polyshape(areaOfInterestLons, areaOfInterestLats), ...
     'FaceColor', 'white');
 
 if flagZoomIn
-    axis tight;
-    zoomInAxisToSet = axis;
-    axis auto;
+    extensionFactor = 0.05;
+else
+    % Extend the content by a constant factor in the UTM system.
+    extensionFactor = 0.2;
+    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'ExtendedTipp')
+        extensionFactor = 0.25;
+    end
 end
+
+[axisLonLatToSet, weightForWidth] ...
+    = extendLonLatAxisByFactor( ...
+    [min(areaOfInterestLons), max(areaOfInterestLons), ...
+    min(areaOfInterestLats), max(areaOfInterestLats)], ...
+    extensionFactor, simConfigs);
 
 % TX.
 hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
     ones(length(cellAntLonLats(:,1)), 1), ...
-    'xr', 'LineWidth', 1.5);
+    markerTowers, ...
+    'MarkerSize', markerSizeTowers, ...
+    'Color', colorTowers, ...
+    'LineWidth', lineWidthTowers);
 
 % Plot simulation results.
-xLabelToSet = 'Longitude (degrees)';
-yLabelToSet = 'Latitude (degrees)';
+xLabelToSet = 'Longitude';
+yLabelToSet = 'Latitude';
 
 set(gca, 'fontWeight', 'bold');
 
@@ -124,15 +156,18 @@ hRxs = surf(lonsNew,latsNew,zsNew, ...
 curColormap = colormap(COLORMAP_TO_USE);
 hClear = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(1, :));
 hBlocked = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(end, :));
-caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
+caxis(colorRange);
+xticks([]); yticks([]);
+xlabel(xLabelToSet); ylabel(yLabelToSet);
 
-legend([hCurHandleTxs, hClear, hBlocked], ...
+hLeg = legend([hCurHandleTxs, hClear, hBlocked], ...
     'Cell towers', 'Clear', 'Blocked', ...
     'Location', LEGEND_LOC); view(2);
+set(hLeg, 'color', legendBackgroundColor);
+set(hCurBlockageMap, 'Color', 'w');
 
-if flagZoomIn
-    axis(zoomInAxisToSet);
-end
+adjustFigSizeByContent(hCurBlockageMap, ...
+    axisLonLatToSet, 'height', weightForWidth*0.9);
 
 plot_google_map('MapType', 'satellite');
 

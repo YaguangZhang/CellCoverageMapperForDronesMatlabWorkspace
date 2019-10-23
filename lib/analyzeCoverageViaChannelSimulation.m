@@ -52,6 +52,9 @@ function [ simState, simConfigs ] ...
 %         The guaranteed minimum number of LiDAR z (or possibly elevation)
 %         elements in one terrain profile; this will ensure non-empty
 %         terrain profiles.
+%       - deg2utm_speZone, utm2deg_speZone
+%         The functions to convert GPS (lat, lon) to (and back from) UTM
+%         (x, y) for the LiDAR data area.
 %
 % Output:
 %   - simState
@@ -170,6 +173,7 @@ markerSizeEffectiveTowers = 12;
 colorIneffectiveTowers = 'r';
 markerIneffectiveTowers = 'x';
 lineWidthIneffectiveTowers = 1.5;
+customFigSize = [500, 500];
 
 %% Create the Map Grid
 
@@ -206,19 +210,49 @@ simState.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
 simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
 
 % Plot.
-hFigAreaOfInterest = figure; hold on; set(gca, 'fontWeight', 'bold');
+hFigAreaOfInterest = figure('Position', [0,0,customFigSize.*0.6]);
+hCurAxis = gca;
+hold on; set(hCurAxis, 'fontWeight', 'bold');
 hAreaOfInterest = plot( ...
     polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
     'FaceColor', areaOfInterestColor);
 hGridPts = plot(simState.mapGridXYPts(:,1), ...
-    simState.mapGridXYPts(:,2), '.b', 'MarkerSize', 3, 'Color', darkBlue);
-axis equal; view(2); grid on; grid minor;
-legend([hAreaOfInterest, hGridPts], ...
-    'Area of interest', 'UAV location grid points');
-xlabel('UTM x (m)'); ylabel('UTM y (m)')
+    simState.mapGridXYPts(:,2), '.', 'MarkerSize', 2.5, 'Color', darkBlue);
+adjustFigSizeByContent(hFigAreaOfInterest, [], 'height', 0.9);
+axis equal; view(2); %grid on; grid minor;
+hLeg = legend([hAreaOfInterest, hGridPts], ...
+    'Area of interest', 'UAV location grid');
+xlabel('UTM x (m)'); ylabel('UTM y (m)');
+% Adjust legend the exponent label for y axis.
+switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+    case 'tipp'
+        annotation(hFigAreaOfInterest, 'textbox',...
+            [0.1409 0.8502 0.1785 0.0945],...
+            'String', ['\times10^', num2str(hCurAxis.YAxis.Exponent)],...
+            'FontWeight', hCurAxis.YAxis.FontWeight,...
+            'FontSize', hCurAxis.YAxis.FontSize,...
+            'EdgeColor', 'none');
+        yticks(yticks);
+        yticklabels(yticklabels);
+    case 'extendedtipp'
+        set(hLeg, 'Location', 'northwest');
+        transparentizeCurLegends;
+        
+        annotation(hFigAreaOfInterest, 'textbox',...
+            [0.1609 0.8369 0.1785 0.0945],...
+            'String', ['\times10^', num2str(hCurAxis.YAxis.Exponent)],...
+            'FontWeight', hCurAxis.YAxis.FontWeight,...
+            'FontSize', hCurAxis.YAxis.FontSize,...
+            'EdgeColor', 'none');
+        yticks(yticks);
+        yticklabels(yticklabels);
+end
 
-curDirToSave = fullfile(pathToSaveResults, 'Overview_RxLocGrid.png');
-saveas(hFigAreaOfInterest, curDirToSave);
+% tightfig(hFigAreaOfInterest);
+curDirToSave = fullfile(pathToSaveResults, 'Overview_RxLocGrid');
+saveEpsFigForPaper(hFigAreaOfInterest, curDirToSave);
+% saveas(hFigAreaOfInterest,  [curDirToSave, '.eps'], 'epsc');
+%  saveas(hFigAreaOfInterest,  [curDirToSave, '.png']);
 
 %% Load Antenna Info
 
@@ -261,13 +295,13 @@ axisXYToSet = [min(utmXYBoundaryToKeepCellTowers(:,1)), ...
     max(utmXYBoundaryToKeepCellTowers(:,1)), ...
     min(utmXYBoundaryToKeepCellTowers(:,2)), ...
     max(utmXYBoundaryToKeepCellTowers(:,2))];
-axisXYToSet = exendAxisByFactor(axisXYToSet, 0.2);
+axisXYToSet = extendAxisByFactor(axisXYToSet, 0.2);
 hIneffeCells = plot(inEffeCellAntsXYH(:,1), ...
     inEffeCellAntsXYH(:,2), markerIneffectiveTowers, ...
     'Color', colorIneffectiveTowers, ...
     'LineWidth', lineWidthIneffectiveTowers);
 uistack(hIneffeCells, 'bottom'); uistack(hEffeCells, 'top');
-adjustFigSizeByContent(hFigCellOverview, axisXYToSet);
+adjustFigSizeByContent(hFigCellOverview, axisXYToSet, 'height');
 xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
 legend([hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
     'Area of interest', 'Extended area', 'Cell towers to consider', ...
@@ -292,13 +326,8 @@ saveas(hFigCellOverview, curDirToSave);
     = simConfigs.utm2deg_speZone(inEffeCellAntsXYH(:,1), ...
     inEffeCellAntsXYH(:,2));
 
-[axisLatMin, axisLonMin] = simConfigs.utm2deg_speZone( ...
-    axisXYToSet(1), axisXYToSet(3));
-[axisLatMax, axisLonMax] = simConfigs.utm2deg_speZone( ...
-    axisXYToSet(2), axisXYToSet(4));
-axisLonLatToSet = [axisLonMin axisLonMax axisLatMin axisLatMax];
-
-hFigCellOverview = figure; hold on; set(gca, 'fontWeight', 'bold');
+hFigCellOverview = figure('Position', [0,0,customFigSize.*0.8]);
+hold on; set(gca, 'fontWeight', 'bold');
 hIneffeCells = plot(inEffeCellAntsLons, ...
     inEffeCellAntsLats, markerIneffectiveTowers, ...
     'Color', colorIneffectiveTowers, ...
@@ -314,16 +343,33 @@ hEffeCells = plot(effeCellAntsLons, effeCellAntsLats, ...
     markerEffectiveTowers, ...
     'MarkerSize', markerSizeEffectiveTowers, ...
     'Color', colorEffectiveTowers);
-adjustFigSizeByContent(hFigCellOverview, axisXYToSet);
-view(2); axis(axisLonLatToSet);
-plot_google_map;
+% Extend the content by a constant factor in the UTM system.
+extensionFactor = 0.2;
+if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'ExtendedTipp')
+    extensionFactor = 0.25;
+end
+[axisLonLatToSet, weightForWidth] ...
+    = extendLonLatAxisByFactor( ...
+    [min(gpsLonsBoundaryToKeepCellTowers), ...
+    max(gpsLonsBoundaryToKeepCellTowers), ...
+    min(gpsLatsBoundaryToKeepCellTowers), ...
+    max(gpsLatsBoundaryToKeepCellTowers)], extensionFactor, simConfigs);
+adjustFigSizeByContent(hFigCellOverview, axisLonLatToSet, ...
+    'height', weightForWidth.*0.9);
+view(2); plot_google_map;
 grid on; grid minor;
-xlabel('Longitude'); ylabel('Latitude');
-xticks([]); yticks([]); box on; makescale('sw', 'units', 'si');
-legend([hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
+xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
+box on; makescale('sw', 'units', 'si');
+hLeg = legend( ...
+    [hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
     'Area of interest', 'Extended area', 'Cell towers to consider', ...
     'Ineffective cell towers', 'defaultLegendAutoUpdate','off');
-
+if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'ExtendedTipp')
+    % Manually adjust the figure for publication.
+    set(hLeg, 'Position', [0.4043, 0.7667, 0.5091, 0.1680]);
+    axis([-88.1448722958386, -85.5528198028410, ...
+        39.3771676547221, 41.7336964261903]);
+end
 curDirToSave = fullfile(pathToSaveResults, ...
     'Overview_CellularTowersToConsider_RoadMap');
 saveEpsFigForPaper(hFigCellOverview, curDirToSave);
@@ -407,8 +453,8 @@ else
         
         % We will use multiple works to churn through the drone locations.
         % To avoid repeative environment set up and data transfer, here we
-        % pre-assign the pixels to be processed by each worker. Pre-assign
-        % pixels to workers to avoid unnecessary data copying.
+        % pre-assign the pixels to be processed by each worker to avoid
+        % unnecessary data copying during worker initialization.
         locIndicesForAllWorkers ...
             = preassignTaskIndicesToWorkers( ...
             length(curIndicesRxLocsToConsider));

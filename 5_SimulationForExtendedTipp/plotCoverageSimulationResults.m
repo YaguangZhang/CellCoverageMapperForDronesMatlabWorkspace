@@ -178,11 +178,13 @@ pathToSaveFig = fullfile(pathToSaveResults, ...
 saveas(hCurPLMap,  pathToSaveFig);
 close(hCurPLMap);
 
+% Smaller maps for publication.
+customFigSize = [500, 500].*0.6;
 for idxH = 1:numOfRxHeightToInspect
     rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
     
+    % For blockage maps.
     curFlagZoomIn = true;
-    
     % Use plot3k to avoid fitting data for NaN spots.
     [ hCurPLMap ] ...
         = plotPathLossMap( ...
@@ -199,22 +201,56 @@ for idxH = 1:numOfRxHeightToInspect
         = plotBlockageMap( ...
         [mapGridLonLats, simState.blockageMaps{idxH}], ...
         effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-        curFlagZoomIn);
+        curFlagZoomIn, customFigSize);
+    hLeg = findobj(hCurBlMap, 'Type', 'Legend');
+    switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+        case 'extendedtipp'
+            set(hLeg, 'Position', [0.1369, 0.7687, 0.4374, 0.1538]);
+        case 'tipp'
+            set(hLeg, 'Position', [0.5201, 0.1132, 0.3836, 0.1538]);
+    end
+    % Further tighten the figure.
+    xlabel(''); ylabel('');
+    tightfig(hCurBlMap);
     
     pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageMap_RxHeight_', num2str(rxAntH), '.png']);
-    saveas(hCurBlMap,  pathToSaveFig);
+        ['BlockageMap_RxHeight_', ...
+        strrep(num2str(rxAntH), '.', '_')]);
+    saveas(hCurBlMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurBlMap, [pathToSaveFig, '.png']);
     close(hCurBlMap);
+    
+    % For coverage maps.
+    curFlagZoomIn = true;
     
     [ hCurPLMap ] ...
         = plotPathLossMap( ...
         [mapGridLonLats, simState.coverageMaps{idxH}], ...
         effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-        curFlagZoomIn, defaultCmdToPlotPLMaps);
+        curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
+    hCb = findobj(hCurPLMap, 'Type', 'Colorbar');
+    hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+    switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+        case 'extendedtipp'
+            set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
+        case 'tipp'
+            set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
+            set(hCb, 'Visible', 'off');
+    end
+    % Further tighten the figure.
+    xlabel(''); ylabel('');
+    tightfig(hCurPLMap);
+    % Move the colorbar title a bit to fully show the
+    hCbTitle = get(hCb, 'Title');
+    set(hCbTitle, 'Unit', 'pixel');
+    curCbTitlePos = hCbTitle.Position;
+    set(hCbTitle, 'Position', [5 curCbTitlePos(2)+3 curCbTitlePos(3)]);
     
     pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['PathLossMap_Coverage_RxHeight_', num2str(rxAntH), '.png']);
-    saveas(hCurPLMap,  pathToSaveFig);
+        ['PathLossMap_Coverage_RxHeight_', ...
+        strrep(num2str(rxAntH), '.', '_')]);
+    saveas(hCurPLMap,  [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurPLMap,  [pathToSaveFig, '.png']);
     close(hCurPLMap);
 end
 
@@ -293,7 +329,7 @@ mapType = 'Blockage';
     mapType, ~curFlagGenFigsSilently);
 pathToSaveFig = fullfile(pathToSaveResults, ...
     ['EmpiricalCdf_', mapType, '.png']);
-saveas(curEmpCdfFig,  pathToSaveFig);
+saveas(curEmpCdfFig, pathToSaveFig);
 if curFlagGenFigsSilently
     close(curEmpCdfFig);
 end
@@ -305,10 +341,21 @@ mapType = 'Coverage';
     = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
     mapType, ~curFlagGenFigsSilently);
 pathToSaveFig = fullfile(pathToSaveResults, ...
-    ['EmpiricalCdf_', mapType, '.png']);
-saveas(curEmpCdfFig,  pathToSaveFig);
+    ['EmpiricalCdf_', mapType]);
+saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
+% Coverage ratio gain.
+[ curCovRatioGainFig ] ...
+    = plotCoverageRatioGain(simState, simConfigs, ...
+    mapType, ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['EmpiricalCdf_', mapType, 'CovRatGain']);
+saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+
 if curFlagGenFigsSilently
     close(curEmpCdfFig);
+    close(curCovRatioGainFig);
 end
 
 disp('    Done!')
@@ -323,8 +370,8 @@ disp(['    Plotting coverage ratio vs drone height ', ...
     = plotCovRatioVsInspectedHeight(simState.blockageMaps, ...
     simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ~curFlagGenFigsSilently);
 pathToSaveFig = fullfile(pathToSaveResults, ...
-    'CoverageRatioVsDroneHeight_Blockage.png');
-saveas(curCovRatioVsHFig,  pathToSaveFig);
+    'CoverageRatioVsDroneHeight_Blockage');
+saveEpsFigForPaper(curCovRatioVsHFig,  pathToSaveFig);
 if curFlagGenFigsSilently
     close(curCovRatioVsHFig);
 end

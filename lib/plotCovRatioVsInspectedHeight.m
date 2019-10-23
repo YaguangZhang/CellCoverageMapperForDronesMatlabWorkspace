@@ -22,6 +22,9 @@ function [hFig, covRatios] = plotCovRatioVsInspectedHeight( ...
 %
 % Yaguang Zhang, Purdue, 10/17/2019
 
+% Set an appropriate figure size for publication.
+desiredFigSizeInPixel = [500, 180];
+
 if ~exist('flagVisible', 'var')
     flagVisible = true;
 end
@@ -32,9 +35,11 @@ if ~iscolumn(covRatios)
 end
 
 % Plot.
-hFig= figure('Visible', flagVisible); hold on;
-plot(heightsInM, covRatios, '*--', 'MarkerSize', 9, 'LineWidth', 1);
-xlabel('Height (m)'); ylabel('Coverage Ratio'); grid on; grid minor;
+hFig= figure('Visible', flagVisible, ...
+    'Position', [0, 0, desiredFigSizeInPixel]);
+hold on; set(gca, 'fontWeight', 'bold');
+plot(heightsInM, covRatios, '*--', 'MarkerSize', 6, 'LineWidth', 1);
+xlabel('Height (m)'); ylabel('LoS Coverage Ratio'); grid on; grid minor;
 
 end
 % EOF
