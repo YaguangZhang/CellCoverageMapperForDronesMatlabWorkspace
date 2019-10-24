@@ -37,11 +37,6 @@ function coveragePL = computeCoveragePL(txXYH, rxXYH, ...
 %         the signal. Limits: 0 < reliability < 1.
 %       - simConfigs.NTIA_EHATA_ENVIRO_CODE
 %   	  For the NTIA eHata library: the NLCD environment code.
-%       - simConfigs.LOS_FIRST_FRES_CLEAR_RATIO
-%         The clearance ratio of the first Fresnel zone for a LoS path: at
-%         least this ratio of the first Fresnel zone needs to be clear for
-%         a path to be considered as "line of sight" (LoS); we expect the
-%         value to be larger or equal to 50%.
 %       - simConfigs.CARRIER_WAVELENGTH_IN_M
 %         Carrier wavelength in meters.
 %   - lidarProfile
