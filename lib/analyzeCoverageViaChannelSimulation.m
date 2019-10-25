@@ -508,7 +508,16 @@ else
                 .*numOfRxHeightToInspect, 5);
         end
         
-        parfor idxWorker = 1:numOfWorkers
+        % Utilize parfor only when most of the workers will get something
+        % to process.
+        if (sum(cellfun(@(c) isempty(c), locIndicesForAllWorkers))...
+                /numOfWorkers)>=0.5
+            parforArg = 0;
+        else
+            parforArg = numOfWorkers;
+        end
+
+        parfor (idxWorker = 1:numOfWorkers, parforArg)
             % Load the NTIA eHata library first, if necessary, to avoid the
             % "unable to find ehata" error.
             if ~libisloaded('ehata')

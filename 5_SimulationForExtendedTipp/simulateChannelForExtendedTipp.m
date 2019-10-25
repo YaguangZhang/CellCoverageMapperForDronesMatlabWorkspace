@@ -25,7 +25,7 @@ prepareSimulationEnv;
 
 % Change PRESET to run the code for different areas.
 SUPPORTED_PRESETS = {'ACRE', 'Tipp', 'ExtendedTipp', 'IN'};
-PRESET = 'Tipp';
+PRESET = 'IN';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
