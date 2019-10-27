@@ -21,10 +21,15 @@ function [hCurPLMap, hCurHandleTxs] ...
 %         'ColorRange' is given as [max min] instead of [min max].
 %       - UTM_X_Y_BOUNDARY_OF_INTEREST
 %         The UTM (x, y) polygon boundary vertices representing the area of
-%         interest for generating the coverage maps; for presets
-%         ExtendedTipp and IN, this is default to the range covered by the
-%         availabe LiDAR data set for the corresponding area of interest
-%         when it is empty.
+%         interest for generating the coverage maps.
+%       - utm2deg_speZone
+%         Function to convert GPS degrees (lat, lon) from UTM (x, y).
+%       - CURRENT_SIMULATION_TAG
+%         A string label to identify this simulation.
+%       - NUM_OF_PIXELS_FOR_LONGER_SIDE
+%         The number of pixels for the longer side (width/height) of the
+%         map; the number of pixels for the other side will be proportional
+%         to its length.
 %   - flagVisible
 %     An optional boolean to control whether to show the plot or not.
 %   - flagZoomIn
@@ -210,7 +215,7 @@ if any(boolsPathLossesToShow)
             hRxs = surf( lonsNew,latsNew,zsNew, ...
                 'FaceAlpha',0.5, 'EdgeColor', 'none');
             caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
-            hCb = colorbar; % ylabel(hCb, cLabelToSet); 
+            hCb = colorbar; % ylabel(hCb, cLabelToSet);
             title(hCb, cLabelToSet);
             [c,h] = contour(lonsNew,latsNew,zsNew);
             clabel(c,h);
