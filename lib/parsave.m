@@ -16,7 +16,7 @@ for idxVar = 1:(nargin-1)
 end
 
 eval(['save(absPathToSave, "', ...
-    table2array(join(varLabels, '", "')), '");']);
+    convertStringsToChars(join(varLabels, '", "')), '");']);
 
 end
 % EOF
