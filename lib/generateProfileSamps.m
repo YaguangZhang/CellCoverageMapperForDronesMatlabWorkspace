@@ -64,7 +64,7 @@ for curIdxTile = unique(indicesClosestTile)'
         dispErr(err);
         disp(' ');
         disp('Trying to fix the file...');
-        validateLidarMatFile(lidarMatFileAbsDirs{curIdxTile});
+        validateLidarMatFile(lidarMatFileAbsDirs{curIdxTile}, simConfigs);
         load(lidarMatFileAbsDirs{curIdxTile});
         disp('succeeded!');
         disp(' ');
