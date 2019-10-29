@@ -56,7 +56,19 @@ function [ profileTerrain, profileLidar, eleForNanLocs ] ...
 %     1:numOfProfileSampLocs);
 
 for curIdxTile = unique(indicesClosestTile)'
-    load(lidarMatFileAbsDirs{curIdxTile});
+    try
+        load(lidarMatFileAbsDirs{curIdxTile});
+    catch err
+        disp(' ');
+        warning('Error loading .mat LiDAR file!');
+        dispErr(err);
+        disp(' ');
+        disp('Trying to fix the file...');
+        validateLidarMatFile(lidarMatFileAbsDirs{curIdxTile});
+        load(lidarMatFileAbsDirs{curIdxTile});
+        disp('succeeded!');
+        disp(' ');
+    end
     
     % Find the profile locations which has the closest data tile as the
     % current one ...
