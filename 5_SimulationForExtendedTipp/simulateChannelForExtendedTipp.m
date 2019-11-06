@@ -112,8 +112,10 @@ simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 50;
 %   profiles.
 simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 
-%   - Rx heights for the simulator to inspect.
-simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 30; 50; 70; 90; 100];
+%   - Rx heights for the simulator to inspect. Note that according to FAA,
+%   the maximum allowable altitude is 400 feet (~122m) above the ground.
+simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+    = [1.5; (10:10:120)'; 125];
 
 %   - The maximum radius that a cellular tower can cover; we will use this
 %   to find the cellular towers that are effective and limit the area to
