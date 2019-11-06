@@ -135,7 +135,7 @@ simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M = nan;
 %   One can choose 'HighestAntennas' to consider more towers which may be
 %   able to see the heightest receiver at some spot in the area of interest
 %   for accuracy, or 'LowestAntennas' to speed up the simulation.
-simConfigs.MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY = 'HighestAntennas';
+% simConfigs.MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY = 'HighestAntennas';
 
 %   - The function to calculate, according to the TX and RX heights, the
 %   maximum cellular tower coverage radius. For example, it can be set to
