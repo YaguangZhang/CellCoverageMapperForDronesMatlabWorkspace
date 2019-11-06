@@ -517,7 +517,13 @@ else
         else
             parforArg = numOfWorkers;
         end
-
+        
+        % To make sure the overhead time is recorded by the first pixel
+        % processed by the work.
+        curOverheadTimeInSecStart = tic;
+        % For recording and estimating processing time.
+        curExecTimeInSecStarts ...
+            = num2cell(ones(parforArg,1).*curOverheadTimeInSecStart);
         parfor (idxWorker = 1:numOfWorkers, parforArg)
             % Load the NTIA eHata library first, if necessary, to avoid the
             % "unable to find ehata" error.
@@ -527,9 +533,6 @@ else
             
             % Load our Python module.
             py_addpath(fullfile(pwd, 'lib', 'python'));
-            
-            % For recording and estimating processing time.
-            curExecTimeInSecStart = tic;
             
             curWorkerPixCnt = 0;
             curWorkerNumPixs = length(locIndicesForAllWorkers{idxWorker});
@@ -607,7 +610,7 @@ else
                         curLidarProfile, curTerrainProfile, ...
                         curCellXYH, [curDroneXY, curDroneH], ...
                         simConfigs);
-                    curExecTime = toc(curExecTimeInSecStart);
+                    curExecTime = toc(curExecTimeInSecStarts{idxWorker});
                     
                     curWorkerPixCnt = curWorkerPixCnt+1;
                     
@@ -619,7 +622,7 @@ else
                         idxDroneLoc, idxDroneHeightInM];
                     
                     % Reset timer.
-                    curExecTimeInSecStart = tic;
+                    curExecTimeInSecStarts{idxWorker} = tic;
                 end
             end
             
