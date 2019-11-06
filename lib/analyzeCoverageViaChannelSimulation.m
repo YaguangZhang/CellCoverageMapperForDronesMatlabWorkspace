@@ -523,7 +523,7 @@ else
         curOverheadTimeInSecStart = tic;
         % For recording and estimating processing time.
         curExecTimeInSecStarts ...
-            = num2cell(ones(parforArg,1).*curOverheadTimeInSecStart);
+            = num2cell(repmat(curOverheadTimeInSecStart, parforArg, 1));
         parfor (idxWorker = 1:numOfWorkers, parforArg)
             % Load the NTIA eHata library first, if necessary, to avoid the
             % "unable to find ehata" error.
