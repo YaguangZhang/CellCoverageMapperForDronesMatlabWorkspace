@@ -152,10 +152,11 @@ if ~(simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M>0)
             error('');
     end
     
-    % Set it to be the distance that one can see at the top of the
-    % highest/lowest cell tower to the highest/lowest RX above the horizon
-    % (i.e. without blockage of the earth): D_BL_IN_KM ~=
-    % 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
+    % The maximum range for a tower. For example, it can be the distance
+    % that one can see at the top of the highest/lowest cell tower to the
+    % highest/lowest RX above the horizon (i.e. without blockage of the
+    % earth):
+    %       D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
     simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M ...
         = simConfigs.getCellCoverageRadiusInM( ...
         fctMaxCellCoverageRadiusGenStrategy(cellAntsXYH(:,3)), ...

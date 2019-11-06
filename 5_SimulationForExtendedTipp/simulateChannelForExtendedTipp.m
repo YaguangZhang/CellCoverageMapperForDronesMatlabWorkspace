@@ -118,11 +118,9 @@ simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = [1.5; 10; 30; 50; 70; 90; 100];
 %   - The maximum radius that a cellular tower can cover; we will use this
 %   to find the cellular towers that are effective and limit the area to
 %   consider for each effective cellular tower during the simulation; by
-%   default (when it is not a positive scalar) it will be set to be the
-%   distance that one can see at the top of the highest/lowest cell tower
-%   to the highest/lowest RX above the horizon (i.e. without blockage of
-%   the earth): D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)). Please
-%   see the field 'MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY' for more
+%   default (when it is not a positive scalar) 
+%   
+%   Please see the field 'MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY' for more
 %   information.
 simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M = nan;
 
@@ -135,13 +133,29 @@ simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M = nan;
 %   One can choose 'HighestAntennas' to consider more towers which may be
 %   able to see the heightest receiver at some spot in the area of interest
 %   for accuracy, or 'LowestAntennas' to speed up the simulation.
-% simConfigs.MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY = 'HighestAntennas';
+simConfigs.MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY = 'HighestAntennas';
 
 %   - The function to calculate, according to the TX and RX heights, the
-%   distance that one can see the RX from the TX above the horizon:
-%   D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
+%   maximum cellular tower coverage radius. For example, it can be set to
+%   be the distance that one can see at the top of the highest/lowest cell
+%   tower to the highest/lowest RX above the horizon (i.e. without blockage
+%   of the earth): 
+%
+%       D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
+%
+%   Here, we use the radio horizontal instead (3.57 => 4.12). References:
+%
+%       Haslett, Christopher. Essentials of Radio Wave Propagation,
+%       Cambridge University Press, 2007. ProQuest Ebook Central,
+%       https://ebookcentral.proquest.com/lib/purdue/detail.action?docID=803105.
+%
+%       WikiPedia articles:       
+%               https://en.wikipedia.org/wiki/Horizon,
+%           and
+%               https://en.wikipedia.org/wiki/Line-of-sight_propagation.
+%
 simConfigs.getCellCoverageRadiusInM = @(TxHeightInM, RxHeightInM) ...
-    3.57*(sqrt(TxHeightInM)+sqrt(RxHeightInM))*1000;
+    4.12*(sqrt(TxHeightInM)+sqrt(RxHeightInM))*1000;
 
 %   - The clearance ratio of the first Fresnel zone for a LoS path: at
 %   least this ratio of the first Fresnel zone needs to be clear for a path

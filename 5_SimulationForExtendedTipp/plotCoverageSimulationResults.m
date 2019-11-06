@@ -240,7 +240,7 @@ for idxH = 1:numOfRxHeightToInspect
     % Further tighten the figure.
     xlabel(''); ylabel('');
     tightfig(hCurPLMap);
-    % Move the colorbar title a bit to fully show the
+    % Move the colorbar title a bit to fully show it.
     hCbTitle = get(hCb, 'Title');
     set(hCbTitle, 'Unit', 'pixel');
     curCbTitlePos = hCbTitle.Position;
