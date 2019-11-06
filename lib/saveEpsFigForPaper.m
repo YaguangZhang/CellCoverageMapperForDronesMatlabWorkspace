@@ -3,8 +3,8 @@ function [ ] = saveEpsFigForPaper(hFig, fullPathToSaveFig)
 %fullPathToSaveFig.
 %
 % Note: In order to use export_fig, one needs to install ghostscript at
-%       http://www.ghostscript.com 
-% and manually locate pdftops (if asked) at 
+%       http://www.ghostscript.com
+% and manually locate pdftops (if asked) at
 %       NistMeasurementCampaignCode/lib/ext/xpdf-tools-win-4.00
 %
 % Yaguang Zhang, Purdue, 07/16/2018
@@ -29,13 +29,22 @@ curFigureColor = get(gcf,'Color');
 set(gcf, 'Color', 'white');
 
 % Fix ticks.
-curXTicks = xticks; 
-curYTicks = yticks; 
-xticks('manual'); xticks(curXTicks); 
-yticks('manual'); yticks(curYTicks); 
+curXTicks = xticks;
+curYTicks = yticks;
+xticks('manual'); xticks(curXTicks);
+yticks('manual'); yticks(curYTicks);
 
-export_fig(epsFullPathToSave, '-eps'); 
-export_fig(pngFullPathToSave, '-png', '-transparent');
+try
+    export_fig(epsFullPathToSave, '-eps');
+catch
+    saveas(hFig, epsFullPathToSave, 'epsc');
+end
+
+try
+    export_fig(pngFullPathToSave, '-png', '-transparent');
+catch
+    saveas(hFig, pngFullPathToSave);
+end
 
 set(gcf, 'Color', curFigureColor);
 set(0, 'currentfigure', curFigure);
