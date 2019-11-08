@@ -23,7 +23,13 @@ function [hFig, covRatios] = plotCovRatioVsInspectedHeight( ...
 % Yaguang Zhang, Purdue, 10/17/2019
 
 % Set an appropriate figure size for publication.
-desiredFigSizeInPixel = [500, 180];
+flagResizeFigForPublication = evalin('base', 'RESIZE_FIG_FOR_PUBLICATION');
+if flagResizeFigForPublication
+    desiredFigSizeInPixel = [500, 180];
+else
+    defaultFigPos =get(0,'defaultfigureposition');
+    desiredFigSizeInPixel = defaultFigPos(3:4);
+end
 
 if ~exist('flagVisible', 'var')
     flagVisible = true;

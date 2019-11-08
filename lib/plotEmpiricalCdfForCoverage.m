@@ -45,7 +45,13 @@ function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
 % Yaguang Zhang, Purdue, 10/05/2019
 
 % Set an appropriate figure size for publication.
-desiredFigSizeInPixel = [500, 300];
+flagResizeFigForPublication = evalin('base', 'RESIZE_FIG_FOR_PUBLICATION');
+if flagResizeFigForPublication
+    desiredFigSizeInPixel = [500, 300];
+else
+    defaultFigPos =get(0,'defaultfigureposition');
+    desiredFigSizeInPixel = defaultFigPos(3:4);
+end
 
 if ~exist('flagVisible', 'var')
     flagVisible = true;
@@ -81,7 +87,7 @@ for idxMap = 1:numMaps
         case 'coverage'
             boolsCovPs = (~isnan(curM)) ...
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
-    end    
+    end
     numsOfCovPixels(idxMap) = sum(boolsCovPs);
     
     curMNanToInf = curM; curMNanToInf(~boolsCovPs) = inf;
@@ -100,7 +106,7 @@ numOfMarkers = length(markers);
 infinitePathLossInDb = 1000;
 
 hFigCdf = figure('Visible', flagVisible, ...
-    'Position', [0, 0, desiredFigSizeInPixel]); 
+    'Position', [0, 0, desiredFigSizeInPixel]);
 hold on; set(gca, 'fontWeight', 'bold');
 xMax = -inf; xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
 for idxMap = 1:numMaps

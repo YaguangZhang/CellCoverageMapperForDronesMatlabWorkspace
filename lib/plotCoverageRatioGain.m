@@ -28,7 +28,13 @@ function [hFigCovRatGain] = plotCoverageRatioGain( ...
 % Yaguang Zhang, Purdue, 10/05/2019
 
 % Set an appropriate figure size for publication.
-desiredFigSizeInPixel = [500, 300];
+flagResizeFigForPublication = evalin('base', 'RESIZE_FIG_FOR_PUBLICATION');
+if flagResizeFigForPublication
+    desiredFigSizeInPixel = [500, 300];
+else
+    defaultFigPos =get(0,'defaultfigureposition');
+    desiredFigSizeInPixel = defaultFigPos(3:4);
+end
 
 % For plotting.
 markers = {'-', '-.', '--', ':'};
@@ -91,7 +97,7 @@ covRatios = cell(numMaps, 1);
 % plots.
 xMax = -inf; xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
 for idxMap = 1:numMaps
-    % Pre-compute the axis ranges.    
+    % Pre-compute the axis ranges.
     maxPtIdxToShow = find(~isfinite(cdfXs{idxMap}), 1)-1;
     if isempty(maxPtIdxToShow)
         maxPtIdxToShow = length(cdfXs{idxMap});
@@ -147,7 +153,7 @@ curYLimToSet = curAxisTight(3:4) ...
     + (curAxisAuto(3:4)-curAxisTight(3:4)).*0.5;
 axis([xMin xMax curYLimToSet]);
 grid on; grid minor; box on;
-xlabel('Maximum Allowed Path Loss (dB)'); 
+xlabel('Maximum Allowed Path Loss (dB)');
 ylabel('Coverage Ratio Gain (%)');
 hLeg = legend(hsCdf, ...
     arrayfun(@(n) ['UAV at ', num2str(n), ' m'], cdfMeta.rxHeightsInM, ...

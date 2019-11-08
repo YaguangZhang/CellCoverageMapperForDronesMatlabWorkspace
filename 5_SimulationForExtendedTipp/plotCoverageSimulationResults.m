@@ -180,7 +180,22 @@ saveas(hCurPLMap,  pathToSaveFig);
 close(hCurPLMap);
 
 % Smaller maps for publication.
-customFigSize = [500, 500].*0.6;
+if ~isfield(simState,'RESIZE_FIG_FOR_PUBLICATION')
+    % By default, we do not need to resize figures.
+    evalin('base', 'RESIZE_FIG_FOR_PUBLICATION = false');
+else
+    evalin('base', ...
+        'RESIZE_FIG_FOR_PUBLICATION=simState.RESIZE_FIG_FOR_PUBLICATION');
+end
+
+flagResizeFigForPublication = evalin('base', 'RESIZE_FIG_FOR_PUBLICATION');
+if flagResizeFigForPublication
+    customFigSize = [500, 500].*0.6;
+else
+    defaultFigPos =get(0,'defaultfigureposition');
+    customFigSize = defaultFigPos(3:4);
+end
+
 for idxH = 1:numOfRxHeightToInspect
     rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
     

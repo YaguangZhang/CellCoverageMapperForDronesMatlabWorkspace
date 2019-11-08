@@ -197,6 +197,10 @@ simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.2;
 %   we have a maximum path loss of ~142 dB.
 simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 
+%   - For figures, we need to decide whether to resize them for
+%   publication.
+simConfigs.RESIZE_FIG_FOR_PUBLICATION = true;
+
 %% Preprocessing LiDAR Data
 
 % Make sure the chosen LiDAR dataset to use in the simulation is indeed
