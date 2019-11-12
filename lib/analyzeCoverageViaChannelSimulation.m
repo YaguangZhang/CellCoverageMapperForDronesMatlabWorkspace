@@ -540,7 +540,6 @@ else
         curExecTimeInSecStart = curOverheadTimeInSecStart;
         
         % For recording and estimating processing time in parfor.
-        pathsToOverheadTimeInSecStarts = cell(parforArg, 1);
         pathToSaveOverheadTimeMats = fullfile(pathToSaveResults, ...
             'ProcessingTimeCacheRecords');
         if exist(pathToSaveOverheadTimeMats, 'dir')
@@ -548,6 +547,7 @@ else
         end
         mkdir(pathToSaveOverheadTimeMats);
         if parforArg ~= 0
+            pathsToOverheadTimeInSecStarts = cell(parforArg, 1);
             for curTaskId = 1:parforArg
                 curPathToOverheadTimeInSecStart ...
                     = fullfile(pathToSaveOverheadTimeMats, ...
@@ -558,23 +558,22 @@ else
                     = curPathToOverheadTimeInSecStart;
             end
         else
+            pathsToOverheadTimeInSecStarts = cell(1, 1);
             curPathToOverheadTimeInSecStart ...
                 = fullfile(pathToSaveOverheadTimeMats, ...
                 'Worker_0.mat');
             save(curPathToOverheadTimeInSecStart, ...
                 'curExecTimeInSecStart');
-            for curTaskId = 1:parforArg
-                pathsToOverheadTimeInSecStarts{curTaskId} ...
-                    = curPathToOverheadTimeInSecStart;
-            end
+            pathsToOverheadTimeInSecStarts{1} ...
+                = curPathToOverheadTimeInSecStart;
         end
         
         parfor (idxWorker = 1:numOfWorkers, parforArg)
             % Processing time considering the overhead.
-            try
+            if parforArg ~= 0
                 curTask = getCurrentTask();
                 curTaskId = curTask.ID;
-            catch
+            else
                 curTaskId = 1;
             end
             
