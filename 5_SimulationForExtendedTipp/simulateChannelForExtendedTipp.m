@@ -199,7 +199,7 @@ simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 
 %   - For figures, we need to decide whether to resize them for
 %   publication.
-simConfigs.RESIZE_FIG_FOR_PUBLICATION = true;
+simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 
 %% Preprocessing LiDAR Data
 

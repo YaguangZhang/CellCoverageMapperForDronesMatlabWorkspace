@@ -20,10 +20,19 @@ function [hFig, covRatios] = plotCovRatioVsInspectedHeight( ...
 %   - covRatios
 %     The coverage ratios for the input maps.
 %
+% Update 20191112: If flagResizeFigForPublication is set to true in the
+% base workspace, the figure will be resized for publication.
+%
 % Yaguang Zhang, Purdue, 10/17/2019
 
 % Set an appropriate figure size for publication.
-flagResizeFigForPublication = evalin('base', 'RESIZE_FIG_FOR_PUBLICATION');
+try
+    flagResizeFigForPublication = evalin('base', ...
+        'flagResizeFigForPublication');
+catch
+    flagResizeFigForPublication = false;
+end
+
 if flagResizeFigForPublication
     desiredFigSizeInPixel = [500, 180];
 else

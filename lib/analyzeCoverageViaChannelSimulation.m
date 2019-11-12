@@ -174,7 +174,13 @@ markerSizeEffectiveTowers = 12;
 colorIneffectiveTowers = 'r';
 markerIneffectiveTowers = 'x';
 lineWidthIneffectiveTowers = 1.5;
-customFigSize = [500, 500];
+
+if simConfigs.RESIZE_FIG_FOR_PUBLICATION
+    customFigSize = [500, 500];
+else
+    defaultFigPos = get(0,'defaultfigureposition');
+    customFigSize = defaultFigPos(3:4);
+end
 
 %% Create the Map Grid
 
@@ -211,7 +217,12 @@ simState.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
 simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
 
 % Plot.
-hFigAreaOfInterest = figure('Position', [0,0,customFigSize.*0.6]);
+if simConfigs.RESIZE_FIG_FOR_PUBLICATION
+    curCustomFigSize = customFigSize.*0.6;
+else
+    curCustomFigSize = customFigSize;
+end
+hFigAreaOfInterest = figure('Position', [0,0,curCustomFigSize]);
 hCurAxis = gca;
 hold on; set(hCurAxis, 'fontWeight', 'bold');
 hAreaOfInterest = plot( ...
@@ -327,7 +338,12 @@ saveas(hFigCellOverview, curDirToSave);
     = simConfigs.utm2deg_speZone(inEffeCellAntsXYH(:,1), ...
     inEffeCellAntsXYH(:,2));
 
-hFigCellOverview = figure('Position', [0,0,customFigSize.*0.8]);
+if simConfigs.RESIZE_FIG_FOR_PUBLICATION
+    curCustomFigSize = customFigSize.*0.8;
+else
+    curCustomFigSize = customFigSize;
+end
+hFigCellOverview = figure('Position', [0,0,curCustomFigSize]);
 hold on; set(gca, 'fontWeight', 'bold');
 hIneffeCells = plot(inEffeCellAntsLons, ...
     inEffeCellAntsLats, markerIneffectiveTowers, ...
@@ -521,10 +537,49 @@ else
         % To make sure the overhead time is recorded by the first pixel
         % processed by the work.
         curOverheadTimeInSecStart = tic;
-        % For recording and estimating processing time.
-        curExecTimeInSecStarts ...
-            = num2cell(repmat(curOverheadTimeInSecStart, parforArg, 1));
+        curExecTimeInSecStart = curOverheadTimeInSecStart;
+        
+        % For recording and estimating processing time in parfor.
+        pathsToOverheadTimeInSecStarts = cell(parforArg, 1);
+        pathToSaveOverheadTimeMats = fullfile(pathToSaveResults, ...
+            'ProcessingTimeCacheRecords');
+        if exist(pathToSaveOverheadTimeMats, 'dir')
+            rmdir(pathToSaveOverheadTimeMats, 's');
+        end
+        mkdir(pathToSaveOverheadTimeMats);
+        if parforArg ~= 0
+            for curTaskId = 1:parforArg
+                curPathToOverheadTimeInSecStart ...
+                    = fullfile(pathToSaveOverheadTimeMats, ...
+                    ['Worker_', num2str(curTaskId), '.mat']);
+                save(curPathToOverheadTimeInSecStart, ...
+                    'curExecTimeInSecStart');
+                pathsToOverheadTimeInSecStarts{curTaskId} ...
+                    = curPathToOverheadTimeInSecStart;
+            end
+        else
+            curPathToOverheadTimeInSecStart ...
+                = fullfile(pathToSaveOverheadTimeMats, ...
+                'Worker_0.mat');
+            save(curPathToOverheadTimeInSecStart, ...
+                'curExecTimeInSecStart');
+            for curTaskId = 1:parforArg
+                pathsToOverheadTimeInSecStarts{curTaskId} ...
+                    = curPathToOverheadTimeInSecStart;
+            end
+        end
+        
         parfor (idxWorker = 1:numOfWorkers, parforArg)
+            % Processing time considering the overhead.
+            curTask = getCurrentTask();
+            curTaskId = curTask.ID;
+            
+            curExecTimeInSecStartMatContent ...
+                = load(pathsToOverheadTimeInSecStarts{curTaskId});  ...
+                %#ok<PFBNS>
+            curExecTimeInSecStart = curExecTimeInSecStartMatContent ...
+                .curExecTimeInSecStart;
+            
             % Load the NTIA eHata library first, if necessary, to avoid the
             % "unable to find ehata" error.
             if ~libisloaded('ehata')
@@ -610,19 +665,23 @@ else
                         curLidarProfile, curTerrainProfile, ...
                         curCellXYH, [curDroneXY, curDroneH], ...
                         simConfigs);
-                    curExecTime = toc(curExecTimeInSecStarts{idxWorker});
                     
-                    curWorkerPixCnt = curWorkerPixCnt+1;
+                    curExecTime = toc(curExecTimeInSecStart);
                     
                     % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
                     % idxDroneHeightInM].
+                    curWorkerPixCnt = curWorkerPixCnt+1;
                     resultsFromWorkersCell{idxWorker} ...
                         (curWorkerPixCnt, :) ...
                         = [curBlockagePL, curCoveragePL, curExecTime, ...
                         idxDroneLoc, idxDroneHeightInM];
                     
                     % Reset timer.
-                    curExecTimeInSecStarts{idxWorker} = tic;
+                    curExecTimeInSecStart = tic;
+                    curPathToSaveOverheadTimeInSecStart ...
+                        = pathsToOverheadTimeInSecStarts{curTaskId};
+                    parsave(curPathToSaveOverheadTimeInSecStart, ...
+                        curExecTimeInSecStart);
                 end
             end
             

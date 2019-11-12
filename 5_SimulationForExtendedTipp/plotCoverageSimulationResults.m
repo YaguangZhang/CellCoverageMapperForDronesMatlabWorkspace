@@ -180,19 +180,20 @@ saveas(hCurPLMap,  pathToSaveFig);
 close(hCurPLMap);
 
 % Smaller maps for publication.
-if ~isfield(simState,'RESIZE_FIG_FOR_PUBLICATION')
+if ~isfield(simState,'flagResizeFigForPublication')
     % By default, we do not need to resize figures.
-    evalin('base', 'RESIZE_FIG_FOR_PUBLICATION = false');
+    evalin('base', 'flagResizeFigForPublication = false');
 else
     evalin('base', ...
-        'RESIZE_FIG_FOR_PUBLICATION=simState.RESIZE_FIG_FOR_PUBLICATION');
+        'flagResizeFigForPublication=simState.RESIZE_FIG_FOR_PUBLICATION');
 end
 
-flagResizeFigForPublication = evalin('base', 'RESIZE_FIG_FOR_PUBLICATION');
+flagResizeFigForPublication ...
+    = evalin('base', 'flagResizeFigForPublication');
 if flagResizeFigForPublication
     customFigSize = [500, 500].*0.6;
 else
-    defaultFigPos =get(0,'defaultfigureposition');
+    defaultFigPos = get(0, 'defaultfigureposition');
     customFigSize = defaultFigPos(3:4);
 end
 
