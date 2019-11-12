@@ -571,8 +571,12 @@ else
         
         parfor (idxWorker = 1:numOfWorkers, parforArg)
             % Processing time considering the overhead.
-            curTask = getCurrentTask();
-            curTaskId = curTask.ID;
+            try
+                curTask = getCurrentTask();
+                curTaskId = curTask.ID;
+            catch
+                curTaskId = 1;
+            end
             
             curExecTimeInSecStartMatContent ...
                 = load(pathsToOverheadTimeInSecStarts{curTaskId});  ...
