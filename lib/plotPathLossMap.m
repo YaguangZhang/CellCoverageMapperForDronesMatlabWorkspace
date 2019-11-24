@@ -230,7 +230,6 @@ set(hLeg, 'color', legendBackgroundColor);
 set(hCurPLMap, 'Color', 'w');
 
 view(2); xticks([]); yticks([]);
-xticks([]); yticks([]);
 
 adjustFigSizeByContent(hCurPLMap, axisToSet, ...
     'height', weightForWidth*1.05);
