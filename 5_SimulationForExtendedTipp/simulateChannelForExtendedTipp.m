@@ -24,8 +24,20 @@ curFileName = mfilename;
 prepareSimulationEnv;
 
 % Change PRESET to run the code for different areas.
-SUPPORTED_PRESETS = {'ACRE', 'Tipp', 'ExtendedTipp', 'IN'};
-PRESET = 'IN';
+%   - 'ACRE'
+%     Purdue ACRE research farm with manually labeled square
+%     boundary (larger than that for 'ACRE_EXACT').
+%   - 'ACRE_EXACT'
+%     Purdue ACRE research farm with the exact boundary imported from the
+%     offical kmz boundary file.
+%   - 'Tipp'
+%     Tippecanoe county.
+%   - 'ExtendedTipp'
+%     WHIN area.
+%   - 'IN'
+%     Indiana state.
+SUPPORTED_PRESETS = {'ACRE', 'ACRE_EXACT', 'Tipp', 'ExtendedTipp', 'IN'};
+PRESET = 'ACRE';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
@@ -57,6 +69,9 @@ switch PRESET
     case 'IN'
         pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'PostProcessingResults', '5_4_SimulationForIn');
+    case 'ACRE_EXACT'
+        pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'PostProcessingResults', '5_5_SimulationForAcreExact');
 end
 
 %% Simulation Configurations
@@ -85,6 +100,9 @@ switch PRESET
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
     case 'IN'
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
+    case 'ACRE_EXACT'
+        % TODO: Read in the ACRE boundary.
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
 end
 
 %   - Carrier frequency and wavelength.
@@ -98,14 +116,14 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 10000; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
 %   ingored.
-simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 50;
+simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 0.5; % 50;
 %   - Similarly, the guaranteed spacial resolution for LiDAR profiles.
-simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 50;
+simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 0.5; % 50;
 
 %   - The guaranteed minimum number of LiDAR z (or possibly elevation)
 %   elements in one terrain profile; this will ensure non-empty terrain
