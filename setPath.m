@@ -19,6 +19,9 @@ absHomePathWinArtsy = ['D:\One Drive - Purdue\OneDrive - purdue.edu', ...
 %  - Local copy on the computer cluster at Purdue:
 absHomePathLinuxCoverage = ['/home/coverage', ...
     '/CellCoverageMapper'];
+%  - Local copy on the computer cluster at Purdue:
+absHomePathLinuxCoverageOnFrankie = ['/home/coverage/nvme/', ...
+    '/CellCoverageMapper'];
 
 % The absolute path to Python 3. Please make sure it is correct for the
 % machine to run this script.
@@ -27,7 +30,9 @@ absPythonPathWinArtsy ...
     = ['C:\Users\Yaguang Zhang\AppData\Local\Programs', ...
     '\Python\Python37\python.exe'];
 %  - Local copy on the computer cluster at Purdue:
-absPythonPathLinuxCoverage = ['/usr/bin/python3.7'];
+absPythonPathLinuxCoverage = '/usr/bin/python3.7';
+%  - Local copy on the computer cluster at Purdue:
+absPythonPathLinuxCoverageOnFrankie = '/usr/bin/python3.7';
 
 unknownComputerErrorMsg = ...
     ['Compute not recognized... \n', ...
@@ -44,6 +49,10 @@ switch strtrim(curHostname)
         % The computer cluster at Purdue.
         ABS_PATH_TO_SHARED_FOLDER = absHomePathLinuxCoverage;
         ABS_PATH_TO_PYTHON = absPythonPathLinuxCoverage;
+    case 'ygzhang'
+        % The virtual machine coverage on Purdue GPU cluster Frankie.
+        ABS_PATH_TO_SHARED_FOLDER = absHomePathLinuxCoverageOnFrankie;
+        ABS_PATH_TO_PYTHON = absPythonPathLinuxCoverageOnFrankie;
     otherwise
         error(unknownComputerErrorId, unknownComputerErrorMsg);
 end
@@ -69,7 +78,7 @@ if ~strcmp(curPythonVersion(1:3), '3.7')
     error(['Loaded Python is not version 3.7.', ...
         ' Please restart Matlab and try again!']);
 end
-% Make sure our Python module is available. 
+% Make sure our Python module is available.
 try
     py_addpath(fullfile(pwd, 'lib', 'python'));
 catch err
@@ -79,7 +88,7 @@ catch err
     if isunix
         errorMsg = [errorMsg, ...
             'Please make sure both python3.7 and ', ...
-            'python3.7-dev are installed!']; 
+            'python3.7-dev are installed!'];
     end
     error(errorMsg);
 end
