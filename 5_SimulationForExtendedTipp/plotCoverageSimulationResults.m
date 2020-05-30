@@ -42,7 +42,7 @@ if totalNumOfFigs>numOfFigsToGenForSingleCellInspection %#ok<BDSCI>
         numOfFigsToGenForSingleCellInspection);
     indicesOfFigTasks = sort(indicesOfFigTasks);
 else
-    indicesOfFigTasks = 1:numOfFigsToGenForSingleCellInspection;
+    indicesOfFigTasks = 1:totalNumOfFigs;
 end
 
 [effeCellIndices, rxHeightIndices] ...
