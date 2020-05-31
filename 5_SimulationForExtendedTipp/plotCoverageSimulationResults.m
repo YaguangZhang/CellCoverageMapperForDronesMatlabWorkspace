@@ -235,6 +235,7 @@ for idxH = 1:numOfRxHeightToInspect
         strrep(num2str(rxAntH), '.', '_')]);
     saveas(hCurBlMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurBlMap, [pathToSaveFig, '.png']);
+    saveas(hCurBlMap, [pathToSaveFig, '.fig']);
     close(hCurBlMap);
     
     % For coverage maps.
@@ -268,6 +269,7 @@ for idxH = 1:numOfRxHeightToInspect
         strrep(num2str(rxAntH), '.', '_')]);
     saveas(hCurPLMap,  [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurPLMap,  [pathToSaveFig, '.png']);
+    saveas(hCurPLMap,  [pathToSaveFig, '.fig']);
     close(hCurPLMap);
 end
 
