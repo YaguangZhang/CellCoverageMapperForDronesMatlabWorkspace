@@ -139,7 +139,12 @@ for idxMap = 1:numMaps
         xMin = min(xMin, xs(curXMinIdx));
     end
 end
-axis tight; curAxis = axis; axis([xMin xMax curAxis(3:4)]);
+axis tight; curAxis = axis; axisToSet = [xMin xMax curAxis(3:4)];
+try
+    axis(axisToSet);
+catch
+    warning(['Unable to set axis to ', mat2str(axisToSet), '!'])
+end
 grid on; grid minor; box on;
 xlabel('Path Loss (dB)'); ylabel('Empirical CDF');
 legend(hsCdf, ...
