@@ -25,11 +25,22 @@ end
 
 locIndicesForAllWorkers = cell(numOfAvailableWorkers, 1);
 
-for idxLoc = 1:numOfTasks
-    idxWorkerToAssign = mod(idxLoc-1, numOfAvailableWorkers)+1;
-    locIndicesForAllWorkers{idxWorkerToAssign} = ...
-        [locIndicesForAllWorkers{idxWorkerToAssign}, idxLoc];
+% Pre-allocate the indices to workers. We will use a worker-based approach
+% to avoid frequently changing cell size.
+for idxWorker = 1:numOfAvailableWorkers
+    % Essentially, we need numbers within the range 1:numOfTasks that have
+    % a remainder of idxWorker after being divided by
+    % numOfAvailableWorkers.
+    locIndicesForAllWorkers{idxWorker} ...
+        = idxWorker:numOfAvailableWorkers:numOfTasks;
 end
+
+% % An index-based approach, which acheives the same goal but is slower.
+% for idxLoc = 1:numOfTasks
+%     idxWorkerToAssign = mod(idxLoc-1, numOfAvailableWorkers)+1;
+%     locIndicesForAllWorkers{idxWorkerToAssign} = ...
+%         [locIndicesForAllWorkers{idxWorkerToAssign}, idxLoc];
+% end
 
 end
 % EOF
