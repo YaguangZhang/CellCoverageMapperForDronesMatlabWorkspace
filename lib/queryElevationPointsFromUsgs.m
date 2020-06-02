@@ -1,5 +1,5 @@
 function [ eles ] = queryElevationPointsFromUsgs(lats, lons, language)
-%QUERYELEVATIONPOINTSFROMUSGS Querry elevation data for input locations vis
+%QUERYELEVATIONPOINTSFROMUSGS Querry elevation data for input locations via
 %the National Map - Elevation Point Query Service.
 %
 % More information can be found at https://nationalmap.gov/epqs/
