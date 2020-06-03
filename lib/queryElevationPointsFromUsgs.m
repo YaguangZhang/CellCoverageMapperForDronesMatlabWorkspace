@@ -106,7 +106,9 @@ switch lower(language)
                     catch
                         % Save the fetched JSON object to a file for
                         % debugging.
-                        parsave('./degbugFetchedPyJsons', fetchedPyJsons);
+                        fetchedPyJsonsChar = char(fetchedPyJsons);
+                        parsave('./degbugFetchedPyJsonsChar', ...
+                            fetchedPyJsonsChar);
                     end
                     eles(curIdxStart:curIdxEnd) = arrayfun(@(resp) resp ...
                         .USGS_Elevation_Point_Query_Service ...
