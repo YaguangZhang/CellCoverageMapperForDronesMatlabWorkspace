@@ -14,6 +14,7 @@ function [ utmPolyMat, utmZone ] ...
 assert(strcmp(utmZone, secUtmZone), ...
     'GPS range points are not in the same UTM zone!');
 
+% Note that the output vertices are arragned in a clockwise order.
 utmPolyMat = [minX, minY; minX, maxY; maxX, maxY; maxX, minY; minX, minY];
 
 end

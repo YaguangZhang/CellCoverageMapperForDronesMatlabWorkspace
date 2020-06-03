@@ -55,5 +55,10 @@ end
 
 utmXyBoundary = utmXyBoundary.Vertices;
 
+% Make sure the output vertices are clockwise and the polygon is closed.
+assert(ispolycw(utmXyBoundary(:,1),utmXyBoundary(:,2)), ...
+    'The output vertices are not clockwise!')
+utmXyBoundary(end+1, :) = utmXyBoundary(1, :);
+
 end
 % EOF
