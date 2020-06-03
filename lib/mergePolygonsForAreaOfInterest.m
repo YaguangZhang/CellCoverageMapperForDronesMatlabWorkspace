@@ -7,7 +7,7 @@ function [mergedPolygon] ...
 %   - polygons
 %     A cell with all the 2D polygons to be considered.
 %   - shrinkFactor
-%     Optimal. Shrink factor, specified as a scalar in the range of [0,1].
+%     Optional. Shrink factor, specified as a scalar in the range of [0,1].
 %     0 corresponds to the convex hull of the points. 1 corresponds to the
 %     tightest single-region boundary around the points. Default to 0.5.
 %

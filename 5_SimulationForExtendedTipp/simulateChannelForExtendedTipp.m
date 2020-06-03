@@ -37,7 +37,7 @@ prepareSimulationEnv;
 %   - 'IN'
 %     Indiana state.
 SUPPORTED_PRESETS = {'ACRE', 'ACRE_EXACT', 'Tipp', 'ExtendedTipp', 'IN'};
-PRESET = 'ACRE';
+PRESET = 'ACRE_EXACT';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
@@ -101,8 +101,12 @@ switch PRESET
     case 'IN'
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
     case 'ACRE_EXACT'
-        % TODO: Read in the ACRE boundary.
-        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
+        % Read in the ACRE boundary.
+        ABS_DIR_TO_ACRE_EXACT_BOUNDARY ...
+            = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz');
+        [simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST, ~] ...
+            = extractBoundaryFromKmzFile(ABS_DIR_TO_ACRE_EXACT_BOUNDARY);
 end
 
 %   - Carrier frequency and wavelength.
@@ -116,7 +120,7 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 10000; % 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 150; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
@@ -163,7 +167,7 @@ simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M = nan;
 %
 %       D_BL_IN_KM ~= 3.57(sqrt(h_TX_IN_M)+sqrt(h_RX_IN_M)).
 %
-%   Here, we use the radio horizontal instead (3.57 => 4.12). References:
+%   Here, we use the radio horizon instead (3.57 => 4.12). References:
 %
 %       Haslett, Christopher. Essentials of Radio Wave Propagation,
 %       Cambridge University Press, 2007. ProQuest Ebook Central,
