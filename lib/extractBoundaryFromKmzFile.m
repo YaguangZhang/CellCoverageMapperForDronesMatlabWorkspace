@@ -6,7 +6,7 @@ function [ utmXyBoundary, utmZone ] ...
 % Input:
 %   - dirToKmzFile
 %     The absolute path to the .kmz file. Note that we only support
-%     polygons without holes. 
+%     polygons without holes.
 %
 % Outputs:
 %   - utmXyBoundary
@@ -30,7 +30,7 @@ for idxPolygon = 1:numOfPolygons
     % Remove the trailing NaN.
     curLats = curLats(1:(end-1));
     
-    if length(curLats)>0
+    if ~isempty(curLats)
         curLons = curPolygonStruct.Lon(:);
         curLons = curLons(1:(end-1));
         

@@ -120,14 +120,14 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 150; % 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 500; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
 %   ingored.
-simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 0.5; % 50;
+simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 1; % 50;
 %   - Similarly, the guaranteed spacial resolution for LiDAR profiles.
-simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 0.5; % 50;
+simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 1; % 50;
 
 %   - The guaranteed minimum number of LiDAR z (or possibly elevation)
 %   elements in one terrain profile; this will ensure non-empty terrain
