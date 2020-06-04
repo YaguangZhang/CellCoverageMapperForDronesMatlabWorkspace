@@ -95,12 +95,22 @@ for curIdxTile = unique(indicesClosestTile)'
     % Find the profile locations which has the closest data tile as the
     % current one and are close enough to the current data tile by
     % extending the current tile boundary.
-    xYBoundryPolygonExt = extendPoly( ...
-        [xYBoundryPolygon.Vertices; xYBoundryPolygon.Vertices(1,:)], ...
-        sqrt(2)/2*lidarRasterResolutionInM, pi/50);
-    assert(length(xYBoundryPolygonExt)==1, ...
-        'The extended data tile should have only one region!');
-    xYBoundryPolygonExt = polyshape(xYBoundryPolygonExt{1});
+    if length(xYBoundryPolygon.Vertices(:,1))==4
+        % Most of the time, the boundary for the tile should have exactly 4
+        % vertices. In this case, we will treat it as a rectangle and
+        % simply shift its vertices.
+        xYBoundryPolygonExt = extendRectPolyShape(...
+            xYBoundryPolygon, lidarRasterResolutionInM);
+    else
+        % Otherwise, we will extend the boundary more precisely (which is
+        % way slower).
+        xYBoundryPolygonExt = extendPoly( ...
+            [xYBoundryPolygon.Vertices; xYBoundryPolygon.Vertices(1,:)], ...
+            sqrt(2)/2*lidarRasterResolutionInM, pi/50);
+        assert(length(xYBoundryPolygonExt)==1, ...
+            'The extended data tile should have only one region!');
+        xYBoundryPolygonExt = polyshape(xYBoundryPolygonExt{1});
+    end
     
     % We only need to consider points not in the current tile.
     boolsCandidateProfileSampsNearCurTile = ...

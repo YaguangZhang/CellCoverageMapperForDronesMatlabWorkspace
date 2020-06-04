@@ -107,6 +107,9 @@ switch lower(language)
                         % Save the fetched JSON object to a file for
                         % debugging.
                         fetchedPyJsonsChar = char(fetchedPyJsons);
+                        warning( ...
+                            ['Unable to process fetchedPyJsons: ', ...
+                            fetchedPyJsonsChar]);
                         parsave('./degbugFetchedPyJsonsChar', ...
                             fetchedPyJsonsChar);
                         throw(err);
