@@ -18,7 +18,7 @@ function [ utmXyBoundary, utmZone ] ...
 utmXyBoundary = polyshape();
 utmZone = '';
 
-kmzStruct = kmz2struct(dirToKmzFile);
+kmzStruct = kmz2structCxPlatform(dirToKmzFile);
 polyonsLonLatStruct = kmzStruct(strcmp({kmzStruct.Geometry}, 'Polygon'));
 
 numOfPolygons = length(polyonsLonLatStruct);
