@@ -75,7 +75,7 @@ switch lower(language)
                     dispErr(err);
                     if ctnTrials == maxNumOfTrials
                         save('errorWorkspaceInQuerryEle.mat');
-                        error('Run out of allowed number of trials!');                        
+                        error('Run out of allowed number of trials!');
                     end
                 end
             end
@@ -99,10 +99,16 @@ switch lower(language)
                     fetchedPyJsons = py.ConcurrentWebreader ...
                         .concurrent_fetch_urls( ...
                         py.list(urls(curIdxStart:curIdxEnd)));
-                    try 
+                    fetchedJsonsCell = cell(fetchedPyJsons);
+                    
+                    boolsIsValidJson = cellfun( ...
+                        @(json) ~isa(json, 'py.NoneType'), ...
+                        fetchedJsonsCell);
+                    
+                    try
                         fetchedJsons = cellfun(@(jo) ...
                             jsondecode(native2unicode(jo)), ...
-                            cell(fetchedPyJsons));
+                            fetchedJsonsCell(boolsIsValidJson));
                     catch err
                         % Save the fetched JSON object to a file for
                         % debugging.
@@ -114,7 +120,10 @@ switch lower(language)
                             fetchedPyJsonsChar);
                         throw(err);
                     end
-                    eles(curIdxStart:curIdxEnd) = arrayfun(@(resp) resp ...
+                    
+                    indicesToUpdate = curIdxStart:curIdxEnd;
+                    indicesToUpdate = indicesToUpdate(boolsIsValidJson);
+                    eles(indicesToUpdate) = arrayfun(@(resp) resp ...
                         .USGS_Elevation_Point_Query_Service ...
                         .Elevation_Query.Elevation, fetchedJsons');
                 end
