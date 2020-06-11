@@ -37,7 +37,7 @@ prepareSimulationEnv;
 %   - 'IN'
 %     Indiana state.
 SUPPORTED_PRESETS = {'ACRE', 'ACRE_EXACT', 'Tipp', 'ExtendedTipp', 'IN'};
-PRESET = 'ACRE_EXACT';
+PRESET = 'Tipp';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
@@ -120,7 +120,7 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100; % 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 256; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
@@ -277,7 +277,7 @@ if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
     assert(any(strcmp({'ExtendedTipp', 'IN'}, PRESET)), ...
         ['No raw Indiana LiDAR data available for ', PRESET, ...
         ' to generate the area of interest polygon!'])
-    
+
     areaOfInterestLidarDataset = PRESET;
     % The only case when the LiDAR dataset folder is different from the
     % simulation tag is for the extended Tippecanoe area.
