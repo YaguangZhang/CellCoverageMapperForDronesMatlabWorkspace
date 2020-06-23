@@ -609,7 +609,10 @@ else
             curWorkerNumPixsToReportProgress = ceil(curWorkerNumPixs ...
                 .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT ...
                 ); %#ok<PFBNS>
-            for idxDroneLoc = locIndicesForAllWorkers{idxWorker}
+            curDroneLocIndices = locIndicesForAllWorkers{idxWorker};
+            % Make sure curDroneLocIndices is a row vector.
+            curDroneLocIndices = curDroneLocIndices(:)';
+            for idxDroneLoc = curDroneLocIndices
                 
                 % Report progress when necessary.
                 if mod(curWorkerPixCnt, ...
