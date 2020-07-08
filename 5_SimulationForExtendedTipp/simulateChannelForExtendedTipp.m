@@ -223,6 +223,9 @@ simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 %   publication.
 simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 
+% Turn the diary logging function on.
+diary(fullfile(pathToSaveResults, 'diary.txt'));
+
 %% Preprocessing LiDAR Data
 
 % Make sure the chosen LiDAR dataset to use in the simulation is indeed
