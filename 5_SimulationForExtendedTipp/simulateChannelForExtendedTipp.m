@@ -110,7 +110,7 @@ switch PRESET
 end
 
 %   - Carrier frequency and wavelength.
-simConfigs.CARRIER_FREQUENCY_IN_MHZ = 1900;
+simConfigs.CARRIER_FREQUENCY_IN_MHZ = 28000; % 1900;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
     = physconst('LightSpeed')/simConfigs.CARRIER_FREQUENCY_IN_MHZ/1e6;
 
@@ -120,7 +120,7 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 256; % 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100; % 256; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
@@ -224,7 +224,14 @@ simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 
 % Turn the diary logging function on.
-diary(fullfile(pathToSaveResults, 'diary.txt'));
+dirToSaveDiary = fullfile(pathToSaveResults, 'diary.txt');
+if ~exist(dirToSaveDiary, 'file')
+    if ~exist(pathToSaveResults, 'dir')
+        mkdir(pathToSaveResults)
+    end
+    fclose(fopen(dirToSaveDiary, 'w'));
+end
+diary(dirToSaveDiary);
 
 %% Preprocessing LiDAR Data
 
