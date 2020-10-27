@@ -52,12 +52,22 @@ function [terrainProfile, lidarProfile] ...
 % Suppress warning from generateProfileSamps.
 warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
 
+flagHistResAvailable = false;
+
 if exist(absPathToCacheMatFile, 'file')
-    cachedResults = load(absPathToCacheMatFile, ...
-        'terrainProfile', 'lidarProfile');
-    terrainProfile = cachedResults.terrainProfile;
-    lidarProfile = cachedResults.lidarProfile;
-else
+    try
+        cachedResults = load(absPathToCacheMatFile, ...
+            'terrainProfile', 'lidarProfile');
+        terrainProfile = cachedResults.terrainProfile;
+        lidarProfile = cachedResults.lidarProfile;
+        flagHistResAvailable = true;
+    catch
+        warning(['Unable to load history results from ', ...
+            absPathToCacheMatFile, '!']);
+    end    
+end
+
+if ~flagHistResAvailable
     % Sample locations along the cellular tower and the drone for creating
     % terrain and LiDAR profiles.
     if simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M ...
