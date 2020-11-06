@@ -25,8 +25,8 @@ prepareSimulationEnv;
 
 % Change PRESET to run the code for different areas.
 %   - 'ACRE'
-%     Purdue ACRE research farm with manually labeled square
-%     boundary (larger than that for 'ACRE_EXACT').
+%     Purdue ACRE research farm with manually labeled square boundary
+%     (larger than that for 'ACRE_EXACT').
 %   - 'ACRE_EXACT'
 %     Purdue ACRE research farm with the exact boundary imported from the
 %     offical kmz boundary file.
@@ -36,8 +36,12 @@ prepareSimulationEnv;
 %     WHIN area.
 %   - 'IN'
 %     Indiana state.
-SUPPORTED_PRESETS = {'ACRE', 'ACRE_EXACT', 'Tipp', 'ExtendedTipp', 'IN'};
-PRESET = 'Tipp';
+%   - 'Aerostat'
+%     Simulation for one areostat as the cell tower case.
+SUPPORTED_PRESETS = {'ACRE', 'ACRE_EXACT', ...
+    'Tipp', 'ExtendedTipp', 'IN', ...
+    'Aerostat'};
+PRESET = 'Aerostat';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
@@ -49,11 +53,17 @@ assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
 % and '' (automatically pick the biggest processed set).
 LIDAR_DATA_SET_TO_USE = '';
 
-% The absolute path to the antenna infomation file.
-ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
-% The cellular tower height value to use.
-DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
+switch PRESET
+    case 'Aerostat'
+        % The absolute path to the antenna infomation file.
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'CellTowerInfo', 'Aerostat', 'AerostatLatLonAlt.csv');
+    otherwise
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
+        % The cellular tower height value to use.
+        DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
+end
 
 % The absolute path to save results.
 switch PRESET
@@ -72,6 +82,9 @@ switch PRESET
     case 'ACRE_EXACT'
         pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'PostProcessingResults', '5_5_SimulationForAcreExact');
+    case 'Aerostat'
+        pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'PostProcessingResults', '5_6_SimulationForAerostat');
 end
 
 %% Simulation Configurations
@@ -107,10 +120,18 @@ switch PRESET
             'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz');
         [simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST, ~] ...
             = extractBoundaryFromKmzFile(ABS_DIR_TO_ACRE_EXACT_BOUNDARY);
+    case 'Aerostat'
+        % We will start with the IN boundary and intersect it with a square
+        % centered at the aerostat.
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = [];
+        squareOfInterestSideLengthInM = distdim(100, 'miles', 'm');
 end
 
-%   - Carrier frequency and wavelength.
-simConfigs.CARRIER_FREQUENCY_IN_MHZ = 28000; % 1900;
+%   - Carrier frequency and wavelength. Typical values:
+%       - 1900 MHz for cellular LTE
+%       - 28000 MHz (28 GHz) for millimeter wave
+%       - 3500 MHz (3.5 GHz) and 915 MHz for areostat applications
+simConfigs.CARRIER_FREQUENCY_IN_MHZ = 3500;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
     = physconst('LightSpeed')/simConfigs.CARRIER_FREQUENCY_IN_MHZ/1e6;
 
@@ -120,7 +141,7 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100; % 256; % 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 256; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
@@ -135,9 +156,14 @@ simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 1.5; % 50;
 simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 
 %   - Rx heights for the simulator to inspect. Note that according to FAA,
-%   the maximum allowable altitude is 400 feet (~122m) above the ground.
+%   the maximum allowable altitude is 400 feet (~122m) above the
+%   ground. Typical values:
+%       - [1.5; (10:10:120)'; 125] for cellular and millimeter wave
+%       inspection
+%       - 1.5 for 3500 MHz (3.5 GHz) areostat application
+%       - 0.1 for 915 MHz areostat application
 simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
-    = [1.5; (10:10:120)'; 125];
+    = 1.5;
 
 %   - The maximum radius that a cellular tower can cover; we will use this
 %   to find the cellular towers that are effective and limit the area to
@@ -265,12 +291,18 @@ disp('    Loading cellular antenna information ...')
 % Note: we use "height" to indicate the vertical distance from the ground
 % to the antenna; "elevation" to indicate the ground elevation; and
 % "altitude" to indicate elevation+height.
-cellAntsLatLon = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
-[numAnts, ~] = size(cellAntsLatLon);
+cellAntsLatLonAlt = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
+numAnts = size(cellAntsLatLonAlt, 1);
 cellAntsXYH = nan(numAnts, 3);
 [cellAntsXYH(:,1), cellAntsXYH(:,2)] ...
-    = deg2utm_speZone(cellAntsLatLon(:,1), cellAntsLatLon(:,2));
-cellAntsXYH(:,3) = DEFAULT_TX_ANT_HEIGHT_IN_M;
+    = deg2utm_speZone(cellAntsLatLonAlt(:,1), cellAntsLatLonAlt(:,2));
+if size(cellAntsLatLonAlt, 2)>2
+    cellAntsXYH(:,3) = cellAntsLatLonAlt(:,3);
+end
+boolsCellAntAltUnknown = isnan(cellAntsXYH(:,3));
+if sum(boolsCellAntAltUnknown)>0
+    cellAntsXYH(boolsCellAntAltUnknown,3) = DEFAULT_TX_ANT_HEIGHT_IN_M;
+end
 
 disp('    Done!')
 
@@ -284,20 +316,43 @@ disp('    Done!')
 % cluster machine to save time used in data fetching.
 
 if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
-    assert(any(strcmp({'ExtendedTipp', 'IN'}, PRESET)), ...
+    % So far, we have presets 'ExtendedTipp', 'IN', and 'Aerostat' that
+    % need automatically generated areas of interset.
+    assert(any(strcmp({'ExtendedTipp', 'IN', 'Aerostat'}, PRESET)), ...
         ['No raw Indiana LiDAR data available for ', PRESET, ...
-        ' to generate the area of interest polygon!'])
-
-    areaOfInterestLidarDataset = PRESET;
-    % The only case when the LiDAR dataset folder is different from the
-    % simulation tag is for the extended Tippecanoe area.
-    if strcmp(PRESET, 'ExtendedTipp')
-        areaOfInterestLidarDataset = 'Tipp_Extended';
+        ' to generate the area of interest polygon!'])    
+    
+    % Take care of the cases where the LiDAR dataset folder is different
+    % from the simulation tag, e.g., the extended Tippecanoe area case.
+    switch PRESET
+        case 'ExtendedTipp'
+            areaOfInterestLidarDataset = 'Tipp_Extended';
+        case 'Aerostat'
+            areaOfInterestLidarDataset = 'IN';
+        otherwise
+            areaOfInterestLidarDataset = PRESET;
     end
+    
     simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
         = generateUtmXyBoundaryOfLidarDataset( ...
         fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
         'Lidar', areaOfInterestLidarDataset), simConfigs);
+end
+
+% For the areostat case, we still need to refine the area of interest.
+switch PRESET
+    case 'Aerostat'
+        % The area of interest is the intersect of the LiDAR coverage area
+        % and the square centered at the aerostat.
+        areaOfInterestPoly = intersect( ...
+            polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
+            polyshape(constructUtmRectanglePolyMatFromCenter( ...
+            cellAntsLatLonAlt(1, 1:2), ...
+            [1,1].*squareOfInterestSideLengthInM)));
+        [areaOfInterestXs, areaOfInterestYs] ...
+            = boundary(areaOfInterestPoly);
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = [areaOfInterestXs, areaOfInterestYs];
 end
 
 %% Simulation
