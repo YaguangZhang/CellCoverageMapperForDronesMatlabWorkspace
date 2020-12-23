@@ -41,7 +41,7 @@ prepareSimulationEnv;
 SUPPORTED_PRESETS = {'ACRE', 'ACRE_EXACT', ...
     'Tipp', 'ExtendedTipp', 'IN', ...
     'Aerostat'};
-PRESET = 'Aerostat';
+PRESET = 'IN';
 
 assert(any(strcmp(SUPPORTED_PRESETS, PRESET)), ...
     ['Unsupported preset "', PRESET, '"!']);
@@ -129,9 +129,9 @@ end
 
 %   - Carrier frequency and wavelength. Typical values:
 %       - 1900 MHz for cellular LTE
-%       - 28000 MHz (28 GHz) for millimeter wave
+%        - 28000 MHz (28 GHz) for millimeter wave
 %       - 3500 MHz (3.5 GHz) and 915 MHz for areostat applications
-simConfigs.CARRIER_FREQUENCY_IN_MHZ = 3500;
+simConfigs.CARRIER_FREQUENCY_IN_MHZ = 28000;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
     = physconst('LightSpeed')/simConfigs.CARRIER_FREQUENCY_IN_MHZ/1e6;
 
@@ -141,7 +141,7 @@ simConfigs.UTM_ZONE = '16 T';
 %   - We will use this number of pixels for the longer side (width/height)
 %   of the map; the number of pixels for the other side will be
 %   proportional to its length.
-simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 256; % 100;
+simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100; %256; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
 %   value will decrease the simulation time but small obstacles may get
@@ -156,11 +156,11 @@ simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 1.5; % 50;
 simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 
 %   - Rx heights for the simulator to inspect. Note that according to FAA,
-%   the maximum allowable altitude is 400 feet (~122m) above the
-%   ground. Typical values:
+%   the maximum allowable altitude is 400 feet (~122m) above the ground.
+%   Typical values:
 %       - [1.5; (10:10:120)'; 125] for cellular and millimeter wave
-%       inspection
-%       - 1.5 for 3500 MHz (3.5 GHz) areostat application
+%         inspection
+%        - 1.5 for 3500 MHz (3.5 GHz) areostat application
 %       - 0.1 for 915 MHz areostat application
 simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
     = 1.5;
@@ -168,7 +168,8 @@ simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
 %   - The maximum radius that a cellular tower can cover; we will use this
 %   to find the cellular towers that are effective and limit the area to
 %   consider for each effective cellular tower during the simulation; by
-%   default (when it is not a positive scalar)
+%   default (when it is not a positive scalar) we will compute a value
+%   based on the radio horizon.
 %
 %   Please see the field 'MAX_CELL_COVERAGE_RADIUS_GEN_STRATEGY' for more
 %   information.
@@ -320,7 +321,7 @@ if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
     % need automatically generated areas of interset.
     assert(any(strcmp({'ExtendedTipp', 'IN', 'Aerostat'}, PRESET)), ...
         ['No raw Indiana LiDAR data available for ', PRESET, ...
-        ' to generate the area of interest polygon!'])    
+        ' to generate the area of interest polygon!'])
     
     % Take care of the cases where the LiDAR dataset folder is different
     % from the simulation tag, e.g., the extended Tippecanoe area case.
