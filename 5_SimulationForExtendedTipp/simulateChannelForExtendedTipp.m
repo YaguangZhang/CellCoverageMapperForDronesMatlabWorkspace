@@ -322,7 +322,7 @@ if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
     assert(any(strcmp({'ExtendedTipp', 'IN', 'Aerostat'}, PRESET)), ...
         ['No raw Indiana LiDAR data available for ', PRESET, ...
         ' to generate the area of interest polygon!'])
-    
+
     % Take care of the cases where the LiDAR dataset folder is different
     % from the simulation tag, e.g., the extended Tippecanoe area case.
     switch PRESET
@@ -333,7 +333,7 @@ if isempty(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST)
         otherwise
             areaOfInterestLidarDataset = PRESET;
     end
-    
+
     simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
         = generateUtmXyBoundaryOfLidarDataset( ...
         fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
@@ -372,7 +372,7 @@ else
         = analyzeCoverageViaChannelSimulation(pathToSaveResults, ...
         lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
         cellAntsXYH, simConfigs);
-    save(pathToSaveSimResults, 'simConfigs', 'simState');
+    save(pathToSaveSimResults, 'simConfigs', 'simState', '-v7.3');
 end
 disp('    Done!')
 
