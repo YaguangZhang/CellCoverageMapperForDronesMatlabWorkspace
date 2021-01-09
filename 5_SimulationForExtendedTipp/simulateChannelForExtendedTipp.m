@@ -221,7 +221,7 @@ simConfigs.NTIA_EHATA_RELIABILITY = 0.95;
 simConfigs.NTIA_EHATA_ENVIRO_CODE = 82; % Cultivated Crops.
 
 %   - Functions to convert GPS degrees (lat, lon) from/to UTM (x, y). We
-%   will polulate them later.
+%   will populate them later.
 
 % Convert GPS degrees to UTM coordinates for the specified zone.
 utmstruct_speZone = defaultm('utm');
