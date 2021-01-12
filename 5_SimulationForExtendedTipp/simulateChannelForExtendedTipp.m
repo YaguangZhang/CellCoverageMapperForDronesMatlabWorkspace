@@ -61,7 +61,9 @@ switch PRESET
     otherwise
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
-        % The cellular tower height value to use.
+        % The cellular tower height value to use. According to the HIFLD
+        % Land Mobile Commercial Transmission Towers data set, the mean
+        % tower height is 63.5 m, while the median tower height is 47.2 m.
         DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
 end
 

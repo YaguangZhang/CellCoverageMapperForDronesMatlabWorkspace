@@ -13,10 +13,22 @@ prepareSimulationEnv;
 
 %% Script Parameters
 
-% The directory to load cellular tower location information. We will use
-% the NTIA randomized U.S. cellular laydown.
+% The directory to load cellular tower location information. We have:
+%   - NTIA randomized U.S. cellular laydown
+%       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+%           'CellTowerInfo', 'RandomizedCarrierSitesv2.csv')
+%   - Homeland Infrastructure Foundation-Level Data (HIFLD) Cellular Towers
+%       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+%           'CellTowerInfo', 'HIFLD', ... 'CellTowers',
+%           'Cellular_Towers_LatLon.csv');
+%   - (Recommended) HIFLD Land Mobile Commercial Transmission Towers
+%       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+%           'CellTowerInfo', 'HIFLD', ... 'LandMobileCommercialTxTowers',
+%           ... 'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
 ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
+    'CellTowerInfo', 'HIFLD', ...
+    'LandMobileCommercialTxTowers', ...
+    'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
 
 % The radius to inspect around a point of interest for estimating its
 % cellular tower density. Based on:
@@ -37,6 +49,13 @@ pathToLoadSimResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 % The absolute path to save results.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'PostProcessingResults', '8_CellTowerDensityInvestigation');
+
+% The values to show contour lines. For the NTIA randomized cell tower
+% layout, it is recommended to use:
+%       contourLevelVs = [1, 3, 5, 10, 15, 30, 50, 80, 100, 150];
+% For the HIFLD Land Mobile Commercial Transmission Towers:
+%       contourLevelVs = [2, 3, 5, 7, 9, 15, 20, 50, 80, 110];
+contourLevelVs = [2, 3, 5, 7, 9, 15, 20, 50, 80, 110];
 
 %% Initialization
 
@@ -144,7 +163,6 @@ moveIndianaStateToCenter;
 %     cellTowerDensitiesNumPerSqKm]);
 hCellTowers = plot(cellAntsLatLonAlt(:,2), cellAntsLatLonAlt(:,1), ...
     'b.', 'MarkerSize', 22);
-contourLevelVs = [1, 3, 5, 10, 15, 30, 50, 80, 100, 150];
 hSurf = surfOnSimGrid([simState.mapGridLatLonPts(:, 2:-1:1) ...
     cellTowerDensitiesNumPer1000SqKms], simConfigs, ...
     contourLevelVs, 0.75, 22, 3, 'w');
@@ -162,7 +180,7 @@ saveas(hCellTowerDensity, ...
 saveas(hCellTowerDensity, ...
     fullfile(pathToSaveResults, 'cellTowerDensity.fig'));
 
-% Empirical CDF for cellular tower density of IN
+%% Empirical CDF for cellular tower density of IN
 
 hCellTowerDensityECDF = figure('Visible', true, ...
     'Unit', 'pixel', 'Position', [0,0,1600,1200]);
@@ -170,7 +188,9 @@ hold on;
 ecdf(cellTowerDensitiesNumPer1000SqKms);
 [f, x] = ecdf(cellTowerDensitiesNumPer1000SqKms);
 contourLevelVs = interp1(f(2:end), x(2:end), 0:0.1:1);
-fm = interp1(x(2:end), f(2:end), 5); title({['F(5) = ', num2str(fm)]; ...
+F_5 = interp1(x(2:end), f(2:end), 5); 
+F_10 = interp1(x(2:end), f(2:end), 10); 
+title({['F(5) = ', num2str(F_5), '; F(10) = ', num2str(F_10)]; ...
     ['Ref contourLevelVs = ', num2str(contourLevelVs)]});
 grid on; grid minor;
 saveas(hCellTowerDensityECDF, ...
