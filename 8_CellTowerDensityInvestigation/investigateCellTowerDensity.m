@@ -6,7 +6,8 @@
 clear; clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
-cd(fileparts(mfilename('fullpath'))); cd('..'); addpath('lib');
+cd(fileparts(mfilename('fullpath'))); addpath('.');
+cd('..'); addpath('lib');
 curFileName = mfilename;
 
 prepareSimulationEnv;
@@ -14,21 +15,19 @@ prepareSimulationEnv;
 %% Script Parameters
 
 % The directory to load cellular tower location information. We have:
-%   - NTIA randomized U.S. cellular laydown
+%   - (Recommended) NTIA randomized U.S. cellular laydown
 %       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 %           'CellTowerInfo', 'RandomizedCarrierSitesv2.csv')
 %   - Homeland Infrastructure Foundation-Level Data (HIFLD) Cellular Towers
 %       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 %           'CellTowerInfo', 'HIFLD', ... 'CellTowers',
 %           'Cellular_Towers_LatLon.csv');
-%   - (Recommended) HIFLD Land Mobile Commercial Transmission Towers
+%   - HIFLD Land Mobile Commercial Transmission Towers
 %       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 %           'CellTowerInfo', 'HIFLD', ... 'LandMobileCommercialTxTowers',
 %           ... 'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
 ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'CellTowerInfo', 'HIFLD', ...
-    'LandMobileCommercialTxTowers', ...
-    'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
+           'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
 
 % The radius to inspect around a point of interest for estimating its
 % cellular tower density. Based on:
