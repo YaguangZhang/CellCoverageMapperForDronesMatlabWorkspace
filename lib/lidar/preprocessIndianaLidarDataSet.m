@@ -41,13 +41,17 @@ function [lidarFileRelDirs, xYBoundryPolygons, lonLatBoundryPolygons] ...
 %
 % Yaguang Zhang, Purdue, 08/30/2019
 
+ABS_DIR_TO_SAVE_RESULTS = fullfile(ABS_PATH_TO_LOAD_LIDAR, 'metaInfo.mat');
+flagDatasetProcessed = exist(ABS_DIR_TO_SAVE_RESULTS, 'file');
+
 % Set this to be false to reuse history processing results.
 FLAG_FORCE_REPROCESSING_DATA = false;
 % Set this to be true to generate figures for debugging. Because reusing
 % history processing results will skip loading all the data needed for
-% plotting, we will not generate figures if FLAG_FORCE_REPROCESSING_DATA is
-% false.
-FLAG_GEN_DEBUG_FIGS = true && FLAG_FORCE_REPROCESSING_DATA;
+% plotting, we will not generate figures if the data set of interest is
+% already processed and FLAG_FORCE_REPROCESSING_DATA is false.
+FLAG_GEN_DEBUG_FIGS = (~flagDatasetProcessed) ...
+    || FLAG_FORCE_REPROCESSING_DATA;
 
 % Any LiDAR z value too big or too small will be discarded (set to NaN).
 maxAllowedAbsLidarZ = 10^38;
@@ -60,9 +64,7 @@ warning('off','MATLAB:polyshape:repairedBySimplify');
 disp(' ')
 disp(['    Preprocessing Indiana LiDAR dataset ', datasetName, ' ...'])
 
-ABS_DIR_TO_SAVE_RESULTS = fullfile(ABS_PATH_TO_LOAD_LIDAR, 'metaInfo.mat');
-
-if exist(ABS_DIR_TO_SAVE_RESULTS, 'file') ...
+if flagDatasetProcessed ...
         && (~FLAG_FORCE_REPROCESSING_DATA)
     disp('        The specified dataset has been processed before.')
     disp('        Loading history results ...')
