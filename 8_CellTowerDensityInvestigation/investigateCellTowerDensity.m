@@ -28,6 +28,12 @@ prepareSimulationEnv;
 %           ... 'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
 ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
            'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
+% The values to show contour lines. For the NTIA randomized cell tower
+% layout, it is recommended to use:
+%       contourLevelVs = [1, 3, 5, 10, 15, 30, 50, 80, 100, 150];
+% For the HIFLD Land Mobile Commercial Transmission Towers:
+%       contourLevelVs = [2, 3, 5, 7, 9, 15, 20, 50, 80, 110];
+contourLevelVs = [1, 3, 5, 10, 15, 30, 50, 80, 100, 150];
 
 % The radius to inspect around a point of interest for estimating its
 % cellular tower density. Based on:
@@ -48,13 +54,6 @@ pathToLoadSimResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 % The absolute path to save results.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'PostProcessingResults', '8_CellTowerDensityInvestigation');
-
-% The values to show contour lines. For the NTIA randomized cell tower
-% layout, it is recommended to use:
-%       contourLevelVs = [1, 3, 5, 10, 15, 30, 50, 80, 100, 150];
-% For the HIFLD Land Mobile Commercial Transmission Towers:
-%       contourLevelVs = [2, 3, 5, 7, 9, 15, 20, 50, 80, 110];
-contourLevelVs = [2, 3, 5, 7, 9, 15, 20, 50, 80, 110];
 
 %% Initialization
 
@@ -137,7 +136,7 @@ hCellTowers = plot(cellAntsLatLonAlt(:,2), cellAntsLatLonAlt(:,1), ...
     'b.', 'MarkerSize', 22);
 uistack(hPolyIn,'top'); box on;
 legend([hCellTowers, hPolyIn], 'Cell Tower', 'Indiana', ...
-    'FontSize', 25, 'Location','southeast');
+    'FontSize', 25, 'Location', 'southeast', 'LineWidth', 3);
 % Move IN state to the center.
 moveIndianaStateToCenter;
 saveas(hCellTowerOnRoadMap, ...
@@ -178,6 +177,40 @@ saveas(hCellTowerDensity, ...
     fullfile(pathToSaveResults, 'cellTowerDensity.png'));
 saveas(hCellTowerDensity, ...
     fullfile(pathToSaveResults, 'cellTowerDensity.fig'));
+
+% Cellular tower density (no tower locs) for IN.
+hCellTowerDensityOnly = figure('Visible', true, ...
+    'Unit', 'pixel', 'Position', [0,0,900,1200]);
+hold on; xticks([]); xticklabels({}); yticks([]); yticklabels({});
+hPolyIn = plot3(boundOfInterestLons, boundOfInterestLats, ...
+    ones(size(boundOfInterestLons)) ...
+    .*(max(cellTowerDensitiesNumPer1000SqKms)+2), ...
+    'r-', 'LineWidth', 7);
+newAxis = extendAxisByFactor(axis, -0.1);
+axis(newAxis);
+tightfig;
+plot_google_map('MapType', 'roadmap');
+moveIndianaStateToCenter;
+% plot3k([simState.mapGridLatLonPts(:, 2:-1:1) ...
+%     cellTowerDensitiesNumPerSqKm]);
+% hCellTowers = plot(cellAntsLatLonAlt(:,2), cellAntsLatLonAlt(:,1), ...
+%     'b.', 'MarkerSize', 22);
+hSurf = surfOnSimGrid([simState.mapGridLatLonPts(:, 2:-1:1) ...
+    cellTowerDensitiesNumPer1000SqKms], simConfigs, ...
+    contourLevelVs, 0.75, 22, 3, 'k');
+colormap(colormap(flipud(hot))); set(gca, 'ColorScale', 'log'); box on;
+hAT = autoText('Cell Tower Density (# per 1000 km^2)', ...
+    'Location','southeast', 'FontSize', 22, 'LineWidth', 3);
+set(hAT, 'FitBoxToText', 'on', 'LineStyle', '-', 'FontSize', 22, ...
+    'LineWidth', 3, 'BackGroundColor', 'w', ...
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+    'Position', [0.6,0.01,0.37,0.1]);
+% Move IN state to the center.
+moveIndianaStateToCenter;
+saveas(hCellTowerDensityOnly, ...
+    fullfile(pathToSaveResults, 'cellTowerDensityOnly.png'));
+saveas(hCellTowerDensityOnly, ...
+    fullfile(pathToSaveResults, 'cellTowerDensityOnly.fig'));
 
 %% Empirical CDF for cellular tower density of IN
 
