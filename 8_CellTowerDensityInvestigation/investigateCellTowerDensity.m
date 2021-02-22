@@ -14,20 +14,25 @@ prepareSimulationEnv;
 
 %% Script Parameters
 
-% The directory to load cellular tower location information. We have:
-%   - (Recommended) NTIA randomized U.S. cellular laydown
+% The directories to load cellular tower location information. We have:
+%   - OpenCelliD
+%       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+%           'CellTowerInfo', 'OpenCelliDUsa_20210219', ...
+%            'Cellular_Towers_LatLonHR.csv');
+%   - NTIA randomized U.S. cellular laydown
 %       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 %           'CellTowerInfo', 'RandomizedCarrierSitesv2.csv')
 %   - Homeland Infrastructure Foundation-Level Data (HIFLD) Cellular Towers
 %       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-%           'CellTowerInfo', 'HIFLD', ... 'CellTowers',
-%           'Cellular_Towers_LatLon.csv');
+%           'CellTowerInfo', 'HIFLD', ...
+%            'CellTowers', 'Cellular_Towers_LatLon.csv');
 %   - HIFLD Land Mobile Commercial Transmission Towers
 %       fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-%           'CellTowerInfo', 'HIFLD', ... 'LandMobileCommercialTxTowers',
-%           ... 'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
+%           'CellTowerInfo', 'HIFLD', ...
+%            'LandMobileCommercialTxTowers', ...
+%           'Land_Mobile_Commercial_Transmission_Towers_LatLonH.csv');
 ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-           'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
+    'CellTowerInfo', 'RandomizedCarrierSitesv2.csv');
 % The values to show contour lines. For the NTIA randomized cell tower
 % layout, it is recommended to use:
 %       contourLevelVs = [1, 3, 5, 10, 15, 30, 50, 80, 100, 150];
@@ -225,8 +230,8 @@ hold on;
 ecdf(cellTowerDensitiesNumPer1000SqKms);
 [f, x] = ecdf(cellTowerDensitiesNumPer1000SqKms);
 contourLevelVs = interp1(f(2:end), x(2:end), 0:0.1:1);
-F_5 = interp1(x(2:end), f(2:end), 5); 
-F_10 = interp1(x(2:end), f(2:end), 10); 
+F_5 = interp1(x(2:end), f(2:end), 5);
+F_10 = interp1(x(2:end), f(2:end), 10);
 title({['F(5) = ', num2str(F_5), '; F(10) = ', num2str(F_10)]; ...
     ['Ref contourLevelVs = ', num2str(contourLevelVs)]});
 grid on; grid minor;
