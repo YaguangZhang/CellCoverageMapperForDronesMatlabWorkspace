@@ -1,6 +1,9 @@
 %MOVEINDIANASTATETOCENTER A helper script to center the Indiana State on a
 %map.
 %
+% This also works for other area of interest, as long as
+% boundOfInterestLats and boundOfInterestLons are properly set.
+%
 % Yaguang Zhang, Purdue, 01/07/2021
 
 curAxis = axis;
