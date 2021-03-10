@@ -133,9 +133,11 @@ simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100;
 %   value will decrease the simulation time but small obstacles may be
 %   ingored. For the USGS 1/3 arc-second terrain elevation data set, we
 %   have a grid resolution of approximately 10 meters.
-simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 10;
+simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 1.5;
 %   - Similarly, the guaranteed spacial resolution for LiDAR profiles. For
 %   the 2019 DSM LiDAR data, we have a grid resolution of 5 feet (~1.52 m).
+%   Note: set the two profile resolutions to be the same will help speed up
+%   the simulation.
 simConfigs.MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M = 1.5;
 
 %   - The guaranteed minimum number of LiDAR z (or possibly elevation)

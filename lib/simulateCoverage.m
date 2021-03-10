@@ -513,6 +513,11 @@ if ~exist('nextIdxEffeCellAnt', 'var')
     nextIdxEffeCellAnt = 1;
 end
 for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
+    
+    disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
+        '] Effective cellular tower #', ...
+        num2str(idxEffeCellAnt), '/', num2str(numOfEffeCellAnts), ' ...']);
+    
     % Cellular location.
     curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);
     
@@ -606,7 +611,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         curWorkerNumPixs = length(curDroneLocIndices);
         curWorkerNumPixsToReportProgress = ceil(curWorkerNumPixs ...
             .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT ...
-            ); %#ok<PFBNS>        
+            ); %#ok<PFBNS>
         % Make sure curDroneLocIndices is a row vector.
         curDroneLocIndices = curDroneLocIndices(:)';
         for idxDroneLoc = curDroneLocIndices
@@ -757,7 +762,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     % We will update simState for each tower.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
         'locIndicesForAllWorkersForAllCellsEff', 'proMon', ...
-        'nextIdxEffeCellAnt', '-v7.3'); 
+        'nextIdxEffeCellAnt', '-v7.3');
 end
 
 disp('    Done!')

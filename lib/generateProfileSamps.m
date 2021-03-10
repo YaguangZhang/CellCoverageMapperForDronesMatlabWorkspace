@@ -66,8 +66,12 @@ end
 %     1:numOfProfileSampLocs);
 
 for curIdxTile = unique(indicesClosestTile)'
+    % Only load the fields needed to save time.
+    fieldsToLoad = {'getEleFromXYFct', 'getLiDarZFromXYFct', ...
+        'lidarEles', 'lidarXYZ', 'xYBoundryPolygon'};
+    
     try
-        load(lidarMatFileAbsDirs{curIdxTile});
+        load(lidarMatFileAbsDirs{curIdxTile}, fieldsToLoad{:});
     catch err
         disp(' ');
         warning('Error loading .mat LiDAR file!');
@@ -75,7 +79,7 @@ for curIdxTile = unique(indicesClosestTile)'
         disp(' ');
         disp('Trying to fix the file...');
         validateLidarMatFile(lidarMatFileAbsDirs{curIdxTile}, simConfigs);
-        load(lidarMatFileAbsDirs{curIdxTile});
+        load(lidarMatFileAbsDirs{curIdxTile}, fieldsToLoad{:});
         disp('succeeded!');
         disp(' ');
     end
