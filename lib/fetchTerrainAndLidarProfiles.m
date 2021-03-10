@@ -13,9 +13,12 @@ function [terrainProfile, lidarProfile] ...
 %
 % Inputs:
 %   - absPathToCacheMatFile
-%     The absolute directory to the cache .mat file. We will load the data
-%     there in if that .mat file exists; otherwise, we will create the file
-%     and store the results into it.
+%     The absolute directory to the cache .mat file.
+%       - If it is not empty ...
+%         We will load the data there in if that .mat file exists;
+%         otherwise, we will create the file and store the results into it.
+%       - If it is empty ...
+%         We will ignore the loading and saving procedures.
 %   - startXY, endXY
 %     The UTM (x,y) locations for the start and end locations of the
 %     profile.
@@ -49,8 +52,12 @@ function [terrainProfile, lidarProfile] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
-% Suppress warning from generateProfileSamps.
-warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+FLAG_CHANGE_WARNING_STATUS = false;
+
+if FLAG_CHANGE_WARNING_STATUS
+    % Suppress warning from generateProfileSamps.
+    warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+end
 
 flagHistResAvailable = false;
 
@@ -64,7 +71,7 @@ if exist(absPathToCacheMatFile, 'file')
     catch
         warning(['Unable to load history results from ', ...
             absPathToCacheMatFile, '!']);
-    end    
+    end
 end
 
 if ~flagHistResAvailable
@@ -123,12 +130,16 @@ if ~flagHistResAvailable
             = curEleForNanLidarPts(boolsToReplaceWithEle);
     end
     
-    save(absPathToCacheMatFile, ...
-        'terrainProfile', 'lidarProfile');
+    if ~isempty(absPathToCacheMatFile)
+        save(absPathToCacheMatFile, ...
+            'terrainProfile', 'lidarProfile');
+    end
 end
 
-% Turn suppressed warning back on.
-warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+if FLAG_CHANGE_WARNING_STATUS
+    % Turn suppressed warning back on.
+    warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+end
 
 end
 % EOF

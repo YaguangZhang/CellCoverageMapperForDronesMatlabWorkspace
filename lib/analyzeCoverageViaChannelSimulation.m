@@ -48,6 +48,8 @@ function [ simState, simConfigs ] ...
 %         The guaranteed spacial resolution for terrain profiles; a larger
 %         value will decrease the simulation time but small obstacles may
 %         get ingored.
+%       - MAX_ALLOWED_LIDAR_PROFILE_RESOLUATION_IN_M
+%         Similarly, the guaranteed spacial resolution for LiDAR profiles.
 %       - MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE
 %         The guaranteed minimum number of LiDAR z (or possibly elevation)
 %         elements in one terrain profile; this will ensure non-empty
@@ -408,8 +410,6 @@ curDirToSave = fullfile(pathToSaveResults, ...
     'Overview_CellularTowersToConsider_SatelliteMap');
 saveEpsFigForPaper(hFigCellOverview, curDirToSave);
 
-disp('    Done!')
-
 %% Simulation
 
 [~, hostname] = system('hostname');
@@ -480,10 +480,11 @@ else
             = find(curTxToRxDistsInM ...
             < simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
         
-        % We will use multiple works to churn through the drone locations.
-        % To avoid repeative environment set up and data transfer, here we
-        % pre-assign the pixels to be processed by each worker to avoid
-        % unnecessary data copying during worker initialization.
+        % We will use multiple workers to churn through the drone
+        % locations. To avoid repeative environment set up and data
+        % transfer, here we pre-assign the pixels to be processed by each
+        % worker to avoid unnecessary data copying during worker
+        % initialization.
         locIndicesForAllWorkers ...
             = preassignTaskIndicesToWorkers( ...
             length(curIndicesRxLocsToConsider));
@@ -537,8 +538,8 @@ else
                 .*numOfRxHeightToInspect, 5);
         end
         
-        % Utilize parfor only when most of the workers will get something
-        % to process.
+        % Utilize parfor only when a majority of the workers will get
+        % something to process.
         if (sum(cellfun(@(c) isempty(c), locIndicesForAllWorkers))...
                 /numOfWorkers)>=0.5
             parforArg = 0;
@@ -555,6 +556,8 @@ else
         pathToSaveOverheadTimeMats = fullfile(pathToSaveResults, ...
             'ProcessingTimeCacheRecords');
         if exist(pathToSaveOverheadTimeMats, 'dir')
+            % Specify 's' to also attempts to remove all subfolders and
+            % files, regardless of their write permissions.
             rmdir(pathToSaveOverheadTimeMats, 's');
         end
         mkdir(pathToSaveOverheadTimeMats);

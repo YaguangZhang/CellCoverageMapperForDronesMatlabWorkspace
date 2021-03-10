@@ -4,8 +4,8 @@
 % consider cellular towers around.
 %
 % This simulator has configuration presets available for carrying out
-% simulation with different area of interest. Please adjust the value of
-% the viable PRESET below to choose the target simulation.
+% simulation with different areas of interest. Please adjust the value of
+% the viable PRESET below to choose the desired simulation.
 %
 % If new simulation is needed, please delete previous result files to avoid
 % progress recovery.
@@ -90,7 +90,6 @@ switch PRESET
 end
 
 %% Simulation Configurations
-
 % We will organize all the necessary configurations into a structure called
 % simConfigs.
 %   - A string label to identify this simulation.
@@ -101,11 +100,7 @@ simConfigs.CURRENT_SIMULATION_TAG = PRESET;
 %   IN, this is default to the range covered by the availabe LiDAR data set
 %   for the corresponding area of interest when it is empty.
 switch PRESET
-    case 'ACRE'
-        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
-            = constructUtmRectanglePolyMat(...
-            [40.467341, -87.015762; ...
-            40.501484, -86.979905]);
+
     case 'Tipp'
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = constructUtmRectanglePolyMat(...
@@ -146,7 +141,7 @@ simConfigs.UTM_ZONE = '16 T';
 simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100; %256; % 100;
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
-%   value will decrease the simulation time but small obstacles may get
+%   value will decrease the simulation time but small obstacles may be
 %   ingored.
 simConfigs.MAX_ALLOWED_TERRAIN_PROFILE_RESOLUATION_IN_M = 7.5; % 50;
 %   - Similarly, the guaranteed spacial resolution for LiDAR profiles.
@@ -165,7 +160,7 @@ simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 %        - 1.5 for 3500 MHz (3.5 GHz) areostat application
 %       - 0.1 for 915 MHz areostat application
 simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
-    = 1.5;
+    = [1.5; (10:10:120)'; 125];
 
 %   - The maximum radius that a cellular tower can cover; we will use this
 %   to find the cellular towers that are effective and limit the area to
@@ -249,7 +244,8 @@ simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.2;
 simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 
 %   - For figures, we need to decide whether to resize them for
-%   publication.
+%   publication. If this is set to be true, figures will be generated with
+%   a smaller size for papers.
 simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 
 % Turn the diary logging function on.
@@ -303,7 +299,7 @@ if size(cellAntsLatLonAlt, 2)>2
     cellAntsXYH(:,3) = cellAntsLatLonAlt(:,3);
 end
 boolsCellAntAltUnknown = isnan(cellAntsXYH(:,3));
-if sum(boolsCellAntAltUnknown)>0
+if any(boolsCellAntAltUnknown)
     cellAntsXYH(boolsCellAntAltUnknown,3) = DEFAULT_TX_ANT_HEIGHT_IN_M;
 end
 

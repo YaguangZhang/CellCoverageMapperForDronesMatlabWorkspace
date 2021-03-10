@@ -13,4 +13,7 @@ fileNameHintRuler = hintScriptName(curFileName);
 % to the machine name.
 setPath;
 
+% The format to use for displaying datetime.
+datetimeFormat = 'yyyy/mm/dd HH:MM:ss';
+
 % EOF
