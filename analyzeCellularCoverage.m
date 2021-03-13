@@ -32,7 +32,7 @@ prepareSimulationEnv;
 % Tippecanoe county, 'ExtendedTipp' for the WHIN area, and 'IN' for Indiana
 % state. Please refer to the Simulation Configurations section for a
 % complete list of supported presets.
-PRESET = 'ACRE';
+PRESET = 'ACRE_EXACT';
 
 %% Script Parameters
 
@@ -318,14 +318,22 @@ disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Conducting simulation ...'])
 
-% Computing coverage and blockage maps.
-simState = simulateCoverage(pathToSaveResults, ...
-    lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
-    cellAntsXYH, simConfigs);
-
+pathToSaveSimResults = fullfile(pathToSaveResults, 'simState.mat');
+if exist(pathToSaveSimResults, 'file')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Loading history results ...'])
+    load(pathToSaveSimResults)
+else
+    % Computing coverage and blockage maps.
+    simState = simulateCoverage(pathToSaveResults, ...
+        lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
+        cellAntsXYH, simConfigs);
+    save(pathToSaveSimResults, 'simState', '-v7.3');
+end
 disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 
 % Plot results.
+addpath('5_SimulationForExtendedTipp');
 plotCoverageSimulationResults(pathToSaveResults, simState, simConfigs);
 
 % EOF
