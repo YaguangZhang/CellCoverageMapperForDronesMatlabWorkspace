@@ -35,7 +35,13 @@ if strcmpi(language, 'Python')
     MAX_NUM_OF_CONCURRENT_REQUESTS = 100;
 end
 
-numToStrFormatter = '%.12f';
+% Update 20210415: USGS supports values with at most 10 digits after the
+% decimal point now. For example:
+%   https://nationalmap.gov/epqs/pqs.php?x=-87.58214445193&y=40.16903761691&units=Meters&output=json
+% does not work (11 digits), but
+%   https://nationalmap.gov/epqs/pqs.php?x=-87.5821444519&y=40.1690376169&units=Meters&output=json
+% works (10 digits).
+numToStrFormatter = '%.10f';
 maxNumOfTrials = 100;
 urlUsgsEpqs = 'https://nationalmap.gov/epqs/pqs.php';
 usgsNanValue = -1000000;
