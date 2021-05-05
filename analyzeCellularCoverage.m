@@ -13,12 +13,7 @@
 %   - Matlab R2020b has been used for developing and testing this
 %     simulator.
 %
-% TODO: improve the interrupt recovery function by avoiding saving terrian
-% profiles.
-%
-% TODO: add simulation for Colorado.
-%
-% Yaguang Zhang, Purdue, 03/19/2021
+% Yaguang Zhang, Purdue, 05/05/2021
 
 clear; clc; close all; dbstop if error;
 
@@ -32,7 +27,7 @@ prepareSimulationEnv;
 % Tippecanoe county, 'ExtendedTipp' for the WHIN area, and 'IN' for Indiana
 % state. Please refer to the Simulation Configurations section for a
 % complete list of supported presets.
-PRESET = 'ACRE_EXACT';
+PRESET = 'ShrinkedIN';
 
 %% Script Parameters
 
@@ -100,7 +95,10 @@ switch PRESET
             extTippBoundary.boundary.UTM_ZONE), 'UTM zone mismatch!');
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = extTippBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST;
-    case 'IN'
+    case {'IN', 'ShrinkedIN'}
+        % For ShrinkedIN, we will start with the IN boundary and shrink it
+        % after the maximum radius to consider around a cell tower is
+        % specified.
         inBoundary = load(fullfile(pathToStateInfoFolder, ...
             'IN', 'boundary.mat'));
         assert(strcmp(simConfigs.UTM_ZONE, ...
@@ -187,6 +185,15 @@ simConfigs.getCellCoverageRadiusInM = @(TxHeightInM, RxHeightInM) ...
 simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M ...
     = simConfigs.getCellCoverageRadiusInM( ...
     DEFAULT_TX_ANT_HEIGHT_IN_M, PEDESTRIAN_HEIGHT_IN_M);
+
+% Shrink the outline for PRESET 'ShrinkedIN'.
+if strcmp(PRESET, 'ShrinkedIN')
+    utmXYPolyAreaOfInt = subtract( ...
+        polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
+        polybuffer(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST, ...
+        'lines', simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M));
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = utmXYPolyAreaOfInt.Vertices;
+end
 
 %   - The clearance ratio of the first Fresnel zone for a LoS path: at
 %   least this ratio of the first Fresnel zone needs to be clear for a path

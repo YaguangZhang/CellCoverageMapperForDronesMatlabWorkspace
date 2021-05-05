@@ -52,7 +52,7 @@ function [terrainProfile, lidarProfile] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
-FLAG_CHANGE_WARNING_STATUS = false;
+FLAG_CHANGE_WARNING_STATUS = true;
 
 if FLAG_CHANGE_WARNING_STATUS
     % Suppress warning from generateProfileSamps.
