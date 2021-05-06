@@ -31,7 +31,7 @@ codegen/
 octave-workspace
 
 # Usgs data cache.
-usgsdata/
+usgsdata*/
 
 # Python cache files.
 *.pyc
