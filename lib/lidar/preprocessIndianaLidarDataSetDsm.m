@@ -37,7 +37,10 @@ function [lidarFileRelDirs, xYBoundryPolygons, lonLatBoundryPolygons] ...
 %     processed indicating the area they cover, in terms of UTM (x,y) and
 %     GPS (lon, lat), respectively.
 %
-% Yaguang Zhang, Purdue, 08/30/2019
+% Update 20210506: Break lidarXYZ to lidarXs, lidarYs, and lidarZs to avoid
+% data type conversion.
+%
+% Yaguang Zhang, Purdue, 05/06/2021
 
 ABS_DIR_TO_SAVE_RESULTS = fullfile(ABS_PATH_TO_LOAD_LIDAR, 'metaInfo.mat');
 flagDatasetProcessed = exist(ABS_DIR_TO_SAVE_RESULTS, 'file');
@@ -54,6 +57,11 @@ FLAG_GEN_DEBUG_FIGS = false;
 
 % Any LiDAR z value too big or too small will be discarded (set to NaN).
 maxAllowedAbsLidarZ = 10^38;
+
+% When fetching the elevation data from USGS, we will get more data than
+% the boundary box. This helps avoid NaN interpolation results near the
+% edge. Note: 1/3 arc second approximately correspond to 10 meters.
+usgsBoxPadInM = 15;
 
 % We will temporarily ignore the warning from polyshape.
 warning('off','MATLAB:polyshape:repairedBySimplify');
@@ -80,7 +88,8 @@ else
     [xYBoundryPolygons, lonLatBoundryPolygons] ...
         = deal(cell(numLidarFiles,1));
     
-    parfor idxF = 1:numLidarFiles
+    %zzz par
+    for idxF = 1:numLidarFiles
         try
             tic;
             
@@ -206,13 +215,20 @@ else
                 lidarLons = lidarLons(:);
                 [lidarXs, lidarYs] ...
                     = DEG2UTM_FCT(lidarLats, lidarLons); %#ok<PFBNS>
-                lidarXYZ = [lidarXs, lidarYs, lidarDataImg(:)];
+                
+                % Note: the data type is single for elements in lidarZs.
+                lidarZs = lidarDataImg(:);
+                % Note: the final matrix lidarXYZ has "single" elements,
+                % even though both lidarXs and lidarYs are of the type
+                % "double".
+                %   lidarXYZ = [lidarXs, lidarYs, lidarDataImg(:)];
                 
                 % Find the polygon boundaries.
                 xYBoundryPolygonIndices = boundary(lidarXs, lidarYs);
                 xYBoundryPolygon ...
                     = polyshape([lidarXs(xYBoundryPolygonIndices), ...
                     lidarYs(xYBoundryPolygonIndices)]);
+                % Note: the (lon, lat) boundary is generated independently.
                 lonLatBoundryPolygonIndices ...
                     = boundary(lidarLons, lidarLats);
                 lonLatBoundryPolygon ...
@@ -239,8 +255,16 @@ else
                 
                 disp('            Generating elevation information ...');
                 
-                latRange = [min(lidarLats) max(lidarLats)];
-                lonRange = [min(lidarLons) max(lidarLons)];
+                % Create the ranges for lat/lon in the UTM space. This
+                % helps avoid NaN interpolation results near the edge.
+                xRange = [min(lidarXs)-usgsBoxPadInM, ...
+                    max(lidarXs)+usgsBoxPadInM];
+                yRange = [min(lidarYs)-usgsBoxPadInM, ...
+                    max(lidarYs)+usgsBoxPadInM];
+                [latRMin, lonRMin] = UTM2DEG_FCT(xRange(1), yRange(1));
+                [latRMax, lonRMax] = UTM2DEG_FCT(xRange(2), yRange(2));
+                latRange = [latRMin, latRMax];
+                lonRange = [lonRMin, lonRMax];
                 
                 % For avoid reading in incomplete raw terrain files that
                 % are being downloaded by other worker, we will try loading
@@ -257,8 +281,8 @@ else
                 % worker to avoid any future collisions.
                 usdaDataBackupDir = fullfile('usgsdata_forEachWorker', ...
                     ['worker_', num2str(labindex)]);
-                fctFetchRegion = @(latR, longR) ...
-                    fetchregion(latR, longR, ...
+                fctFetchRegion = @(latR, lonR) ...
+                    fetchregion(latR, lonR, ...
                     'display', true, 'dataDir', usdaDataDir);
                 while ~isinf(numTrials)
                     try
@@ -322,7 +346,7 @@ else
                     rawElevData.elev);
                 
                 % Create a grid for the elevation data.
-                [tippElevDataLons, tippElevDataLats] = meshgrid( ...
+                [usgsElevDataLons, usgsElevDataLats] = meshgrid( ...
                     rawElevDataLonsSorted, rawElevDataLatsSorted);
                 
                 % For very tiny LiDAR data tiles, we may not have enough
@@ -331,14 +355,20 @@ else
                 try
                     % Interperlate the data with lat and lon.
                     lidarEles = interp2( ...
-                        tippElevDataLons, tippElevDataLats, ...
+                        usgsElevDataLons, usgsElevDataLats, ...
                         rawElevDataElesSorted, lidarLons, lidarLats);
+                    
+                    % For nan results, fetch the elevation data from USGS.
+                    boolsNanEles = isnan(lidarEles);
+                    lidarEles(boolsNanEles) ...
+                        = queryElevationPointsFromUsgsInChunks( ...
+                        lidarLats(boolsNanEles), lidarLons(boolsNanEles));
                     
                     % Create a function to get elevation from UTM
                     % coordinates in the same way.
                     getEleFromXYFct = @(xs, ys) ...
                         genUtmEleGetter( ...
-                        tippElevDataLats, tippElevDataLons, ...
+                        usgsElevDataLats, usgsElevDataLons, ...
                         rawElevDataElesSorted, xs, ys, UTM2DEG_FCT);
                 catch err
                     disp(['        There was an error ', ...
@@ -367,7 +397,8 @@ else
                 end
                 
                 parsave(curFullPathToSaveLidarResults, ...
-                    lidarXYZ, xYBoundryPolygon, getLiDarZFromXYFct, ...
+                    lidarXs, lidarYs, lidarZs, ...
+                    xYBoundryPolygon, getLiDarZFromXYFct, ...
                     lidarLats, lidarLons, lidarEles, getEleFromXYFct, ...
                     lonLatBoundryPolygon,  ...
                     STATE_PLANE_CODE_TIPP, DEG2UTM_FCT, UTM2DEG_FCT);
@@ -379,18 +410,23 @@ else
             if FLAG_GEN_DEBUG_FIGS
                 close all; %#ok<UNRCH>
                 
+                lidarZsWaterRm = lidarZs;
+                lidarZsWaterRm(isinf(lidarZsWaterRm)) = nan;
+                lidarXYZ = [lidarXs, lidarYs, double(lidarZsWaterRm)];
+                
                 % Boundary on map.
                 figure;
                 plot(lonLatBoundryPolygon, ...
                     'FaceColor','red','FaceAlpha',0.1);
                 plot_google_map('MapType', 'satellite');
                 
-                % (lidarLons, lidarLats, lidarZ).
+                % (lidarLons, lidarLats, lidarZs).
                 figure; hold on;
                 plot(lonLatBoundryPolygon, ...
                     'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarLons, lidarLats, lidarXYZ(:,3)]);
+                plot3k([lidarLons, lidarLats, lidarZsWaterRm]);
                 view(2);
+                plot_google_map('MapType', 'satellite');
                 
                 % lidarXYZ.
                 figure; hold on;
@@ -405,24 +441,22 @@ else
                 % lidarZ - getLiDarZFromXYFct(lidarX, lidarY).
                 figure; hold on;
                 plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarXYZ(:,1), lidarXYZ(:,2), ...
-                    lidarXYZ(:,3) - getLiDarZFromXYFct(lidarXYZ(:,1), ...
-                    lidarXYZ(:,2))]);
+                plot3k([lidarXYZ(:,1:2), ...
+                    lidarZsWaterRm - getLiDarZFromXYFct(lidarXs, lidarYs)]);
                 axis equal; view(2);
                 
                 % lidarEles - getEleFromXYFct(lidarX, lidarY).
                 figure; hold on;
                 plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarXYZ(:,1), lidarXYZ(:,2), ...
-                    lidarEles - getEleFromXYFct(lidarXYZ(:,1), ...
-                    lidarXYZ(:,2))]);
+                plot3k([lidarXYZ(:,1:2), ...
+                    lidarEles - getEleFromXYFct(lidarXs, lidarYs)]);
                 axis equal; view(2);
                 
                 % lidarZ - lidarEles.
                 figure; hold on;
                 plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarXYZ(:,1), lidarXYZ(:,2), ...
-                    lidarXYZ(:,3) - lidarEles]);
+                plot3k([lidarXYZ(:,1:2), ...
+                    lidarZsWaterRm - lidarEles]);
                 axis equal; view(2);
             end
             
