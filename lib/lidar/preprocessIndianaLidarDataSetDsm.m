@@ -88,8 +88,7 @@ else
     [xYBoundryPolygons, lonLatBoundryPolygons] ...
         = deal(cell(numLidarFiles,1));
     
-    %zzz par
-    for idxF = 1:numLidarFiles
+    parfor idxF = 1:numLidarFiles
         try
             tic;
             
