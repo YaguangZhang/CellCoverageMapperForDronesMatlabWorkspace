@@ -90,6 +90,9 @@ else
         warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
         warning('off', 'MATLAB:polyshape:repairedBySimplify');
         
+        % Load our Python module.
+        py_addpath(fullfile(pwd, 'lib', 'python'));
+        
         try
             tic;
             
