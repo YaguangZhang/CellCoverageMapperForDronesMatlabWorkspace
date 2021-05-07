@@ -63,9 +63,6 @@ maxAllowedAbsLidarZ = 10^38;
 % edge. Note: 1/3 arc second approximately correspond to 10 meters.
 usgsBoxPadInM = 15;
 
-% We will temporarily ignore the warning from polyshape.
-warning('off','MATLAB:polyshape:repairedBySimplify');
-
 [~, datasetName] = fileparts(ABS_PATH_TO_LOAD_LIDAR);
 
 disp(' ')
@@ -89,6 +86,10 @@ else
         = deal(cell(numLidarFiles,1));
     
     parfor idxF = 1:numLidarFiles
+        % We will ignore the warning for function handles and polyshape.
+        warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+        warning('off', 'MATLAB:polyshape:repairedBySimplify');
+        
         try
             tic;
             
@@ -469,13 +470,14 @@ else
                 'file # ', num2str(idxF), '/', ...
                 num2str(numLidarFiles), '!']')
         end
+        
+        warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+        warning('on', 'MATLAB:polyshape:repairedBySimplify');
     end
     
     save(ABS_DIR_TO_SAVE_RESULTS, ...
         'lidarFileRelDirs', 'xYBoundryPolygons', 'lonLatBoundryPolygons');
 end
-
-warning('on','MATLAB:polyshape:repairedBySimplify');
 
 disp('    Done!')
 
