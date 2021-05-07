@@ -76,14 +76,17 @@ function [ simState ] ...
 %         blockage maps and the coverage maps, respectively, for all the RX
 %         height that have been inspected.
 %       - blockageMapsForEachCell, coverageMapsForEachCell
-%         Two cells for the blockage and coverage maps (for all cell
-%         antennas affecting the simulation for all drone heights),
+%         Two cells for the blockage and coverage path loss maps (for all
+%         cell antennas affecting the simulation for all drone heights),
 %         respectively. For example,
 %               simState.blockageMapsForEachCell{idxCell}{idxDroneHeight}
 %         is the path loss vector (for locations in simState.mapGridXYPts)
 %         for the idxCell-th cellular tower that has effect on the
 %         simulation, at the idxDroneHeight-th drone height that needs to
 %         be inspected.
+%       - blockageDistMapsForEachCell
+%         A cell holding the blockage distance in meters with a structure
+%         similar to that for blockageMapsForEachCell.
 %       - TimeUsedInSForEachPixel
 %         For debugging and evaluating computation performance of the
 %         simulator, we also record the time used in second for each map
@@ -110,7 +113,7 @@ function [ simState ] ...
 %         path loss. With 20 MHz bandwidth, 9 dB RX noise figure, and 100 W
 %         TX power, we have a maximum path loss of ~142 dB.
 %
-% Yaguang Zhang, Purdue, 03/09/2021
+% Yaguang Zhang, Purdue, 05/07/2021
 
 %% Before Processing the Data
 
@@ -121,8 +124,8 @@ end
 
 % Extra information on the LiDAR data set.
 %   - Overall boundries for the area covered by the LiDAR data set in UTM.
-lidarFilesXYCoveragePolyshape ...
-    = mergePolygonsForAreaOfInterest(lidarFileXYCoveragePolyshapes, 1);
+% lidarFilesXYCoveragePolyshape ...
+%     = mergePolygonsForAreaOfInterest(lidarFileXYCoveragePolyshapes, 1);
 %   - Centroids for the LiDAR files in UTM.
 lidarFileXYCentroids ...
     = extractCentroidsFrom2DPolyCell(lidarFileXYCoveragePolyshapes);
@@ -436,7 +439,9 @@ numOfRxHeightToInspect ...
     = length(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M);
 [numPixelsPerMap, ~] = size(simState.mapGridXYPts);
 if ~isfield(simState, 'blockageMapsForEachCell')
-    [simState.blockageMapsForEachCell, simState.coverageMapsForEachCell, ...
+    [simState.blockageMapsForEachCell, ...
+        simState.coverageMapsForEachCell, ...
+        simState.blockageDistMapsForEachCell, ...
         simState.TimeUsedInSForEachPixel] ...
         = deal(cell(numOfEffeCellAnts, 1));
     
@@ -481,6 +486,8 @@ if ~isfield(simState, 'blockageMapsForEachCell')
             simState.blockageMapsForEachCell{idxEffeCellAnt} ...
                 {idxDroneHeightInM} = nan(1, numPixelsPerMap);
             simState.coverageMapsForEachCell{idxEffeCellAnt} ...
+                {idxDroneHeightInM} = nan(1, numPixelsPerMap);
+            simState.blockageDistMapsForEachCell{idxEffeCellAnt} ...
                 {idxDroneHeightInM} = nan(1, numPixelsPerMap);
             simState.TimeUsedInSForEachPixel{idxEffeCellAnt} ...
                 {idxDroneHeightInM} = zeros(1, numPixelsPerMap);
@@ -534,7 +541,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     for idxWorker = 1:numOfWorkers
         resultsFromWorkersCell{idxWorker} ...
             = nan(length(locIndicesForAllWorkers{idxWorker}) ...
-            .*numOfRxHeightToInspect, 5);
+            .*numOfRxHeightToInspect, 6);
     end
     
     % Utilize parfor only when a majority of the workers will get something
@@ -661,7 +668,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                     = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M( ...
                     idxDroneHeightInM);
                 
-                [curBlockagePL, curCoveragePL] ...
+                [curBlockagePL, curCoveragePL, curBlockageDistInM] ...
                     = computeBlockageAndCoveragePLs( ...
                     curLidarProfile, curTerrainProfile, ...
                     curCellXYH, [curDroneXY, curDroneH], ...
@@ -670,12 +677,12 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                 curExecTime = toc(curExecTimeStartTic);
                 
                 % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
-                % idxDroneHeightInM].
+                % idxDroneHeightInM, curBlockageDistInM].
                 curWorkerPixCnt = curWorkerPixCnt+1;
                 resultsFromWorkersCell{idxWorker} ...
                     (curWorkerPixCnt, :) ...
                     = [curBlockagePL, curCoveragePL, curExecTime, ...
-                    idxDroneLoc, idxDroneHeightInM];
+                    idxDroneLoc, idxDroneHeightInM, curBlockageDistInM];
                 
                 % Reset timer.
                 curExecTimeStartTic = tic;
@@ -713,11 +720,14 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         curPixelExecTime = curResult(3);
         curIdxDroneLoc = curResult(4);
         curIdxDroneHeightInM = curResult(5);
+        curBlockageDistInM = curResult(6);
         
         simState.blockageMapsForEachCell{idxEffeCellAnt} ...
             {curIdxDroneHeightInM}(curIdxDroneLoc) = curBlockagePL;
         simState.coverageMapsForEachCell{idxEffeCellAnt} ...
             {curIdxDroneHeightInM}(curIdxDroneLoc) = curCoveragePL;
+        simState.blockageDistMapsForEachCell{idxEffeCellAnt} ...
+            {curIdxDroneHeightInM}(curIdxDroneLoc) = curBlockageDistInM;
         simState.TimeUsedInSForEachPixel{idxEffeCellAnt} ...
             {curIdxDroneHeightInM}(curIdxDroneLoc) = curPixelExecTime;
     end

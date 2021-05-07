@@ -1,5 +1,5 @@
-function [ blockagePL ] = computeBlockagePL(txXYAlt, rxXYAlt, ...
-    lidarProfile, simConfigs)
+function [ blockagePL, blockageDistInM ] ...
+    = computeBlockagePL(txXYAlt, rxXYAlt, lidarProfile, simConfigs)
 %COMPUTEBLOCKAGEPL Compute the path loss (in dB) for a pixel of the
 %blockage map.
 %
@@ -33,6 +33,8 @@ function [ blockagePL ] = computeBlockagePL(txXYAlt, rxXYAlt, ...
 %   - blockagePL
 %     The path loss for the blockage map. If the link is blocked, a NaN
 %     will be returned.
+%   - blockageDistInM
+%     The distance (in meters) blocked according to the LiDAR profile.
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
@@ -54,38 +56,46 @@ parsLoSPath = polyfit([0; distTxToRx], ...
 % LoS path height at the LiDAR profile sample locations.
 losPathHs = polyval(parsLoSPath, obsLidarProfDists);
 
-if all(losPathHs>obsLidarProfileZs)
-    % The direct path is now ensured clear. We need to consider the first
-    % Fresnel zone here to more accurately determine the LoS paths.
-    
-    % Distance between the celluar tower and the lidar z locations.
-    d1s = vecnorm( ...
-        [obsLidarProfDists(:)'; ...
-        obsLidarProfileZs(:)'-txXYAlt(3)]);
-    % Distance between the lidar z locations and the mobile device.
-    d2s = vecnorm( ...
-        [distTxToRx - obsLidarProfDists(:)'; ...
-        obsLidarProfileZs(:)'-rxXYAlt(3)]);
-    % First Fresnel zone radii for the lidar z locations.
-    firstFresRadii ...
-        = (sqrt( ...
-        (simConfigs.CARRIER_WAVELENGTH_IN_M .* d1s .* d2s)./(d1s + d2s)))';
-    
-    % The distances between the lidar z locations and the TX-RX direct
-    % path.
-    distsToDirectPath ...
-        = point_to_line_distance( ...
-        [obsLidarProfDists(:), obsLidarProfileZs(:)], ...
-        [0, txXYAlt(3)], ...
-        [distTxToRx, rxXYAlt(3)]);
-    
-    % The extra clearance ratio respective to the first Fresnel zone radius
-    % for LoS paths.
-    if all(distsToDirectPath ...
-            > simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadii)
-        blockagePL = fspl(distTxToRx, simConfigs.CARRIER_WAVELENGTH_IN_M);
-    end
-end
+% Locations with LiDAR z points NOT below the direct path can be already
+% treated as blocked.
+boolsBelowDirectPath = obsLidarProfileZs<losPathHs;
+boolsBlocked = ~boolsBelowDirectPath;
 
+% For locations with LiDAR z below the direct path, we need to consider the
+% first Fresnel zone to accurately determine the blockage distance.
+
+% Distances between the celluar tower and the lidar z locations.
+d1s = vecnorm( ...
+    [obsLidarProfDists(boolsBelowDirectPath)'; ...
+    obsLidarProfileZs(boolsBelowDirectPath)'-txXYAlt(3)]);
+% Distances between the lidar z locations and the mobile device.
+d2s = vecnorm( ...
+    [distTxToRx - obsLidarProfDists(boolsBelowDirectPath)'; ...
+    obsLidarProfileZs(boolsBelowDirectPath)'-rxXYAlt(3)]);
+% First Fresnel zone radii for the lidar z locations.
+firstFresRadii ...
+    = (sqrt( ...
+    (simConfigs.CARRIER_WAVELENGTH_IN_M .* d1s .* d2s)./(d1s + d2s)))';
+
+% The distances between the lidar z locations and the TX-RX direct path.
+distsToDirectPath ...
+    = point_to_line_distance( ...
+    [obsLidarProfDists(boolsBelowDirectPath), ...
+    obsLidarProfileZs(boolsBelowDirectPath)], ...
+    [0, txXYAlt(3)], ...
+    [distTxToRx, rxXYAlt(3)]);
+
+% The extra clearance ratio respective to the first Fresnel zone radius for
+% LoS paths.
+boolsBlocked(boolsBelowDirectPath) = distsToDirectPath ...
+    <= simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadii;
+
+% For simplicity, we will estimate blockageDistInM based on boolsBlocked
+% (without considering the start and end points).
+blockageDistInM = distTxToRx*(sum(boolsBlocked)/length(boolsBlocked));
+
+if all(~boolsBlocked)
+    blockagePL = fspl(distTxToRx, simConfigs.CARRIER_WAVELENGTH_IN_M);
+end
 end
 % EOF
