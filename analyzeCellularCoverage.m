@@ -339,7 +339,6 @@ end
 disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 
 % Plot results.
-addpath('5_SimulationForExtendedTipp');
-plotCoverageSimulationResults(pathToSaveResults, simState, simConfigs);
+plotSimulationResults(pathToSaveResults, simState, simConfigs);
 
 % EOF

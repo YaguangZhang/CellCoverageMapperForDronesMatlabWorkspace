@@ -4,8 +4,8 @@ function [matRxLocWithPathloss, rxAntH, cellAntLoc, cellAntH] ...
 %FETCHPATHLOSSRESULTSFROMSIMSTATE A helper function to fetch pathloss
 %results from the simulation state struct variable simState.
 %
-% Note that when GPS system location is requested, we use (lon, lat) as the
-% output because it matches the UTM (x, y) in plots.
+% Note that when GPS system location is requested, we use (lon, lat) (note
+% the order) as the output because it matches the UTM (x, y) in plots.
 %
 % Inputs:
 %   - simState
@@ -17,9 +17,11 @@ function [matRxLocWithPathloss, rxAntH, cellAntLoc, cellAntH] ...
 %     The indices for the effective cellular antenna and inspected RX
 %     height of interest.
 %   - mapType
-%     Either 'Blockage' or 'Coverage', corresponding to the pathloss
-%     results stored in fields blockageMapsForEachCell and
-%     coverageMapsForEachCell of simState, respectively.
+%     String. 'Blockage', 'Coverage', or 'BlockageDist'. The first two
+%     correspond to the pathloss results stored in fields
+%     blockageMapsForEachCell and coverageMapsForEachCell of simState,
+%     respectively. And the third one corresponds to the blockage distance
+%     results stored in the field blockageDistMapsForEachCell of simState.
 %   - simConfigs
 %     The configuration struct for the simulation. We need fields:
 %       - RX_ANT_HEIGHTS_TO_INSPECT_IN_M
@@ -40,7 +42,7 @@ function [matRxLocWithPathloss, rxAntH, cellAntLoc, cellAntH] ...
 %     Similarly to the RX location, cellAntLoc is (x, y) or (lon, lat)
 %     depending on locType.
 %
-% Yaguang Zhang, Purdue, 10/21/2019
+% Yaguang Zhang, Purdue, 05/07/2021
 
 rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxRxHeight);
 cellAntXY = simState.CellAntsXyhEffective(idxEffeCell, 1:2);
@@ -48,11 +50,14 @@ cellAntH = simState.CellAntsXyhEffective(idxEffeCell, 3);
 
 switch lower(mapType)
     case('blockage')
-        pathlosses ...
-            = simState.blockageMapsForEachCell{idxEffeCell}{idxRxHeight}';
+        values = simState.blockageMapsForEachCell ...
+            {idxEffeCell}{idxRxHeight}';
     case('coverage')
-        pathlosses ...
-            = simState.coverageMapsForEachCell{idxEffeCell}{idxRxHeight}';
+        values = simState.coverageMapsForEachCell ...
+            {idxEffeCell}{idxRxHeight}';
+    case('blockagedist')
+        values = simState.blockageDistMapsForEachCell ...
+            {idxEffeCell}{idxRxHeight}';
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
@@ -70,7 +75,7 @@ switch lower(locType)
         error(['Unsupported locType ', locType, '!']);
 end
 
-matRxLocWithPathloss = [rxLocs pathlosses];
+matRxLocWithPathloss = [rxLocs values];
 
 end
 % EOF

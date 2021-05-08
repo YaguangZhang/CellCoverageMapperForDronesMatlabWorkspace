@@ -37,7 +37,8 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     the input path loss map or not.
 %   - flagCmdToPlotPLs
 %     An optional string to control what command to use in plotting the
-%     path loss map. Currently support: 'plot3k' and 'surf'.
+%     path loss map. Currently support: 'plot3k', 'surf', and
+%     'gridDataSurf'.
 %
 %     If 'surf' is chosen, we will need a new meshgrid for the plot. In
 %     this case, to obtain the z values for points in the new grid, we will
@@ -158,6 +159,7 @@ if any(boolsPathLossesToShow)
     xLabelToSet = 'Longitude';
     yLabelToSet = 'Latitude';
     cLabelToSet = 'Path Loss (dB)';
+    cLabelToSetDist = 'Blockage Distance (m)';
     switch lower(flagCmdToPlotPLs)
         case 'plot3k'
             hRxs = plot3k( ...
@@ -166,6 +168,20 @@ if any(boolsPathLossesToShow)
                 xLabelToSet, yLabelToSet, ...
                 '', cLabelToSet}, ...
                 'ColorRange', colorRange);
+        case 'griddatasurf'
+            set(gca, 'fontWeight', 'bold');
+            
+            % Create meshgrid for surf.
+            upSampFactor = 10;
+            sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
+                .*upSampFactor;
+            surfOpts = {'EdgeColor', 'interp', 'FaceAlpha', 0.9};
+            
+            hRxs = gridDataSurf(matRxLonLatWithPathLoss, ...
+                sufNumPtsPerSide, surfOpts{:});
+            xlabel(xLabelToSet); ylabel(yLabelToSet);
+            hCb = colorbar;
+            title(hCb, cLabelToSetDist);
         case 'surf'
             set(gca, 'fontWeight', 'bold');
             

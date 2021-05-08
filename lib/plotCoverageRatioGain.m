@@ -15,8 +15,8 @@ function [hFigCovRatGain] = plotCoverageRatioGain( ...
 %       - RX_ANT_HEIGHTS_TO_INSPECT_IN_M
 %         Rx heights for the simulator to inspect.
 %   - mapType
-%     A case-insensitive string, 'Blockage' or 'Coverage', controling what
-%     type of map to consider.
+%     A case-insensitive string, 'Blockage', 'Coverage', or 'BlockageDist',
+%     controling what type of map to consider.
 %   - flagVisible
 %     An optional boolean for whether to show the resultant figure or not.
 %     Default to true.
@@ -28,7 +28,7 @@ function [hFigCovRatGain] = plotCoverageRatioGain( ...
 % Update 20191112: If flagResizeFigForPublication is set to true in the
 % base workspace, the figure will be resized for publication.
 %
-% Yaguang Zhang, Purdue, 10/05/2019
+% Yaguang Zhang, Purdue, 05/07/2021
 
 % Set an appropriate figure size for publication.
 try
@@ -60,6 +60,8 @@ switch lower(mapType)
         maps = simState.blockageMaps;
     case 'coverage'
         maps = simState.coverageMaps;
+    case 'blockagedist'
+        maps = simState.blockageDistMaps;
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
@@ -80,7 +82,7 @@ for idxMap = 1:numMaps
         'All maps should have the same number of pixels!');
     
     switch lower(mapType)
-        case 'blockage'
+        case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
         case 'coverage'
             boolsCovPs = (~isnan(curM)) ...
