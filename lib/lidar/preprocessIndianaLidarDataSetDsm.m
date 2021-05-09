@@ -153,6 +153,8 @@ else
                 disp('            Aborted.');
             end
         end
+        
+        toc;
     end
     
     boolsFilesProcessed(indicesFilesProcessed) = curBoolsFilesProcessed;
