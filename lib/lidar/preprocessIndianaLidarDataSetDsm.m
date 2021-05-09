@@ -85,7 +85,75 @@ else
     [xYBoundryPolygons, lonLatBoundryPolygons] ...
         = deal(cell(numLidarFiles,1));
     
-    parfor idxF = 1:numLidarFiles
+    % Generate full path strings to the Matlab .mat cache files for saving
+    % and reusing the preprocessing results.
+    curDirToSaveLidarResults = fullfile( ...
+        ABS_PATH_TO_LOAD_LIDAR, ...
+        'MatlabCache');
+    if ~exist(curDirToSaveLidarResults, 'dir')
+        mkdir(curDirToSaveLidarResults)
+    end
+    fullPathToSaveLidarResults = cell(numLidarFiles, 1);
+    for idxF = 1:numLidarFiles
+        if ~exist('curLidarFileParentRelDir', 'var')
+            [curLidarFileParentRelDir, curLidarFileName] ...
+                = fileparts(lidarFileRelDirs{idxF});
+        else
+            [~, curLidarFileName] = fileparts(lidarFileRelDirs{idxF});
+        end
+        fullPathToSaveLidarResults{idxF} = fullfile( ...
+            curDirToSaveLidarResults, [curLidarFileName, '.mat']);
+    end
+    
+    % Load results for files that are already processed.
+    boolsFileProcessed = cellfun(@(matPath) exist(matPath, 'file'), ...
+        fullPathToSaveLidarResults)';
+    parfor idxF = find(boolsFileProcessed)
+        tic;
+        
+        disp(['        File # ', ...
+            num2str(idxF), '/', num2str(numLidarFiles), ...
+            ': Loading history results ...']);
+        
+        curFullPathToSaveLidarResults ...
+            = fullPathToSaveLidarResults{idxF};
+        
+        % Try reusing the history results.
+        if exist(curFullPathToSaveLidarResults, 'file') ...
+                && (~FLAG_FORCE_REPROCESSING_DATA)
+            
+            % Clear last warning message.
+            lastwarn('');
+            try
+                historyResult = load(curFullPathToSaveLidarResults, ...
+                    'xYBoundryPolygon', 'lonLatBoundryPolygon');
+                xYBoundryPolygon = historyResult.xYBoundryPolygon;
+                lonLatBoundryPolygon ...
+                    = historyResult.lonLatBoundryPolygon;
+            catch err
+                disp('            There was an error!')
+                dispErr(err);
+                warning('The history result .mat file is invalid!');
+            end
+            
+            % Check whether there is any warning in loading the desired
+            % data.
+            [warnMsg, ~] = lastwarn;
+            if ~isempty(warnMsg)
+                warning('Failed in loading history data!');
+                boolsFileProcessed(idxF) = false;
+                disp('            Aborted.');
+            end
+        else
+            boolsFileProcessed(idxF) = false;
+        end
+        
+        xYBoundryPolygons{idxF} = xYBoundryPolygon;
+        lonLatBoundryPolygons{idxF} = lonLatBoundryPolygon;
+    end
+    
+    % Processing other files.
+    parfor idxF = find(~boolsFileProcessed)
         % We will ignore the warning for function handles and polyshape.
         warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
         warning('off', 'MATLAB:polyshape:repairedBySimplify');
@@ -97,315 +165,269 @@ else
             tic;
             
             disp(['        File # ', ...
-                num2str(idxF), '/', num2str(numLidarFiles), ' ...']);
+                num2str(idxF), '/', num2str(numLidarFiles), ...
+                ': Processing raw LiDAR data ...']);
             
-            [curLidarFileParentRelDir, curLidarFileName] ...
-                = fileparts(lidarFileRelDirs{idxF});
+            curFullPathToSaveLidarResults ...
+                = fullPathToSaveLidarResults{idxF};
             
-            % For saving and reusing the results.
-            curDirToSaveLidarResults = fullfile( ...
-                ABS_PATH_TO_LOAD_LIDAR, ...
-                'MatlabCache');
-            if ~exist(curDirToSaveLidarResults, 'dir')
-                mkdir(curDirToSaveLidarResults)
-            end
-            curFullPathToSaveLidarResults = fullfile( ...
-                curDirToSaveLidarResults, [curLidarFileName, '.mat']);
+            %====== START OF LIDAR DATA PROCESSING ======
+            % Load LiDAR data.
+            curLidarFileAbsDir = fullfile(ABS_PATH_TO_LOAD_LIDAR, ...
+                curLidarFileParentRelDir, [curLidarFileName, '.tif']);
+            [lidarDataImg, R] = readgeoraster(curLidarFileAbsDir);
+            lidarDataImg(abs(lidarDataImg(:))>maxAllowedAbsLidarZ) ...
+                = nan;
+            % Reset samples with exact zero values. Regions with water seem
+            % to always have a z value of 0.
+            lidarDataImg(lidarDataImg(:)==0) = -inf;
             
-            % Try reusing the history results.
-            flagSuccessInLoadingData = false;
-            if exist(curFullPathToSaveLidarResults, 'file') ...
-                    && (~FLAG_FORCE_REPROCESSING_DATA)
-                disp('            Loading history results ...');
+            [lidarRasterXLabels, lidarRasterYLabels] ...
+                = pixcenters(geotiffinfo(curLidarFileAbsDir));
+            
+            % Convert survery feet to meter.
+            lidarDataImg = distdim(lidarDataImg, 'ft', 'm');
+            % Convert raster (row, col) to (lat, lon). First, get the
+            % projected coordinate system (CRS).
+            coordinateSystem = convertStringsToChars( ...
+                lower(R.ProjectedCRS.Name));
+            % Remove white space.
+            coordinateSystem(isspace(coordinateSystem)) = [];
+            
+            % Some sanity checks for the data set.
+            try
+                assert(contains(coordinateSystem, lower('NAD')) ...
+                    && contains(coordinateSystem, '83'), ...
+                    ['Expecting CRS NAD83! (', ...
+                    convertStringsToChars(R.ProjectedCRS.Name), ')']);
+                % Check if this is a data set for Indiana.
+                assert(contains(coordinateSystem, ...
+                    lower('Indiana')), ...
+                    ['Expecting Indiana data! (', ...
+                    convertStringsToChars(R.ProjectedCRS.Name), ')']);
+            catch err
+                disp(['        There was an error ', ...
+                    'validating the projection name!']);
+                dispErr(err);
                 
-                % Clear last warning message.
-                lastwarn('');
+                disp(['            Trying to ', ...
+                    'validate the projection by its parameters...']);
+                coordinateSystem = validateProjectionByParameter( ...
+                    R.ProjectedCRS.ProjectionParameters);
+                if strcmp(coordinateSystem, 'unknown')
+                    R.ProjectedCRS.ProjectionParameters
+                    error('Projection validation failed!')
+                end
+            end
+            
+            if contains(coordinateSystem, 'East','IgnoreCase', true)
+                % The State plane code for the Tippecanoe data.
+                STATE_PLANE_CODE_TIPP = 'indiana east';
+            elseif contains(coordinateSystem, 'West', ...
+                    'IgnoreCase', true)
+                STATE_PLANE_CODE_TIPP = 'indiana west';
+            else
+                error( ...
+                    ['Unknown projected coordinate system: ', ...
+                    R.ProjectedCRS.Name, '!']);
+            end
+            [lidarRasterXs, lidarRasterYs] ...
+                = meshgrid(lidarRasterXLabels, lidarRasterYLabels);
+            [lidarLons, lidarLats] ...
+                = sp_proj(STATE_PLANE_CODE_TIPP, 'inverse', ...
+                lidarRasterXs(:), lidarRasterYs(:), 'sf');
+            
+            % Store the new (x,y,z) data.
+            lidarLats = lidarLats(:);
+            lidarLons = lidarLons(:);
+            [lidarXs, lidarYs] ...
+                = DEG2UTM_FCT(lidarLats, lidarLons); %#ok<PFBNS>
+            
+            % Note: the data type is single for elements in lidarZs.
+            lidarZs = lidarDataImg(:);
+            % Note: the final matrix lidarXYZ has "single" elements, even
+            % though both lidarXs and lidarYs are of the type "double".
+            %   lidarXYZ = [lidarXs, lidarYs, lidarDataImg(:)];
+            
+            % Find the polygon boundaries.
+            xYBoundryPolygonIndices = boundary(lidarXs, lidarYs);
+            xYBoundryPolygon ...
+                = polyshape([lidarXs(xYBoundryPolygonIndices), ...
+                lidarYs(xYBoundryPolygonIndices)]);
+            % Note: the (lon, lat) boundary is generated independently.
+            lonLatBoundryPolygonIndices ...
+                = boundary(lidarLons, lidarLats);
+            lonLatBoundryPolygon ...
+                = polyshape(...
+                [lidarLons(lonLatBoundryPolygonIndices), ...
+                lidarLats(lonLatBoundryPolygonIndices)]);
+            
+            assert( (xYBoundryPolygon.NumRegions == 1) ...
+                && (lonLatBoundryPolygon.NumRegions == 1), ...
+                'Generated boundaries should have only one region!');
+            
+            % Create a function to get LiDAR z from UTM coordinates.
+            fctLonLatToLidarStatePlaneXY ...
+                = @(lon, lat) sp_proj(STATE_PLANE_CODE_TIPP, ...
+                'forward', lon, lat, 'sf');
+            getLiDarZFromStatePlaneXYFct = @(spXs, spYs) ...
+                interp2(lidarRasterXs, lidarRasterYs, ...
+                lidarDataImg, spXs, spYs);
+            getLiDarZFromXYFct ...
+                = @(xs, ys) genRasterLidarZGetter( ...
+                getLiDarZFromStatePlaneXYFct, ...
+                fctLonLatToLidarStatePlaneXY, ...
+                xs, ys, UTM2DEG_FCT);
+            
+            disp('            Generating elevation information ...');
+            
+            % Create the ranges for lat/lon in the UTM space. This helps
+            % avoid NaN interpolation results near the edge.
+            xRange = [min(lidarXs)-usgsBoxPadInM, ...
+                max(lidarXs)+usgsBoxPadInM];
+            yRange = [min(lidarYs)-usgsBoxPadInM, ...
+                max(lidarYs)+usgsBoxPadInM];
+            [latRMin, lonRMin] = UTM2DEG_FCT(xRange(1), yRange(1));
+            [latRMax, lonRMax] = UTM2DEG_FCT(xRange(2), yRange(2));
+            latRange = [latRMin, latRMax];
+            lonRange = [lonRMin, lonRMax];
+            
+            % For avoid reading in incomplete raw terrain files that are
+            % being downloaded by other worker, we will try loading the
+            % data a few times.
+            numTrials = 0;
+            maxNumTrialsAllowed = 3; % 30;
+            timeToWaitBeforeTryAgainInS = 0; % 30;
+            % Default directory to save USDA data.
+            usdaDataDir = 'usgsdata';
+            % Backup directory to store USDA data when the data in the
+            % default directory do not work (possibly because of the
+            % collision of workers trying to store the same data file at
+            % the same dir). We will assign one folder for each worker to
+            % avoid any future collisions.
+            usdaDataBackupDir = fullfile('usgsdata_forEachWorker', ...
+                ['worker_', num2str(labindex)]);
+            fctFetchRegion = @(latR, lonR) ...
+                fetchregion(latR, lonR, ...
+                'display', true, 'dataDir', usdaDataDir);
+            while ~isinf(numTrials)
                 try
-                    historyResult = load(curFullPathToSaveLidarResults, ...
-                        'xYBoundryPolygon', 'lonLatBoundryPolygon');
-                    xYBoundryPolygon = historyResult.xYBoundryPolygon;
-                    lonLatBoundryPolygon ...
-                        = historyResult.lonLatBoundryPolygon;
+                    % Use USGS 1/3 arc-second (~10m) resolution data for US
+                    % terrain elevation.
+                    region = fctFetchRegion(latRange, lonRange);
+                    rawElevData = region.readelevation(...
+                        latRange, lonRange, ...
+                        'sampleFactor', 1, ...
+                        'display', true);
+                    numTrials = inf;
                 catch err
                     disp('            There was an error!')
                     dispErr(err);
-                    warning('The history result .mat file is invalid!');
-                end
-                
-                % Check whether there is any warning in loading the desired
-                % data.
-                [warnMsg, ~] = lastwarn;
-                if isempty(warnMsg)
-                    flagSuccessInLoadingData = true;
-                end
-                
-                if ~flagSuccessInLoadingData
-                    warning('Failed in loading history data!');
-                    disp('            Aborted.');
+                    
+                    if strcmpi(err.identifier, ...
+                            'MATLAB:subsassigndimmismatch')
+                        % A workaround for a bug in the terrain elevation
+                        % libary. Some downloaded tiles have more data than
+                        % what the raster needs. Typically, if the size of
+                        % the raster is m x n, the data fetched could be
+                        % (m+1) x (n+1). We will only use m x n of the data
+                        % fetched, then.
+                        fctFetchRegion = @(latR, longR) ...
+                            fetchAnomalyRegion(latR, longR, ...
+                            'display', true, 'dataDir', usdaDataDir);
+                    else
+                        % Use the backup USGS cache folder to avoid
+                        % collision.
+                        fctFetchRegion = @(latR, longR) ...
+                            fetchregion(latR, longR, ...
+                            'display', true, ...
+                            'dataDir', usdaDataBackupDir);
+                    end
+                    
+                    numTrials = numTrials+1;
+                    warning(['Error fetching elevation info for ', ...
+                        'file # ', num2str(idxF), '/', ...
+                        num2str(numLidarFiles), ...
+                        ' (trial # ', num2str(numTrials), ')!']);
+                    if numTrials == maxNumTrialsAllowed
+                        error( ...
+                            ['Error fetching elevation info for ', ...
+                            'file # ', num2str(idxF), '/', ...
+                            num2str(numLidarFiles), ...
+                            ' (trial # ', num2str(numTrials), ')!']);
+                    end
+                    pause(timeToWaitBeforeTryAgainInS);
                 end
             end
             
-            if ~flagSuccessInLoadingData
-                disp('            Processing raw LiDAR data ...');
+            disp(['        Fitting elevation data ', ...
+                'in the (lon, lat) system ...']);
+            % Order the raw elevation data so that both lat and lon are
+            % monotonically increasing.
+            [rawElevDataLonsSorted, rawElevDataLatsSorted, ...
+                rawElevDataElesSorted] ...
+                = sortGridMatrixByXY(...
+                rawElevData.longs, rawElevData.lats, ...
+                rawElevData.elev);
+            
+            % Create a grid for the elevation data.
+            [usgsElevDataLons, usgsElevDataLats] = meshgrid( ...
+                rawElevDataLonsSorted, rawElevDataLatsSorted);
+            
+            % For very tiny LiDAR data tiles, we may not have enough
+            % elevation data to carry out interp2. If that happens, we will
+            % use the LiDAR data grid for the elevation, too.
+            try
+                % Interperlate the data with lat and lon.
+                lidarEles = interp2( ...
+                    usgsElevDataLons, usgsElevDataLats, ...
+                    rawElevDataElesSorted, lidarLons, lidarLats);
                 
-                % Load LiDAR data.
-                curLidarFileAbsDir = fullfile(ABS_PATH_TO_LOAD_LIDAR, ...
-                    curLidarFileParentRelDir, [curLidarFileName, '.tif']);
-                [lidarDataImg, R] = readgeoraster(curLidarFileAbsDir);
-                lidarDataImg(abs(lidarDataImg(:))>maxAllowedAbsLidarZ) ...
-                    = nan;
-                % Reset samples with exact zero values. Regions with water
-                % seem to always have a z value of 0.
-                lidarDataImg(lidarDataImg(:)==0) = -inf;
+                % For nan results, fetch the elevation data from USGS.
+                boolsNanEles = isnan(lidarEles);
+                lidarEles(boolsNanEles) ...
+                    = queryElevationPointsFromUsgsInChunks( ...
+                    lidarLats(boolsNanEles), lidarLons(boolsNanEles));
                 
-                [lidarRasterXLabels, lidarRasterYLabels] ...
-                    = pixcenters(geotiffinfo(curLidarFileAbsDir));
+                % Create a function to get elevation from UTM coordinates
+                % in the same way.
+                getEleFromXYFct = @(xs, ys) ...
+                    genUtmEleGetter( ...
+                    usgsElevDataLats, usgsElevDataLons, ...
+                    rawElevDataElesSorted, xs, ys, UTM2DEG_FCT);
+            catch err
+                disp(['        There was an error ', ...
+                    'interperlating the elevation data!']);
+                dispErr(err);
                 
-                % Convert survery feet to meter.
-                lidarDataImg = distdim(lidarDataImg, 'ft', 'm');
-                % Convert raster (row, col) to (lat, lon). First, get the
-                % projected coordinate system (CRS).
-                coordinateSystem = convertStringsToChars( ...
-                    lower(R.ProjectedCRS.Name));
-                % Remove white space.
-                coordinateSystem(isspace(coordinateSystem)) = [];
+                % Fetch the key stored by plot_google_maps. If this does
+                % not work, please run plot_google_maps with your Google
+                % Maps API once and try again.
+                googleApiKeyFile = load(fullfile( ...
+                    fileparts(which('plot_google_map')), ...
+                    'api_key.mat'));
+                lidarEles = getElevations(lidarLats, lidarLons, ...
+                    'key', googleApiKeyFile.apiKey);
+                lidarRasterEles ...
+                    = reshape(lidarEles, size(lidarRasterXs));
                 
-                % Some sanity checks for the data set.
-                try
-                    assert(contains(coordinateSystem, lower('NAD')) ...
-                        && contains(coordinateSystem, '83'), ...
-                        ['Expecting CRS NAD83! (', ...
-                        convertStringsToChars(R.ProjectedCRS.Name), ')']);
-                    % Check if this is a data set for Indiana.
-                    assert(contains(coordinateSystem, ...
-                        lower('Indiana')), ...
-                        ['Expecting Indiana data! (', ...
-                        convertStringsToChars(R.ProjectedCRS.Name), ')']);
-                catch err
-                    disp(['        There was an error ', ...
-                        'validating the projection name!']);
-                    dispErr(err);
-                    
-                    disp(['            Trying to ', ...
-                        'validate the projection by its parameters...']);
-                    coordinateSystem = validateProjectionByParameter( ...
-                        R.ProjectedCRS.ProjectionParameters);
-                    if strcmp(coordinateSystem, 'unknown')
-                        R.ProjectedCRS.ProjectionParameters
-                        error('Projection validation failed!')
-                    end
-                end
-                
-                if contains(coordinateSystem, 'East','IgnoreCase', true)
-                    % The State plane code for the Tippecanoe data.
-                    STATE_PLANE_CODE_TIPP = 'indiana east';
-                elseif contains(coordinateSystem, 'West', ...
-                        'IgnoreCase', true)
-                    STATE_PLANE_CODE_TIPP = 'indiana west';
-                else
-                    error( ...
-                        ['Unknown projected coordinate system: ', ...
-                        R.ProjectedCRS.Name, '!']);
-                end
-                [lidarRasterXs, lidarRasterYs] ...
-                    = meshgrid(lidarRasterXLabels, lidarRasterYLabels);
-                [lidarLons, lidarLats] ...
-                    = sp_proj(STATE_PLANE_CODE_TIPP, 'inverse', ...
-                    lidarRasterXs(:), lidarRasterYs(:), 'sf');
-                
-                % Store the new (x,y,z) data.
-                lidarLats = lidarLats(:);
-                lidarLons = lidarLons(:);
-                [lidarXs, lidarYs] ...
-                    = DEG2UTM_FCT(lidarLats, lidarLons); %#ok<PFBNS>
-                
-                % Note: the data type is single for elements in lidarZs.
-                lidarZs = lidarDataImg(:);
-                % Note: the final matrix lidarXYZ has "single" elements,
-                % even though both lidarXs and lidarYs are of the type
-                % "double".
-                %   lidarXYZ = [lidarXs, lidarYs, lidarDataImg(:)];
-                
-                % Find the polygon boundaries.
-                xYBoundryPolygonIndices = boundary(lidarXs, lidarYs);
-                xYBoundryPolygon ...
-                    = polyshape([lidarXs(xYBoundryPolygonIndices), ...
-                    lidarYs(xYBoundryPolygonIndices)]);
-                % Note: the (lon, lat) boundary is generated independently.
-                lonLatBoundryPolygonIndices ...
-                    = boundary(lidarLons, lidarLats);
-                lonLatBoundryPolygon ...
-                    = polyshape(...
-                    [lidarLons(lonLatBoundryPolygonIndices), ...
-                    lidarLats(lonLatBoundryPolygonIndices)]);
-                
-                assert( (xYBoundryPolygon.NumRegions == 1) ...
-                    && (lonLatBoundryPolygon.NumRegions == 1), ...
-                    'Generated boundaries should have only one region!');
-                
-                % Create a function to get LiDAR z from UTM coordinates.
-                fctLonLatToLidarStatePlaneXY ...
-                    = @(lon, lat) sp_proj(STATE_PLANE_CODE_TIPP, ...
-                    'forward', lon, lat, 'sf');
                 getLiDarZFromStatePlaneXYFct = @(spXs, spYs) ...
                     interp2(lidarRasterXs, lidarRasterYs, ...
-                    lidarDataImg, spXs, spYs);
-                getLiDarZFromXYFct ...
+                    lidarRasterEles, spXs, spYs);
+                getEleFromXYFct ...
                     = @(xs, ys) genRasterLidarZGetter( ...
                     getLiDarZFromStatePlaneXYFct, ...
                     fctLonLatToLidarStatePlaneXY, ...
                     xs, ys, UTM2DEG_FCT);
-                
-                disp('            Generating elevation information ...');
-                
-                % Create the ranges for lat/lon in the UTM space. This
-                % helps avoid NaN interpolation results near the edge.
-                xRange = [min(lidarXs)-usgsBoxPadInM, ...
-                    max(lidarXs)+usgsBoxPadInM];
-                yRange = [min(lidarYs)-usgsBoxPadInM, ...
-                    max(lidarYs)+usgsBoxPadInM];
-                [latRMin, lonRMin] = UTM2DEG_FCT(xRange(1), yRange(1));
-                [latRMax, lonRMax] = UTM2DEG_FCT(xRange(2), yRange(2));
-                latRange = [latRMin, latRMax];
-                lonRange = [lonRMin, lonRMax];
-                
-                % For avoid reading in incomplete raw terrain files that
-                % are being downloaded by other worker, we will try loading
-                % the data a few times.
-                numTrials = 0;
-                maxNumTrialsAllowed = 3; % 30;
-                timeToWaitBeforeTryAgainInS = 0; % 30;
-                % Default directory to save USDA data.
-                usdaDataDir = 'usgsdata';
-                % Backup directory to store USDA data when the data in the
-                % default directory do not work (possibly because of the
-                % collision of workers trying to store the same data file
-                % at the same dir). We will assign one folder for each
-                % worker to avoid any future collisions.
-                usdaDataBackupDir = fullfile('usgsdata_forEachWorker', ...
-                    ['worker_', num2str(labindex)]);
-                fctFetchRegion = @(latR, lonR) ...
-                    fetchregion(latR, lonR, ...
-                    'display', true, 'dataDir', usdaDataDir);
-                while ~isinf(numTrials)
-                    try
-                        % Use USGS 1/3 arc-second (~10m) resolution data
-                        % for US terrain elevation.
-                        region = fctFetchRegion(latRange, lonRange);
-                        rawElevData = region.readelevation(...
-                            latRange, lonRange, ...
-                            'sampleFactor', 1, ...
-                            'display', true);
-                        numTrials = inf;
-                    catch err
-                        disp('            There was an error!')
-                        dispErr(err);
-                        
-                        if strcmpi(err.identifier, ...
-                                'MATLAB:subsassigndimmismatch')
-                            % A workaround for a bug in the terrain
-                            % elevation libary. Some downloaded tiles have
-                            % more data than what the raster needs.
-                            % Typically, if the size of the raster is m x
-                            % n, the data fetched could be (m+1) x (n+1).
-                            % We will only use m x n of the data fetched,
-                            % then.
-                            fctFetchRegion = @(latR, longR) ...
-                                fetchAnomalyRegion(latR, longR, ...
-                                'display', true, 'dataDir', usdaDataDir);
-                        else
-                            % Use the backup USGS cache folder to avoid
-                            % collision.
-                            fctFetchRegion = @(latR, longR) ...
-                                fetchregion(latR, longR, ...
-                                'display', true, ...
-                                'dataDir', usdaDataBackupDir);
-                        end
-                        
-                        numTrials = numTrials+1;
-                        warning(['Error fetching elevation info for ', ...
-                            'file # ', num2str(idxF), '/', ...
-                            num2str(numLidarFiles), ...
-                            ' (trial # ', num2str(numTrials), ')!']);
-                        if numTrials == maxNumTrialsAllowed
-                            error( ...
-                                ['Error fetching elevation info for ', ...
-                                'file # ', num2str(idxF), '/', ...
-                                num2str(numLidarFiles), ...
-                                ' (trial # ', num2str(numTrials), ')!']);
-                        end
-                        pause(timeToWaitBeforeTryAgainInS);
-                    end
-                end
-                
-                disp(['        Fitting elevation data ', ...
-                    'in the (lon, lat) system ...']);
-                % Order the raw elevation data so that both lat and lon are
-                % monotonically increasing.
-                [rawElevDataLonsSorted, rawElevDataLatsSorted, ...
-                    rawElevDataElesSorted] ...
-                    = sortGridMatrixByXY(...
-                    rawElevData.longs, rawElevData.lats, ...
-                    rawElevData.elev);
-                
-                % Create a grid for the elevation data.
-                [usgsElevDataLons, usgsElevDataLats] = meshgrid( ...
-                    rawElevDataLonsSorted, rawElevDataLatsSorted);
-                
-                % For very tiny LiDAR data tiles, we may not have enough
-                % elevation data to carry out interp2. If that happens, we
-                % will use the LiDAR data grid for the elevation, too.
-                try
-                    % Interperlate the data with lat and lon.
-                    lidarEles = interp2( ...
-                        usgsElevDataLons, usgsElevDataLats, ...
-                        rawElevDataElesSorted, lidarLons, lidarLats);
-                    
-                    % For nan results, fetch the elevation data from USGS.
-                    boolsNanEles = isnan(lidarEles);
-                    lidarEles(boolsNanEles) ...
-                        = queryElevationPointsFromUsgsInChunks( ...
-                        lidarLats(boolsNanEles), lidarLons(boolsNanEles));
-                    
-                    % Create a function to get elevation from UTM
-                    % coordinates in the same way.
-                    getEleFromXYFct = @(xs, ys) ...
-                        genUtmEleGetter( ...
-                        usgsElevDataLats, usgsElevDataLons, ...
-                        rawElevDataElesSorted, xs, ys, UTM2DEG_FCT);
-                catch err
-                    disp(['        There was an error ', ...
-                        'interperlating the elevation data!']);
-                    dispErr(err);
-                    
-                    % Fetch the key stored by plot_google_maps. If this
-                    % does not work, please run plot_google_maps with your
-                    % Google Maps API once and try again.
-                    googleApiKeyFile = load(fullfile( ...
-                        fileparts(which('plot_google_map')), ...
-                        'api_key.mat'));
-                    lidarEles = getElevations(lidarLats, lidarLons, ...
-                        'key', googleApiKeyFile.apiKey);
-                    lidarRasterEles ...
-                        = reshape(lidarEles, size(lidarRasterXs));
-                    
-                    getLiDarZFromStatePlaneXYFct = @(spXs, spYs) ...
-                        interp2(lidarRasterXs, lidarRasterYs, ...
-                        lidarRasterEles, spXs, spYs);
-                    getEleFromXYFct ...
-                        = @(xs, ys) genRasterLidarZGetter( ...
-                        getLiDarZFromStatePlaneXYFct, ...
-                        fctLonLatToLidarStatePlaneXY, ...
-                        xs, ys, UTM2DEG_FCT);
-                end
-                
-                parsave(curFullPathToSaveLidarResults, ...
-                    lidarXs, lidarYs, lidarZs, ...
-                    xYBoundryPolygon, getLiDarZFromXYFct, ...
-                    lidarLats, lidarLons, lidarEles, getEleFromXYFct, ...
-                    lonLatBoundryPolygon,  ...
-                    STATE_PLANE_CODE_TIPP, DEG2UTM_FCT, UTM2DEG_FCT);
             end
+            
+            parsave(curFullPathToSaveLidarResults, ...
+                lidarXs, lidarYs, lidarZs, ...
+                xYBoundryPolygon, getLiDarZFromXYFct, ...
+                lidarLats, lidarLons, lidarEles, getEleFromXYFct, ...
+                lonLatBoundryPolygon,  ...
+                STATE_PLANE_CODE_TIPP, DEG2UTM_FCT, UTM2DEG_FCT);
+            %====== END OF LIDAR DATA PROCESSING ======
             
             xYBoundryPolygons{idxF} = xYBoundryPolygon;
             lonLatBoundryPolygons{idxF} = lonLatBoundryPolygon;
