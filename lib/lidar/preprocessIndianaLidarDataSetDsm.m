@@ -95,28 +95,33 @@ else
     end
     fullPathToSaveLidarResults = cell(numLidarFiles, 1);
     for idxF = 1:numLidarFiles
-        if ~exist('curLidarFileParentRelDir', 'var')
-            [curLidarFileParentRelDir, curLidarFileName] ...
-                = fileparts(lidarFileRelDirs{idxF});
-        else
-            [~, curLidarFileName] = fileparts(lidarFileRelDirs{idxF});
-        end
+        [~, curLidarFileName] = fileparts(lidarFileRelDirs{idxF});
         fullPathToSaveLidarResults{idxF} = fullfile( ...
             curDirToSaveLidarResults, [curLidarFileName, '.mat']);
     end
     
     % Load results for files that are already processed.
-    boolsFileProcessed = cellfun(@(matPath) exist(matPath, 'file'), ...
+    boolsFilesProcessed = cellfun(@(matPath) exist(matPath, 'file'), ...
         fullPathToSaveLidarResults)';
-    parfor idxF = find(boolsFileProcessed)
+    indicesFilesProcessed = find(boolsFilesProcessed);
+    numOfFilesProcessed = length(indicesFilesProcessed);
+    
+    fullPathToProcessedLidarResults ...
+        = fullPathToSaveLidarResults(indicesFilesProcessed);
+    curBoolsFilesProcessed = false(1, numOfFilesProcessed);
+    [curXYBoundryPolygons, curLonLatBoundryPolygons] ...
+        = deal(cell(numOfFilesProcessed,1));
+    
+    parfor idxPar = 1:numOfFilesProcessed
         tic;
         
         disp(['        File # ', ...
-            num2str(idxF), '/', num2str(numLidarFiles), ...
+            num2str(indicesFilesProcessed(idxPar)), ...
+            '/', num2str(numLidarFiles), ...
             ': Loading history results ...']);
         
         curFullPathToSaveLidarResults ...
-            = fullPathToSaveLidarResults{idxF};
+            = fullPathToProcessedLidarResults{idxPar};
         
         % Try reusing the history results.
         if exist(curFullPathToSaveLidarResults, 'file') ...
@@ -139,21 +144,35 @@ else
             % Check whether there is any warning in loading the desired
             % data.
             [warnMsg, ~] = lastwarn;
-            if ~isempty(warnMsg)
+            if isempty(warnMsg)
+                curXYBoundryPolygons{idxPar} = xYBoundryPolygon;
+                curLonLatBoundryPolygons{idxPar} = lonLatBoundryPolygon;
+                curBoolsFilesProcessed(idxPar) = true;
+            else
                 warning('Failed in loading history data!');
-                boolsFileProcessed(idxF) = false;
                 disp('            Aborted.');
             end
-        else
-            boolsFileProcessed(idxF) = false;
         end
-        
-        xYBoundryPolygons{idxF} = xYBoundryPolygon;
-        lonLatBoundryPolygons{idxF} = lonLatBoundryPolygon;
     end
     
+    boolsFilesProcessed(indicesFilesProcessed) = curBoolsFilesProcessed;
+    xYBoundryPolygons(indicesFilesProcessed) ...
+        = curXYBoundryPolygons;
+    lonLatBoundryPolygons(indicesFilesProcessed) ...
+        = curLonLatBoundryPolygons;
+    
     % Processing other files.
-    parfor idxF = find(~boolsFileProcessed)
+    indicesFilesToProcess = find(~boolsFilesProcessed);
+    numOfFilesToProcess = length(indicesFilesToProcess);
+    
+    fullPathToSaveNewLidarResults ...
+        = fullPathToSaveLidarResults(indicesFilesToProcess);
+    [curXYBoundryPolygons, curLonLatBoundryPolygons] ...
+        = deal(cell(numOfFilesToProcess,1));
+    
+    parfor idxPar = 1:numOfFilesToProcess
+        idxF = indicesFilesToProcess(idxPar);
+        
         % We will ignore the warning for function handles and polyshape.
         warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
         warning('off', 'MATLAB:polyshape:repairedBySimplify');
@@ -169,7 +188,9 @@ else
                 ': Processing raw LiDAR data ...']);
             
             curFullPathToSaveLidarResults ...
-                = fullPathToSaveLidarResults{idxF};
+                = fullPathToSaveNewLidarResults{idxPar};
+            [curLidarFileParentRelDir, curLidarFileName] ...
+                = fileparts(lidarFileRelDirs{idxF});
             
             %====== START OF LIDAR DATA PROCESSING ======
             % Load LiDAR data.
@@ -429,8 +450,8 @@ else
                 STATE_PLANE_CODE_TIPP, DEG2UTM_FCT, UTM2DEG_FCT);
             %====== END OF LIDAR DATA PROCESSING ======
             
-            xYBoundryPolygons{idxF} = xYBoundryPolygon;
-            lonLatBoundryPolygons{idxF} = lonLatBoundryPolygon;
+            curXYBoundryPolygons{idxPar} = xYBoundryPolygon;
+            curLonLatBoundryPolygons{idxPar} = lonLatBoundryPolygon;
             
             if FLAG_GEN_DEBUG_FIGS
                 close all; %#ok<UNRCH>
@@ -499,6 +520,11 @@ else
         warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
         warning('on', 'MATLAB:polyshape:repairedBySimplify');
     end
+    
+    xYBoundryPolygons(indicesFilesToProcess) ...
+        = curXYBoundryPolygons;
+    lonLatBoundryPolygons(indicesFilesToProcess) ...
+        = curLonLatBoundryPolygons;
     
     save(ABS_DIR_TO_SAVE_RESULTS, ...
         'lidarFileRelDirs', 'xYBoundryPolygons', 'lonLatBoundryPolygons');

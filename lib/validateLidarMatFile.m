@@ -27,6 +27,10 @@ if isValidMat
     end
 end
 
+if ~exist('simConfigs', 'var')
+    simConfigs = evalin('base', 'simConfigs');
+end
+
 if ~isValidMat
     % Locate the Matlab workspace.
     [absPathToLib, ~] = fileparts(mfilename('fullpath'));
