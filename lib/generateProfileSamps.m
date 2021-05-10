@@ -131,11 +131,36 @@ for curIdxTile = unique(indicesClosestTile)'
     
     % For these points' LiDAR z, use nearest neighbor extrapolation,
     % instead of linear interp2, because the latter will output NaN in this
-    % case.
+    % case. Note that:
     %   indicesNearestPtInCurTile = dsearchn([lidarXs, lidarYs], ...
     %       profileSampLocs(boolsProfileSampsNearCurTile,1:2));
-    indicesNearestPtInCurTile = knnsearch([lidarXs, lidarYs], ...
-        profileSampLocs(boolsProfileSampsNearCurTile,1:2));
+    % is slower than:
+    %   indicesNearestPtInCurTile = knnsearch([lidarXs, lidarYs], ...
+    %       profileSampLocs(boolsProfileSampsNearCurTile,1:2));
+    % To speed things up, we will process the (lidarX, lidarY) pairs one by
+    % one.
+    numOfProfileSampsNearCurTile = sum(boolsProfileSampsNearCurTile);
+    indicesProfileSampsNearCurTile = find(boolsProfileSampsNearCurTile);
+    
+    indicesNearestPtInCurTile = nan(numOfProfileSampsNearCurTile, 1);
+    for idxSamp = 1:numOfProfileSampsNearCurTile
+        curIdxProfileSampsNearCurTile ...
+            = indicesProfileSampsNearCurTile(idxSamp);
+        curProfileSampLoc ...
+            = profileSampLocs(curIdxProfileSampsNearCurTile,1:2);
+        % Filter out grid points that are too far away.
+        deltaDist = lidarRasterResolutionInM*2;
+        boolsGridPtTooFar = abs(lidarXs-curProfileSampLoc(1))>deltaDist ...
+            | abs(lidarYs-curProfileSampLoc(2))>deltaDist;
+        curIndicesNearByGridPts = find(~boolsGridPtTooFar);
+        
+        curIndicesNearestPtInCurTile = knnsearch( ...
+            [lidarXs(curIndicesNearByGridPts), ...
+            lidarYs(curIndicesNearByGridPts)], ...
+            curProfileSampLoc);
+        indicesNearestPtInCurTile(idxSamp) ...
+            = curIndicesNearByGridPts(curIndicesNearestPtInCurTile);
+    end
     
     switch lower(terrainDataType)
         case 'elevation'
