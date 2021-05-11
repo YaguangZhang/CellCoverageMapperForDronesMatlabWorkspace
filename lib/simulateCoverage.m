@@ -515,6 +515,8 @@ numOfWorkersInLocalCluster = localCluster.NumWorkers;
 if ~exist('nextIdxEffeCellAnt', 'var')
     nextIdxEffeCellAnt = 1;
 end
+
+mapGridXYPts = simState.mapGridXYPts;
 for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     
     disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
@@ -583,6 +585,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             = curPathToOverheadTimeInSecStart;
     end
     
+    
     parfor (idxWorker = 1:numOfWorkers, parforArg)
         % Processing time considering the overhead.
         if parforArg ~= 0
@@ -593,8 +596,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         end
         
         curExecTimeInSecStartMatContent ...
-            = load(pathsToOverheadTimeInSecStarts{curTaskId});  ...
-            %#ok<PFBNS>
+            = load(pathsToOverheadTimeInSecStarts{curTaskId}); %#ok<PFBNS>
         curExecTimeStartTic = curExecTimeInSecStartMatContent ...
             .curExecTimeStartTic;
         
@@ -612,8 +614,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         curDroneLocIndices = locIndicesForAllWorkers{idxWorker};
         curWorkerNumPixs = length(curDroneLocIndices);
         curWorkerNumPixsToReportProgress = ceil(curWorkerNumPixs ...
-            .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT ...
-            ); %#ok<PFBNS>
+            .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT); %#ok<PFBNS>
         % Make sure curDroneLocIndices is a row vector.
         curDroneLocIndices = curDroneLocIndices(:)';
         for idxDroneLoc = curDroneLocIndices
@@ -630,8 +631,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             end
             
             % Drone location.
-            curDroneXY ...
-                = simState.mapGridXYPts(idxDroneLoc, :); %#ok<PFBNS>
+            curDroneXY = mapGridXYPts(idxDroneLoc, :); %#ok<PFBNS>
             
             % Generate terrain and LiDAR profiles. We will use an empty
             % cache path to skip saving the profiles.
