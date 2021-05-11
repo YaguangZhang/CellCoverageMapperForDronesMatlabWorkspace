@@ -162,6 +162,12 @@ else
     customFigSize = defaultFigPos(3:4);
 end
 
+% For each cell, if this ratio (or more) of workers will not be assigned
+% with any pixels to process, normal for loop (instead of parfor) will be
+% used. For example, set it to be 0 to always use for; set it to 1 to
+% always use parfor.
+MIN_RATIO_OF_EMPTY_WORKERS_TO_AVOID_PAR = 1;
+
 %% Create the Map Grid
 
 mapMinX = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
@@ -534,10 +540,9 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             .*numOfRxHeightToInspect, 6);
     end
     
-    % Utilize parfor only when a majority of the workers will get something
-    % to process.
+    % Utilize parfor only when some workers will get something to process.
     if (sum(cellfun(@(c) isempty(c), locIndicesForAllWorkers))...
-            /numOfWorkers)>=0.5
+            /numOfWorkers)>=MIN_RATIO_OF_EMPTY_WORKERS_TO_AVOID_PAR
         parforArg = 0;
     else
         parforArg = numOfWorkers;
