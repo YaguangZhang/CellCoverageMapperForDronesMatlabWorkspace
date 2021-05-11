@@ -111,9 +111,11 @@ end
 
 %   - Carrier frequency and wavelength. Typical values:
 %       - 1900 MHz
-%         For cellular LTE
-%       - 28000 MHz (28 GHz)
-%         For millimeter wave
+%         For cellular 4G LTE
+%       - C-Band: 3700 MHz (band n77) and 4700 MHz (band n79)
+%         For cellular 5G sub 6G
+%       - mmWave 28000 MHz (28 GHz)
+%         For cellular 5G millimeter wave
 simConfigs.CARRIER_FREQUENCY_IN_MHZ = 1900;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
     = physconst('LightSpeed')/simConfigs.CARRIER_FREQUENCY_IN_MHZ/1e6;
