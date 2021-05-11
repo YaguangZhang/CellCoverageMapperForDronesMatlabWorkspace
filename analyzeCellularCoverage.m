@@ -305,13 +305,13 @@ disp(['    [', datestr(now, datetimeFormat), ...
 % Note: we use "height" to indicate the vertical distance from the ground
 % to the antenna; "elevation" to indicate the ground elevation; and
 % "altitude" to indicate elevation+height.
-cellAntsLatLonAlt = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
-numAnts = size(cellAntsLatLonAlt, 1);
+cellAntsLatLonH = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
+numAnts = size(cellAntsLatLonH, 1);
 cellAntsXYH = nan(numAnts, 3);
 [cellAntsXYH(:,1), cellAntsXYH(:,2)] ...
-    = deg2utm_speZone(cellAntsLatLonAlt(:,1), cellAntsLatLonAlt(:,2));
-if size(cellAntsLatLonAlt, 2)>2
-    cellAntsXYH(:,3) = cellAntsLatLonAlt(:,3);
+    = deg2utm_speZone(cellAntsLatLonH(:,1), cellAntsLatLonH(:,2));
+if size(cellAntsLatLonH, 2)>2
+    cellAntsXYH(:,3) = cellAntsLatLonH(:,3);
 end
 boolsCellAntAltUnknown = isnan(cellAntsXYH(:,3));
 if any(boolsCellAntAltUnknown)
