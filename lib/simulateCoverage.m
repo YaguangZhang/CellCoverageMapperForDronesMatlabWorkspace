@@ -530,6 +530,8 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     locIndicesForAllWorkers ...
         = locIndicesForAllWorkersForAllCellsEff{idxEffeCellAnt};
     numOfWorkers = length(locIndicesForAllWorkers);
+    assert(numOfWorkers==numOfWorkersInLocalCluster, ...
+        'Preassigned tasks do not match current number of workers!');
     
     % Pre-allocate space. To make sure parfor works, we will store all
     % results from one worker into one matrix with each row being:
