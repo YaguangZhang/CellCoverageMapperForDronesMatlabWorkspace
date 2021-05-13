@@ -15,7 +15,8 @@
 %
 % Yaguang Zhang, Purdue, 05/05/2021
 
-clear; clc; close all; dbstop if error;
+clearvars -except PRESET CARRIER_FREQUENCY_IN_MHZ;
+clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
 cd(fileparts(mfilename('fullpath'))); addpath('lib');
@@ -27,7 +28,13 @@ prepareSimulationEnv;
 % Tippecanoe county, 'ExtendedTipp' for the WHIN area, and 'IN' for Indiana
 % state. Please refer to the Simulation Configurations section for a
 % complete list of supported presets.
-PRESET = 'ShrinkedIN';
+if ~exist('PRESET', 'var')
+    % For testing:
+    %   'ACRE_EXACT'.
+    % For the journal paper:
+    %   {'Tipp', 'ShrinkedIN'}.
+    PRESET = 'Tipp';
+end
 
 %% Script Parameters
 
@@ -116,7 +123,10 @@ end
 %         For cellular 5G sub 6G
 %       - mmWave 28000 MHz (28 GHz)
 %         For cellular 5G millimeter wave
-simConfigs.CARRIER_FREQUENCY_IN_MHZ = 1900;
+if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
+    CARRIER_FREQUENCY_IN_MHZ = 1900;
+end
+simConfigs.CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCY_IN_MHZ;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
     = physconst('LightSpeed')/simConfigs.CARRIER_FREQUENCY_IN_MHZ/1e6;
 
