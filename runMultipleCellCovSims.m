@@ -1,5 +1,5 @@
 %RUNMULTIPLECELLCOVSIMS Run multiple analyzeCellularCoverage with different
-%areas of interest.
+%areas/carrier frequencies of interest.
 %
 % This script can also be used to update the figures for completed
 % simulations.
@@ -16,14 +16,14 @@ prepareSimulationEnv;
 
 % Presets.
 PRESETS = {'ACRE_EXACT', 'Tipp', 'ShrinkedIN'};
-% Currently, we do not support multiple carrier frequencies.
+% Carrier frequencies.
 %	- 1900 MHz
 %     For cellular 4G LTE
 %   - C-Band: 3700 MHz (band n77) and 4700 MHz (band n79)
 %     For cellular 5G sub 6G
 %   - mmWave 28000 MHz (28 GHz)
 %     For cellular 5G millimeter wave
-CARRIER_FREQUENCIES_IN_MHZ = {1900};
+CARRIER_FREQUENCIES_IN_MHZ = {1900, 3700, 4700};
 
 for idxPreset = 1:length(PRESETS)
     for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)

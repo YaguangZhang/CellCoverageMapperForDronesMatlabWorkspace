@@ -56,11 +56,6 @@ DEFAULT_TX_ANT_HEIGHT_IN_M = 50;
 % The typical pedestrian height.
 PEDESTRIAN_HEIGHT_IN_M = 1.5;
 
-% The absolute path to the folder for saving the results.
-pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'PostProcessingResults', ['Simulation_', PRESET, ...
-    '_LiDAR_', LIDAR_DATA_SET_TO_USE]);
-
 %% Simulation Configurations
 % We will organize all the necessary configurations into a structure called
 % simConfigs.
@@ -236,6 +231,12 @@ simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 %   a smaller size for papers.
 simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 
+% The absolute path to the folder for saving the results.
+pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'PostProcessingResults', ['Simulation_', PRESET, ...
+    '_CARRIER_', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ...
+    'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+
 % Turn the diary logging function on.
 dirToSaveDiary = fullfile(pathToSaveResults, 'diary.txt');
 if ~exist(dirToSaveDiary, 'file')
@@ -352,5 +353,7 @@ disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 
 % Plot results.
 plotSimulationResults(pathToSaveResults, simState, simConfigs);
+
+diary off;
 
 % EOF
