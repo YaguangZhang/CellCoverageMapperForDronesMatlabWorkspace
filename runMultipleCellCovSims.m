@@ -25,8 +25,8 @@ PRESETS = {'ACRE_EXACT', 'Tipp', 'ShrinkedIN'};
 %     For cellular 5G millimeter wave
 CARRIER_FREQUENCIES_IN_MHZ = {1900, 3700, 4700};
 
-for idxPreset = 1:length(PRESETS)
-    for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
+for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
+    for idxPreset = 1:length(PRESETS)
         PRESET = PRESETS{idxPreset};
         CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
         
