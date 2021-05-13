@@ -507,8 +507,8 @@ parfevalOnAll(gcp(), ...
     @warning, 0, 'off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
 
 % Get the number of workers available for estimating progress.
-localCluster = parcluster('local');
-numOfWorkersInLocalCluster = localCluster.NumWorkers;
+curCluster = gcp;
+numOfWorkersInCurCluster = curCluster.NumWorkers;
 
 % The simulation progress is recorded in the integer variable
 % nextIdxEffeCellAnt, the next idxEffeCellAnt to process.
@@ -530,7 +530,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     locIndicesForAllWorkers ...
         = locIndicesForAllWorkersForAllCellsEff{idxEffeCellAnt};
     numOfWorkers = length(locIndicesForAllWorkers);
-    assert(numOfWorkers==numOfWorkersInLocalCluster, ...
+    assert(numOfWorkers==numOfWorkersInCurCluster, ...
         'Preassigned tasks do not match current number of workers!');
     
     % Pre-allocate space. To make sure parfor works, we will store all
@@ -731,7 +731,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     
     latestEstiPixExecTimeInS = mean(resultsFromWorkersMat(:,3));
     latestEstiTowerExecTimeInS = sum(resultsFromWorkersMat(:,3)) ...
-        ./numOfWorkersInLocalCluster;
+        ./numOfWorkersInCurCluster;
     % Take into account all the heights inspected.
     proMon.pixCnt = proMon.pixCnt ...
         + numOfResultsFromWorkers./numOfRxHeightToInspect;
@@ -755,7 +755,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     remainingTimeInS = latestEstiPixExecTimeInS ...
         .*(proMon.numOfPixToProcess-proMon.pixCnt) ...
         .*numOfRxHeightToInspect ...
-        ./numOfWorkersInLocalCluster;
+        ./numOfWorkersInCurCluster;
     disp(['            Estimated remaining time: ', ...
         num2str(remainingTimeInS, proMon.floatFomatter), ...
         ' seconds']);
