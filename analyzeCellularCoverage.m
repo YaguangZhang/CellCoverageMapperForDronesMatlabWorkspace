@@ -15,7 +15,8 @@
 %
 % Yaguang Zhang, Purdue, 05/05/2021
 
-clearvars -except PRESET CARRIER_FREQUENCY_IN_MHZ pathToSaveSimManDiary;
+clearvars -except PRESETS CARRIER_FREQUENCIES_IN_MHZ ...
+    PRESET CARRIER_FREQUENCY_IN_MHZ pathToSaveSimManDiary idxFre;
 clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
