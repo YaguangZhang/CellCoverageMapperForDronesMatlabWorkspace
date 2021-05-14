@@ -1,0 +1,116 @@
+DOI: https://doi.org/10.5069/G9959FHZ
+OT Collection ID: OT.062012.4326.1
+Dataset Name: 2011 - 2013 Indiana Statewide Lidar
+Short Name: IN_2011_2013
+Collection Platform: Airborne Lidar
+
+----------------------------------------------------------
+
+Dataset Overview: Indiana's Statewide Lidar data is produced at 1.5-meter average post spacing for all 92 Indiana Counties covering more than 36,420 square miles.  New Lidar data was captured except where previously captured Lidar data exists, or the participating County bought-up to a higher resolution of 1.0-meter average post spacing Lidar data.  Existing Lidar data exists for: Porter, Steuben, Noble, De Kalb, Allen, Madison, Delaware, Hendricks, Marion, Hancock, Morgan, Johnson, Shelby, Monroe, and portions of Vermillion, Parke, Vigo, Clay, Sullivan, Knox, Gibson, and Posey.  These existing Lidar datasets were seamlessly integrated into this new statewide dataset.  From this seamless Lidar product a statewide 5-foot post spacing hydro-flattened DEM product was created and is also available.  See the FGDC Metadata provided for more details. This statewide project is divided into three geographic areas captured over a 3-year period (2011-2013):Area 1 (2011) Indiana central counties: St. Joseph, Elkhart, Starke, Marshall, Kosciusko, Pulaski, Fulton, Cass, Miami, Wabash, Carroll, Howard, Clinton, Tipton, Boone, Hendricks, Marion, Morgan, Johnson, Monroe, Brown, Bartholomew, Lawrence, Jackson, Orange, Washington, Crawford, and Harrison. Area 2 (2012) Indiana eastern counties: LaGrange, Steuben, Noble, DeKalb, Whitley, Allen, Huntington, Wells, Adams, Grant, Blackford, Jay, Hamilton, Madison, Delaware, Randolph, Hancock, Henry, Wayne, Shelby, Rush, Fayette, Union, Decatur, Franklin, Jennings, Ripley, Dearborn, Ohio, Scott, Jefferson, Switzerland, Clark, and Floyd. Area 3 (2013) Indiana western counties: Lake, Porter, LaPorte, Newton, Jasper, Benton, White, Warren, Tippecanoe, Fountain, Montgomery, Vermillion, Parke, Putnam, Vigo, Clay, Owen, Sullivan, Greene, Knox, Daviess, Martin, Gibson, Pike, Dubois, Posey, Vanderburgh, Warrick, Spencer, and Perry.Funders of OpenTopography Hosting of the Indiana Statewide Lidar and DEM data: USDA NRCS, Indiana, ISPLS Foundation, Indiana Geographic Information Office, Indiana Office of Technology, Indiana Geological Survey, Surdex Corporation, Vectren Energy Delivery, Indiana, Woolpert, Inc., and Individual IGIC Member Donations from Jim Stout, Jeff McCann, Cele Morris, Becky McKinley, Phil Worrall, and Andy Nicholson.
+
+Dataset Acknowledgement: Ownership of the data products resides with the State of Indiana.  All Lidar, DEM and ancillary data products produced through this project are public domain data.  These data represent a public version of the data set and hold no distribution restrictions - please cite the data set as 'IndianaMap Framework Data' with link to http://www.indianamap.org. Cite as follows:IndianaMap (2011): IndianaMap Framework Lidar. Indiana Statewide Imagery and LiDAR Program, distributed by OpenTopography. https://doi.org/10.5069/G9959FHZ. Accessed April 1, 2018.
+
+Dataset Keywords: Indiana Statewide, IndianaMap, Lidar, DEM, Hydro-flattened DEM, LAS 1.2, IMG
+
+Survey Date: 03/13/2011 - 04/30/2012
+
+----------------------------------------------------------
+
+Data Provider and Roles:
+	1. Woolpert, Inc
+	Role: Collector
+	Url: https://www.woolpert.com/
+
+	2. Indiana Department of Transportation
+	Role: Funder
+	Url: https://www.in.gov/indot/
+
+	3. Indiana Department of Homeland Security
+	Role: Funder
+	Url: http://www.in.gov/dhs/
+
+	4. U.S. Geological Survey
+	Role: Funder
+	Url: https://www.usgs.gov/
+
+	5. Indiana Office of Community & Rural Affairs
+	Role: Funder
+	Url: https://www.in.gov/ocra/
+
+	6. USDA Natural Resources Conservation Services, Indiana
+	Role: Funder
+	Url: https://www.in.nrcs.usda.gov/
+
+	7. National Geospatial-Intelligence Agency
+	Role: Funder
+	Url: https://www.nga.mil/
+
+	8. National Telecommunications & Information Administration
+	Role: Funder
+	Url: https://www.ntia.doc.gov/
+
+	9. Indiana Geographic Information Council, Inc.
+	Role: Partner
+	Url: https://www.igic.org/
+
+	10. Indiana Geological Survey
+	Role: Partner
+	Url: https://igs.indiana.edu/
+
+	11. The IndianaMap
+	Role: Partner
+	Url: http://www.IndianaMap.org/
+
+	12. Indiana Geographic Information Office, Indiana Office of Technology
+	Role: Partner
+	Url: https://www.in.gov/iot/2398.htm
+
+	13. Indiana University, University Information Technology Services
+	Role: Partner
+	Url: https://gis.iu.edu/
+
+
+----------------------------------------------------------
+
+Total lidar Points: 149,496,475,234 pts
+
+Area: 96,094.7 km^2
+
+Point Density: 1.56 pts/m^2
+
+Raster Resolution: 5 ft
+
+Coordinates System: 
+	Horizontal: WGS84 [EPSG: 4326]
+	Vertical: NAVD88
+
+Survey Report: https://cloud.sdsc.edu/v1/AUTH_opentopography/www/metadata/IN_2011_2013.zip
+LAS Validation Data Report: https://cloud.sdsc.edu/v1/AUTH_opentopography/www/lasReports/IN_2011_2013.html
+
+----------------------------------------------------------
+
+Download and Access Products: 
+	1. Raster
+		opentopoID: OTSDEM.072013.2966.1
+		Data Processing: http://opentopo.sdsc.edu/raster?opentopoID=OTSDEM.072013.2966.1
+
+	2. Raster
+		opentopoID: OTSDEM.072013.2965.1
+		Data Processing: http://opentopo.sdsc.edu/raster?opentopoID=OTSDEM.072013.2965.1
+
+	3. Point Cloud Data
+		opentopoID: OTLAS.062012.4326.1
+		Data Processing: http://opentopo.sdsc.edu/lidarDataset?opentopoID=OTLAS.062012.4326.1
+
+
+----------------------------------------------------------
+
+Dataset Extent in KMZ format: https://cloud.sdsc.edu/v1/AUTH_opentopography/www/lidarkmls/point_cloud/01222014_IN_bounds.kmz
+
+Dataset Spatial Bounds:
+	North: 41.7812944127059°
+	South: 37.7569543785564°
+	East: -84.7639812851°
+	West: -88.1155086681°
+
+
