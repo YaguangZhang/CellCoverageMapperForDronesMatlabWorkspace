@@ -14,6 +14,10 @@ curFileName = mfilename;
 
 prepareSimulationEnv;
 
+pathToSaveSimManDiary = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'PostProcessingResults', 'simManDiary.txt');
+diary(pathToSaveSimManDiary);
+
 % Presets.
 PRESETS = {'ACRE_EXACT', 'Tipp', 'ShrinkedIN'};
 % Carrier frequencies.
@@ -23,15 +27,24 @@ PRESETS = {'ACRE_EXACT', 'Tipp', 'ShrinkedIN'};
 %     For cellular 5G sub 6G
 %   - mmWave 28000 MHz (28 GHz)
 %     For cellular 5G millimeter wave
-CARRIER_FREQUENCIES_IN_MHZ = {1900, 3700, 4700};
+CARRIER_FREQUENCIES_IN_MHZ = {1900, 3700, 4700, 28000};
 
 for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
     for idxPreset = 1:length(PRESETS)
         PRESET = PRESETS{idxPreset};
         CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
         
-        analyzeCellularCoverage;
+        try
+            diary off;
+            analyzeCellularCoverage;
+            diary(pathToSaveSimManDiary);
+        catch err
+            diary(pathToSaveSimManDiary);
+            disp(getReport(err))
+        end
     end
 end
+
+diary off;
 
 % EOF
