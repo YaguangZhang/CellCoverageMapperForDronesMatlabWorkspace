@@ -129,9 +129,12 @@ else
             
             % Clear last warning message.
             lastwarn('');
+            
+            % Make sure the file can be loaded properly.
             try
                 historyResult = load(curFullPathToSaveLidarResults, ...
-                    'xYBoundryPolygon', 'lonLatBoundryPolygon');
+                    'xYBoundryPolygon', 'lonLatBoundryPolygon', ...
+                    'getLiDarZFromXYFct');
                 xYBoundryPolygon = historyResult.xYBoundryPolygon;
                 lonLatBoundryPolygon ...
                     = historyResult.lonLatBoundryPolygon;
@@ -139,6 +142,21 @@ else
                 disp('            There was an error!')
                 dispErr(err);
                 warning('The history result .mat file is invalid!');
+            end
+            
+            % Make sure the function getLiDarZFromXYFct in the file has a
+            % valid workspace. More specifically, the function handle
+            % fctLonLatToLidarStatePlaneXY should be struct with field
+            % 'STATE_PLANE_CODE_TIPP'.
+            getLiDarZFromXYFctDetails = functions( ...
+                historyResult.getLiDarZFromXYFct);
+            fctLonLatToLidarStatePlaneXYDetails ...
+                = functions(getLiDarZFromXYFctDetails.workspace{1} ...
+                .fctLonLatToLidarStatePlaneXY);
+            if ~isfield( ...
+                    fctLonLatToLidarStatePlaneXYDetails.workspace{1}, ...
+                    'STATE_PLANE_CODE_TIPP')
+                warning('STATE_PLANE_CODE_TIPP not found!')
             end
             
             % Check whether there is any warning in loading the desired
@@ -192,7 +210,7 @@ else
             curFullPathToSaveLidarResults ...
                 = fullPathToSaveNewLidarResults{idxPar};
             [curLidarFileParentRelDir, curLidarFileName] ...
-                = fileparts(lidarFileRelDirs{idxF});
+                = fileparts(lidarFileRelDirs{idxF}); %#ok<PFBNS>
             
             %====== START OF LIDAR DATA PROCESSING ======
             % Load LiDAR data.
@@ -244,7 +262,10 @@ else
             end
             
             if contains(coordinateSystem, 'East','IgnoreCase', true)
-                % The State plane code for the Tippecanoe data.
+                % The state plane code for the data. A better name would be
+                % `STATE_PLANE_CODE_IN`, but we are reusing history code
+                % and this piece of information will not be exposed to the
+                % user, so it is fine to keep this field name unchanged.
                 STATE_PLANE_CODE_TIPP = 'indiana east';
             elseif contains(coordinateSystem, 'West', ...
                     'IgnoreCase', true)
