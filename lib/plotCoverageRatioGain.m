@@ -49,7 +49,7 @@ end
 markers = {'-', '-.', '--', ':'};
 lineWidth = 1;
 numOfMarkers = length(markers);
-infinitePathLossInDb = 1000;
+infinitePathLossInDb = 10^6;
 
 if ~exist('flagVisible', 'var')
     flagVisible = true;
@@ -97,16 +97,24 @@ end
 % Get the coverage ratio gain compared to the first map. For the
 % comparison, we need to construct a shared grid for the path loss values
 % and fit the empirical data for each map over the grid.
-numOfGridPts = 1000;
+numOfGridPts = 10^4;
 allCdfXs = vertcat(cdfXs{:});
 % Remove invalid grid points.
 allCdfXs = allCdfXs(isfinite(allCdfXs));
 gridValues = linspace(min(allCdfXs), max(allCdfXs), numOfGridPts)';
 
 covRatios = cell(numMaps, 1);
-% Find the axis following the same procedure as that for the empirical CDF
-% plots.
-xMax = -inf; xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
+% Find the axis range.
+xMax = -inf;
+switch lower(mapType)
+    case {'blockage', 'coverage'}
+        xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
+    case 'blockagedist'
+        xMin = inf;
+        xMinLog = 1;
+        gridValues = sort([xMinLog; gridValues]);
+end
+
 for idxMap = 1:numMaps
     % Pre-compute the axis ranges.
     maxPtIdxToShow = find(~isfinite(cdfXs{idxMap}), 1)-1;
@@ -131,9 +139,25 @@ for idxMap = 1:numMaps
     validCdfXs = cdfXs{idxMap}(boolsValidData);
     validCdfVs = cdfVs{idxMap}(boolsValidData);
     [~, indicesUniqueXs] = unique(validCdfXs);
-    covRatios{idxMap} ...
-        = interp1(validCdfXs(indicesUniqueXs), ...
-        validCdfVs(indicesUniqueXs), gridValues);
+    % Make sure the jump at zero, if present, is considered.
+    if (validCdfXs(1)==0) && (validCdfXs(2)==0)
+        indicesUniqueXs(1) = 2;
+    end
+    if length(indicesUniqueXs)==1 && length(validCdfVs)==2
+        covRatios{idxMap} = ...
+            ones(size(gridValues)).*validCdfVs(2);
+        covRatios{idxMap}(1) = validCdfVs(1);
+    else
+        if max(validCdfXs(indicesUniqueXs)) == max(allCdfXs)
+            covRatios{idxMap} ...
+                = interp1([validCdfXs(indicesUniqueXs)], ...
+                [validCdfVs(indicesUniqueXs)], gridValues);
+        else
+            covRatios{idxMap} ...
+                = interp1([validCdfXs(indicesUniqueXs); max(allCdfXs)], ...
+                [validCdfVs(indicesUniqueXs); 1], gridValues);
+        end
+    end
 end
 
 % We will plot the reference track and delete it later to get a consistant
@@ -162,14 +186,26 @@ end
 axis auto; curAxisAuto = axis; axis tight; curAxisTight = axis;
 curYLimToSet = curAxisTight(3:4) ...
     + (curAxisAuto(3:4)-curAxisTight(3:4)).*0.5;
-axis([xMin xMax curYLimToSet]);
+curYLimToSet(1) = max(curYLimToSet(1), 0);
+
+switch lower(mapType)
+    case {'blockage', 'coverage'}
+        xlabel('Maximum Allowed Path Loss (dB)');
+        curLoc = 'NorthWest';
+        axis([xMin xMax curYLimToSet]);
+    case 'blockagedist'
+        xlabel('Maximum Allowed Blockage Distance (m)');
+        set(gca, 'XScale', 'log');
+        curLoc = 'NorthEast';
+        axis([xMinLog xMax curYLimToSet]);
+end
 grid on; grid minor; box on;
-xlabel('Maximum Allowed Path Loss (dB)');
+
 ylabel('Coverage Ratio Gain (%)');
 hLeg = legend(hsCdf, ...
     arrayfun(@(n) ['UAV at ', num2str(n), ' m'], cdfMeta.rxHeightsInM, ...
     'UniformOutput', false), ...
-    'Location', 'NorthWest');
+    'Location', curLoc);
 delete(hsCdf(1));
 set(hLeg, 'AutoUpdate', 'off');
 line(xlim, [0 0], 'Color', 'k');

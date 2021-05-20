@@ -15,8 +15,8 @@ function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
 %       - RX_ANT_HEIGHTS_TO_INSPECT_IN_M
 %         Rx heights for the simulator to inspect.
 %   - mapType
-%     A case-insensitive string, 'Blockage' or 'Coverage', controling what
-%     type of map to consider.
+%     A case-insensitive string, 'Blockage', 'Coverage', or 'BlockageDist',
+%     controling what type of map to consider.
 %   - flagVisible
 %     An optional boolean for whether to show the resultant figure or not.
 %     Default to true.
@@ -45,7 +45,7 @@ function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
 % Update 20191112: If flagResizeFigForPublication is set to true in the
 % base workspace, the figure will be resized for publication.
 %
-% Yaguang Zhang, Purdue, 10/05/2019
+% Yaguang Zhang, Purdue, 05/18/2021
 
 % Set an appropriate figure size for publication.
 try
@@ -71,6 +71,8 @@ switch lower(mapType)
         maps = simState.blockageMaps;
     case 'coverage'
         maps = simState.coverageMaps;
+    case 'blockagedist'
+        maps = simState.blockageDistMaps;
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
@@ -91,7 +93,7 @@ for idxMap = 1:numMaps
         'All maps should have the same number of pixels!');
     
     switch lower(mapType)
-        case 'blockage'
+        case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
         case 'coverage'
             boolsCovPs = (~isnan(curM)) ...
@@ -108,36 +110,79 @@ cdfMeta.numsOfCovPixels = numsOfCovPixels;
 cdfMeta.coverageRatio ...
     = cdfMeta.numsOfCovPixels./cdfMeta.totalNumOfPixelsOnMap;
 
-% For plotting.
-markers = {'-', '-.', '--', ':'};
-lineWidth = 1;
-numOfMarkers = length(markers);
-infinitePathLossInDb = 1000;
+% Compute the ranges and points to show in the CDF plots.
+xMax = -inf;
+switch lower(mapType)
+    case {'blockage', 'coverage'}
+        xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
+    case 'blockagedist'
+        xMin = inf;
+end
 
-hFigCdf = figure('Visible', flagVisible, ...
-    'Position', [0, 0, desiredFigSizeInPixel]);
-hold on; set(gca, 'fontWeight', 'bold');
-xMax = -inf; xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
+[xs, ys] = deal(cell(numMaps, 1));
 for idxMap = 1:numMaps
-    curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
     maxPtIdxToShow = find(~isfinite(cdfXs{idxMap}), 1)-1;
     if isempty(maxPtIdxToShow)
         maxPtIdxToShow = length(cdfXs{idxMap});
     end
-    xs = [cdfXs{idxMap}(1:maxPtIdxToShow); ...
-        infinitePathLossInDb];
-    ys = [cdfVs{idxMap}(1:maxPtIdxToShow); ...
-        cdfVs{idxMap}(maxPtIdxToShow)];
-    hsCdf(idxMap) = plot(xs, ys, ...
-        curMarker, 'LineWidth', lineWidth); %#ok<AGROW>
-    xMax = max(cdfXs{idxMap}(maxPtIdxToShow), xMax);
     
+    xs{idxMap} = cdfXs{idxMap}(1:maxPtIdxToShow);
+    ys{idxMap} = cdfVs{idxMap}(1:maxPtIdxToShow);
+    
+    xMax = max(cdfXs{idxMap}(maxPtIdxToShow), xMax);
     % Find the last point with y less than 5% and keep a record of the
     % corresponding x. We will use the minimus x for the axis xMin.
-    curXMinIdx = find(ys<0.05, 1, 'last');
+    curXMinIdx = find(ys{idxMap}<0.05, 1, 'last');
     if ~isempty(curXMinIdx)
-        xMin = min(xMin, xs(curXMinIdx));
+        xMin = min(xMin, xs{idxMap}(curXMinIdx));
     end
+end
+
+% For plotting.
+markers = {'-', '-.', '--', ':'};
+lineWidth = 1;
+numOfMarkers = length(markers);
+
+hFigCdf = figure('Visible', flagVisible, ...
+    'Position', [0, 0, desiredFigSizeInPixel]);
+hold on; set(gca, 'fontWeight', 'bold');
+
+% Plots.
+for idxMap = 1:numMaps
+    curXs = xs{idxMap};
+    curYs = ys{idxMap};
+    
+    if curXs(1)>xMin
+        curXs = [xMin; curXs]; %#ok<AGROW>
+        curYs = [curYs(1); curYs]; %#ok<AGROW>
+    end
+    
+    if curXs(end)<xMax
+        if strcmpi(mapType, 'blockagedist')
+            assert(curYs(end)==1, 'The max Y is expected to be 1!');
+        end
+        curXs = [curXs; xMax]; %#ok<AGROW>
+        curYs = [curYs; curYs(end)]; %#ok<AGROW>
+    end
+    
+    if strcmpi(mapType, 'blockagedist')
+        % Adjust xs for log scale.
+        xMin = 1;
+        idxFirstNonZeroX = find(curXs~=0, 1, 'first');
+        if ~isempty(idxFirstNonZeroX)
+            curXs = [xMin; curXs(idxFirstNonZeroX:end)];
+            
+            idxFirstNonZeroY = find(curYs~=0, 1, 'first');
+            curYs = [curYs(idxFirstNonZeroY); curYs(idxFirstNonZeroX:end)];
+        else
+            curXs = [];
+            curYs = [];
+        end
+    end
+    
+    curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
+    hsCdf(idxMap) = plot(curXs, curYs, ...
+        curMarker, 'LineWidth', lineWidth); %#ok<AGROW>
 end
 axis tight; curAxis = axis; axisToSet = [xMin xMax curAxis(3:4)];
 try
@@ -146,10 +191,21 @@ catch
     warning(['Unable to set axis to ', mat2str(axisToSet), '!'])
 end
 grid on; grid minor; box on;
-xlabel('Path Loss (dB)'); ylabel('Empirical CDF');
+
+switch lower(mapType)
+    case {'blockage', 'coverage'}
+        xlabel('Path Loss (dB)');
+        curLoc = 'NorthWest';
+    case 'blockagedist'
+        xlabel('Blockage Distance (m)');
+        set(gca, 'XScale', 'log');
+        curLoc = 'SouthEast';
+end
+
+ylabel('Empirical CDF');
 legend(hsCdf, ...
     arrayfun(@(n) ['UAV at ', num2str(n), ' m'], cdfMeta.rxHeightsInM, ...
     'UniformOutput', false), ...
-    'Location', 'NorthWest');
+    'Location', curLoc);
 end
 % EOF

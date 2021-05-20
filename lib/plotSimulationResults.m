@@ -133,7 +133,7 @@ for idxWorker = 1:numOfWorkers
             [ hCurDistMap ] = plotPathLossMap(matRxLonLatWithDist, ...
                 cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
                 false, 'griddatasurf');
-
+            
             saveas(hCurDistMap,  pathToSaveBlockDistFig);
             close(hCurDistMap);
         end
@@ -204,7 +204,7 @@ close(hCurPLMap);
 % Smaller maps for publication.
 if ~isfield(simState,'flagResizeFigForPublication')
     % By default, we do not need to resize figures.
-    evalin('base', 'flagResizeFigForPublication = false');
+    evalin('base', 'flagResizeFigForPublication = false;');
 else
     evalin('base', ...
         'flagResizeFigForPublication=simState.RESIZE_FIG_FOR_PUBLICATION');
