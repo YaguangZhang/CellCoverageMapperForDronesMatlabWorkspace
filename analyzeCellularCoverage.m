@@ -117,6 +117,8 @@ end
 %         For cellular 4G LTE
 %       - C-Band: 3700 MHz (band n77) and 4700 MHz (band n79)
 %         For cellular 5G sub 6G
+%       - 7000 MHz (7 GHz) and 13000 MHz (13GHz)
+%         For broadband wireless backhaul.
 %       - mmWave 28000 MHz (28 GHz)
 %         For cellular 5G millimeter wave
 if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
