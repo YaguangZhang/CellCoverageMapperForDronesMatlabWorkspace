@@ -139,22 +139,28 @@ for idxMap = 1:numMaps
     validCdfXs = cdfXs{idxMap}(boolsValidData);
     validCdfVs = cdfVs{idxMap}(boolsValidData);
     [~, indicesUniqueXs] = unique(validCdfXs);
+    
     % Make sure the jump at zero, if present, is considered.
     if (validCdfXs(1)==0) && (validCdfXs(2)==0)
         indicesUniqueXs(1) = 2;
     end
+    
     if length(indicesUniqueXs)==1 && length(validCdfVs)==2
+        % The all 1 case.
         covRatios{idxMap} = ...
             ones(size(gridValues)).*validCdfVs(2);
         covRatios{idxMap}(1) = validCdfVs(1);
     else
         if max(validCdfXs(indicesUniqueXs)) == max(allCdfXs)
+            % Current max x reaches the maximum possible value. No need to
+            % expolate.
             covRatios{idxMap} ...
-                = interp1([validCdfXs(indicesUniqueXs)], ...
-                [validCdfVs(indicesUniqueXs)], gridValues);
+                = interp1(validCdfXs(indicesUniqueXs), ...
+                validCdfVs(indicesUniqueXs), gridValues);
         else
             covRatios{idxMap} ...
-                = interp1([validCdfXs(indicesUniqueXs); max(allCdfXs)], ...
+                = interp1( ...
+                [validCdfXs(indicesUniqueXs); infinitePathLossInDb], ...
                 [validCdfVs(indicesUniqueXs); 1], gridValues);
         end
     end
@@ -209,5 +215,6 @@ hLeg = legend(hsCdf, ...
 delete(hsCdf(1));
 set(hLeg, 'AutoUpdate', 'off');
 line(xlim, [0 0], 'Color', 'k');
+% line([xMax xMax], ylim, 'Color', 'k');
 end
 % EOF
