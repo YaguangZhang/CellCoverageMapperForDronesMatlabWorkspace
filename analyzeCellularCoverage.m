@@ -34,7 +34,7 @@ if ~exist('PRESET', 'var')
     %   'ACRE_EXACT'.
     % For the journal paper:
     %   {'Tipp', 'ShrinkedIN'}.
-    PRESET = 'Tipp';
+    PRESET = 'ShrinkedIN';
 end
 
 %% Script Parameters
@@ -122,7 +122,7 @@ end
 %       - mmWave 28000 MHz (28 GHz)
 %         For cellular 5G millimeter wave
 if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
-    CARRIER_FREQUENCY_IN_MHZ = 1900;
+    CARRIER_FREQUENCY_IN_MHZ = 28000;
 end
 simConfigs.CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCY_IN_MHZ;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...

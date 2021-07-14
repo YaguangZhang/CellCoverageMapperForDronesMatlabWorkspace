@@ -61,14 +61,22 @@ function [hCurPLMap, hCurHandleTxs] ...
 
 colorMap = 'jet';
 legendBackgroundColor = ones(1,3).*0.8;
-minPathLossInDbExpected = 80;
-flagRiseTxToTop = true;
+% Note:
+%   - The FSPL is 51.99 dB for 1.9 GHz carrier with 5 m Tx-to-Rx distance.
+%    - According to our simulations, the minimum path loss value on the
+%    coverage maps for ShrinkedIN is a little over 73 dB.
+%   - That value is ~68.59 dB for Tipp.
+minPathLossInDbExpected = 65;
+flagRiseTxToTop = false;
 
 % For plotting.
 colorTowers = 'w';
 markerTowers = 'x';
-markerSizeTowers = 6;
+markerSizeTowers = 4;
 lineWidthTowers = 1;
+
+optsSurf = {'EdgeColor', 'none', 'FaceAlpha', 0.5};
+optsGridDataSurf = {'EdgeColor', 'interp'};
 
 % The location of the legend.
 LEGEND_LOC = 'NorthEast';
@@ -175,12 +183,13 @@ if any(boolsPathLossesToShow)
             upSampFactor = 10;
             sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
                 .*upSampFactor;
-            surfOpts = {'EdgeColor', 'interp', 'FaceAlpha', 0.9};
             
             hRxs = gridDataSurf(matRxLonLatWithPathLoss, ...
-                sufNumPtsPerSide, surfOpts{:});
+                sufNumPtsPerSide, ...
+                optsGridDataSurf{:});
             xlabel(xLabelToSet); ylabel(yLabelToSet);
-            hCb = colorbar;
+            hCb = colorbar; caxis([ 0, ...
+                max([1,max(matRxLonLatWithPathLoss(:,3))]) ]);
             title(hCb, cLabelToSetDist);
         case 'surf'
             set(gca, 'fontWeight', 'bold');
@@ -229,7 +238,7 @@ if any(boolsPathLossesToShow)
             end
             
             hRxs = surf( lonsNew,latsNew,zsNew, ...
-                'FaceAlpha',0.5, 'EdgeColor', 'none');
+                optsSurf{:});
             caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
             hCb = colorbar; % ylabel(hCb, cLabelToSet);
             title(hCb, cLabelToSet);

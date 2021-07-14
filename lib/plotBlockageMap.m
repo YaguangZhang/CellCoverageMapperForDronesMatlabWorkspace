@@ -41,6 +41,7 @@ function [hCurBlockageMap, hCurHandleTxs] ...
 % Yaguang Zhang, Purdue, 10/02/2019
 
 legendBackgroundColor = ones(1,3).*0.8;
+flagRiseTxToTop = false;
 
 % For plotting.
 colorTowers = 'w';
@@ -101,8 +102,14 @@ end
     extensionFactor, simConfigs);
 
 % TX.
+if flagRiseTxToTop
+    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1);
+else
+    zsToPlotTx = zeros(length(cellAntLonLats(:,1)), 1);
+end
+
 hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
-    ones(length(cellAntLonLats(:,1)), 1), ...
+    zsToPlotTx, ...
     markerTowers, ...
     'MarkerSize', markerSizeTowers, ...
     'Color', colorTowers, ...
