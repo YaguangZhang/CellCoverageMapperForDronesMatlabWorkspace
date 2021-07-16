@@ -311,8 +311,6 @@ for idxH = 1:numOfRxHeightToInspect
     saveas(hCurDistMap, [pathToSaveFig, '.png']);
     saveas(hCurDistMap, [pathToSaveFig, '.fig']);
     
-    close(hCurDistMap);
-    
     %------ 3_extra_extra ------
     % The version with colorbar adjusted to be the same one but hidden.
     %---------------------------
