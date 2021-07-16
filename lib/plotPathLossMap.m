@@ -67,7 +67,6 @@ legendBackgroundColor = ones(1,3).*0.8;
 %    coverage maps for ShrinkedIN is a little over 73 dB.
 %   - That value is ~68.59 dB for Tipp.
 minPathLossInDbExpected = 65;
-flagRiseTxToTop = false;
 
 % For plotting.
 colorTowers = 'w';
@@ -95,6 +94,12 @@ end
 % We support: 'plot3k' and 'surf'(default).
 if ~exist('flagCmdToPlotPLs', 'var')
     flagCmdToPlotPLs = 'surf';
+end
+
+if strcmpi(flagCmdToPlotPLs, 'gridDataSurf')
+    flagRiseTxToTop = true;
+else
+    flagRiseTxToTop = false;
 end
 
 if ~exist('customFigSize', 'var')

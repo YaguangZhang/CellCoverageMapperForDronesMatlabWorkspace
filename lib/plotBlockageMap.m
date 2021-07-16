@@ -48,7 +48,7 @@ colorTowers = 'w';
 markerTowers = 'x';
 markerSizeTowers = 6;
 lineWidthTowers = 1;
-
+forceDeltaZ = 1;
 % We will use the first color for clearance and the last color for
 % blockage.
 COLORMAP_TO_USE = 'jet';
@@ -103,9 +103,9 @@ end
 
 % TX.
 if flagRiseTxToTop
-    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1);
+    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1).*(1+forceDeltaZ);
 else
-    zsToPlotTx = zeros(length(cellAntLonLats(:,1)), 1);
+    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1).*forceDeltaZ./2;
 end
 
 hCurHandleTxs = plot3(cellAntLonLats(:,1), cellAntLonLats(:,2), ...
@@ -157,8 +157,10 @@ if any(boolsPtsToIgnore)
     zsNew(boolsPtsToIgnore) = nan;
 end
 
-% Plot the blockage areas.
-hRxs = surf(lonsNew,latsNew,zsNew, ...
+% Plot the blockage areas. Note that we shift up zsNew values to make sure
+% the TX's are shown properly (when TX's are expected to be under the surf
+% plot).
+hRxs = surf(lonsNew,latsNew,zsNew+forceDeltaZ, ...
     'FaceAlpha',0.5, 'EdgeColor', 'none');
 curColormap = colormap(COLORMAP_TO_USE);
 hClear = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(1, :));
@@ -177,6 +179,9 @@ adjustFigSizeByContent(hCurBlockageMap, ...
     axisLonLatToSet, 'height', weightForWidth*0.9);
 
 plot_google_map('MapType', 'satellite');
+
+% Fix the color range issue caused by shifted zsNew.
+caxis([1,2]);
 
 end
 % EOF

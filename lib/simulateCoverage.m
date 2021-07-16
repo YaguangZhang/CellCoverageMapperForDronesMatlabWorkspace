@@ -249,6 +249,8 @@ if ~exist([curDirToSave, '.eps'], 'file')
                 'EdgeColor', 'none');
             yticks(yticks);
             yticklabels(yticklabels);
+        case 'shrinkedin'
+            set(hLeg, 'Location', 'SouthEast');
     end
     
     saveEpsFigForPaper(hFigAreaOfInterest, curDirToSave);
@@ -308,10 +310,12 @@ if ~exist(curDirToSave, 'file')
     uistack(hIneffeCells, 'bottom'); uistack(hEffeCells, 'top');
     adjustFigSizeByContent(hFigCellOverview, axisXYToSet, 'height');
     xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
-    legend([hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
+    hLeg = legend([hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
         'Area of interest', 'Extended area', 'Cell towers to consider', ...
         'Ineffective cell towers');
-    
+    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        set(hLeg, 'Location', 'SouthEast');
+    end
     saveas(hFigCellOverview, curDirToSave);
 end
 
@@ -382,6 +386,9 @@ if ~exist([curDirToSave, '.eps'], 'file')
         set(hLeg, 'Position', [0.4043, 0.7667, 0.5091, 0.1680]);
         axis([-88.1448722958386, -85.5528198028410, ...
             39.3771676547221, 41.7336964261903]);
+    elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        set(hLeg, 'Location', 'SouthEast');
+        makescale('nw', 'units', 'si');
     end
     saveEpsFigForPaper(hFigCellOverview, curDirToSave);
     
