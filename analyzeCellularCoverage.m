@@ -34,7 +34,9 @@ if ~exist('PRESET', 'var')
     %   'ACRE_EXACT'.
     % For the journal paper:
     %   {'Tipp', 'ShrinkedIN'}.
-    PRESET = 'ShrinkedIN';
+    % For LoRaWAN on ACRE:
+    %   'ACRE_LORA_5MILE_R'.
+    PRESET = 'ACRE_LORA_5MILE_R';
 end
 
 %% Script Parameters
@@ -47,9 +49,19 @@ end
 % list of supported LiDAR data sets.
 LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
 
-ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'CellTowerInfo', 'NtiaLayoutPlusHifldCellTs', ...
-    'NtiaLayoutMergedWithHifldCellTs_Threshold_1000m_LatLonH.csv');
+switch PRESET
+    case 'ACRE_LORA_5MILE_R'
+        % We only have one tower for LoRaWAN on ACRE.
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
+            ABS_PATH_TO_SHARED_FOLDER, ...
+            'CellTowerInfo', 'PurdueAcreLoraWanTowers.csv');
+    otherwise
+        % Default to the NTIA+HIFLD cell tower locations.
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
+            ABS_PATH_TO_SHARED_FOLDER, ...
+            'CellTowerInfo', 'NtiaLayoutPlusHifldCellTs', ...
+            'NtiaLayoutMergedWithHifldCellTs_Threshold_1000m_LatLonH.csv');
+end
 % The cellular tower height value to use. According to the HIFLD Land
 % Mobile Commercial Transmission Towers data set, the mean tower height is
 % 63.5 m, while the median tower height is 47.2 m.
@@ -86,6 +98,11 @@ switch PRESET
             = extractBoundaryFromKmzFile( ...
             fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz'));
+    case 'ACRE_LORA_5MILE_R'
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = constructUtmRectanglePolyMat(...
+            [40.404306, -87.086317; ...
+            40.547160, -86.896734]);
     case 'Tipp'
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = constructUtmRectanglePolyMat(...
@@ -113,6 +130,8 @@ switch PRESET
 end
 
 %   - Carrier frequency and wavelength. Typical values:
+%       - 915 MHz
+%         For LoRaWAN.
 %       - 1900 MHz
 %         For cellular 4G LTE
 %       - C-Band: 3700 MHz (band n77) and 4700 MHz (band n79)
@@ -122,7 +141,7 @@ end
 %       - mmWave 28000 MHz (28 GHz)
 %         For cellular 5G millimeter wave
 if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
-    CARRIER_FREQUENCY_IN_MHZ = 28000;
+    CARRIER_FREQUENCY_IN_MHZ = 915;
 end
 simConfigs.CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCY_IN_MHZ;
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
