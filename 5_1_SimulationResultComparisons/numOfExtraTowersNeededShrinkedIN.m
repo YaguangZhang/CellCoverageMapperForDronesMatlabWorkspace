@@ -306,7 +306,12 @@ for idxCarrier = 1:numOfCarriers
             ones(size(inBoundaryLons)), ...
             'r-.', 'LineWidth', 3);
         
-        saveas(hFigCellOverview, [dirToSaveIllu, '.jpg']);
+        saveas(hFigCellOverview, [dirToSaveIllu, '.fig']);
+        saveas(hFigCellOverview, [dirToSaveIllu, '.jpg']);        
+        saveas(hFigCellOverview, [dirToSaveIllu, '.eps'], 'epsc');
+        
+        set(hFigCellOverview, 'Color', 'w');
+        export_fig(hFigCellOverview, [dirToSaveIllu, '_alt.eps']);
     end
 end
 
