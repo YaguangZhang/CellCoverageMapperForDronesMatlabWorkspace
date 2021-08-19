@@ -35,8 +35,9 @@ if ~exist('PRESET', 'var')
     % For the journal paper:
     %   {'Tipp', 'ShrinkedIN'}.
     % For LoRaWAN on ACRE:
-    %   'ACRE_LORA_5MILE_R'.
-    PRESET = 'ACRE_LORA_1MILE_R';
+    %   {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R',
+    %    'ACRE_LORA_HALF_MILE_R'}.
+    PRESET = 'ACRE_LORA_HALF_MILE_R';
 end
 
 %% Script Parameters
