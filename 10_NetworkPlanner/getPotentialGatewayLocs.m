@@ -26,6 +26,8 @@ addpath('lib'); addpath('.');
 curFileName = mfilename;
 
 prepareSimulationEnv;
+% Set this to true for extra plots.
+DEBUG = true;
 
 %% Script Parameters
 
@@ -45,6 +47,12 @@ prepareSimulationEnv;
 MIN_CANDIDATE_HEIGHT_IN_M = 20;
 MAX_CANDIDATE_HEIGHT_IN_M = 250;
 LOCAL_CIRCLE_R_IN_M = 30;
+MIN_NEAR_EDGE_R_IN_M = LOCAL_CIRCLE_R_IN_M*0.9;
+
+% To avoid extremely narrow high peaks, which are likely to be caused by
+% error, we will make sure the closest points are all high enough
+% (>=MIN_CANDIDATE_HEIGHT_IN_M).
+NUM_OF_CLOSEST_HIGH_PT = 4;
 
 % For any candidate location, we will make sure there is no other candidate
 % locations too nearby.
@@ -69,7 +77,10 @@ LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
 GRID_RESOLUTION_IN_M = 1.5;
 
 % The zone label to use in the UTM (x, y) system.
-UTM_ZONE = '13 T';
+UTM_ZONE = '16 T';
+
+% For figures.
+scatterPtSize = 12;
 
 %% Reuse History Grid If Possible
 
@@ -82,6 +93,12 @@ pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'm_MinCandDist_', num2str(MIN_CANDIDATE_DIST_IN_M), '_m']);
 if ~exist(pathToSaveResults, 'dir')~=7
     mkdir(pathToSaveResults);
+end
+
+% The absolute path for debug results.
+pathToSaveDebugResults = fullfile(pathToSaveResults, 'DEBUG');
+if ~exist(pathToSaveDebugResults, 'dir')~=7
+    mkdir(pathToSaveDebugResults);
 end
 
 dirToSaveSimConfigs = fullfile(pathToSaveResults, 'simConfigs.mat');
@@ -169,7 +186,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
         '] Creating a grid for the extended area of interest ...'])
 
     disp(['        [', datestr(now, datetimeFormat), ...
-        '] Getting grid points ...'])
+        '] Generating grid points ...'])
     utmXYBoundaryOfInterestExt = polybuffer( ...
         polyshape(UTM_X_Y_BOUNDARY_OF_INTEREST), LOCAL_CIRCLE_R_IN_M);
     utmXYBoundaryOfInterestExt = utmXYBoundaryOfInterestExt.Vertices;
@@ -184,10 +201,12 @@ if ~exist(dirToSaveSimConfigs, 'file')
 
     mapXLabels = constructAxisGrid( ...
         mean([mapMaxX, mapMinX]), ...
-        floor((mapMaxX-mapMinX)./GRID_RESOLUTION_IN_M), GRID_RESOLUTION_IN_M);
+        floor((mapMaxX-mapMinX)./GRID_RESOLUTION_IN_M), ...
+        GRID_RESOLUTION_IN_M);
     mapYLabels = constructAxisGrid( ...
         mean([mapMaxY, mapMinY]), ...
-        floor((mapMaxY-mapMinY)./GRID_RESOLUTION_IN_M), GRID_RESOLUTION_IN_M);
+        floor((mapMaxY-mapMinY)./GRID_RESOLUTION_IN_M), ...
+        GRID_RESOLUTION_IN_M);
     [mapXs,mapYs] = meshgrid(mapXLabels,mapYLabels);
 
     % Discard map grid points out of the area of interest.
@@ -221,11 +240,170 @@ if ~exist(dirToSaveSimConfigs, 'file')
         '] Saving results ...'])
     save(dirToSaveSimConfigs, 'simConfigs', '-v7.3');
 
+    % Generate overview plots for the grid.
+    hOverviewForGrid = figure; hold on;
+    scatter3(simConfigs.mapGridLatLonPts(:, 2), ...
+        simConfigs.mapGridLatLonPts(:, 1), ...
+        simConfigs.mapGridGroundEles, ...
+        scatterPtSize, simConfigs.mapGridGroundEles, 'filled');
+    xlabel('Longitude'); ylabel('Latitude');
+    hCb = colorbar; hCb.Label.String = 'Ground Elevation (m)';
+    plot_google_map('MapType', 'hybrid');
+    saveas(hOverviewForGrid, fullfile(pathToSaveDebugResults, ...
+        'overviewForGrid_eles.jpg'));
+    close(hOverviewForGrid);
+
+    hOverviewForGrid = figure; hold on;
+    scatter3(simConfigs.mapGridLatLonPts(:, 2), ...
+        simConfigs.mapGridLatLonPts(:, 1), ...
+        simConfigs.mapGridLidarZs, ...
+        scatterPtSize, simConfigs.mapGridLidarZs, 'filled');
+    xlabel('Longitude'); ylabel('Latitude');
+    hCb = colorbar; hCb.Label.String = 'LiDAR z (m)';
+    plot_google_map('MapType', 'hybrid');
+    saveas(hOverviewForGrid, fullfile(pathToSaveDebugResults, ...
+        'overviewForGrid_lidarZs.jpg'));
+    close(hOverviewForGrid);
+
+    hOverviewForGrid = figure; hold on;
+    structHs = simConfigs.mapGridLidarZs - simConfigs.mapGridGroundEles;
+    scatter3(simConfigs.mapGridLatLonPts(:, 2), ...
+        simConfigs.mapGridLatLonPts(:, 1), ...
+        structHs, ...
+        scatterPtSize, structHs, 'filled');
+    xlabel('Longitude'); ylabel('Latitude');
+    hCb = colorbar; hCb.Label.String = 'Struct Height (m)';
+    plot_google_map('MapType', 'hybrid');
+    saveas(hOverviewForGrid, fullfile(pathToSaveDebugResults, ...
+        'overviewForGrid_structHs.jpg'));
+    close(hOverviewForGrid);
+
     disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 end
 
 %% Search for Candidate Locs
 
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Searching for candidate locations ...'])
+
+mapGridStructHInM = ...
+    simConfigs.mapGridLidarZs - simConfigs.mapGridGroundEles;
+numOfGridPts = length(mapGridStructHInM);
+
+% Candidate points need to be (i) in the original area of interest and (ii)
+% of heights (Lidar z - ground ele) in the desired range.
+boolsGridPtIsCand = inpolygon( ...
+    simConfigs.mapGridXYPts(:,1), simConfigs.mapGridXYPts(:,2), ...
+    UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), UTM_X_Y_BOUNDARY_OF_INTEREST(:,2) ...
+    ) ...
+    & (mapGridStructHInM >= MIN_CANDIDATE_HEIGHT_IN_M) ...
+    & (mapGridStructHInM <= MAX_CANDIDATE_HEIGHT_IN_M);
+
+% For printing out progress info.
+candCnt = 0;
+progCnt = 0;
+totalCands = sum(boolsGridPtIsCand);
+numOfCandsProgress = ceil(totalCands/10);
+for idxPt = find(boolsGridPtIsCand)'
+    candCnt = candCnt+1;
+    progCnt = progCnt+1;
+
+    if progCnt>=numOfCandsProgress
+        disp(['        [', datestr(now, datetimeFormat), ...
+            '] ', num2str(candCnt), '/', num2str(totalCands), ' ...'])
+        progCnt = 0;
+    end
+
+    % Now we need to make sure the candidate is a local maxima.
+    curGridPtXY = simConfigs.mapGridXYPts(idxPt, :);
+    curGridPtLatLon = simConfigs.mapGridLatLonPts(idxPt, :);
+    curGridPtLidarZ = simConfigs.mapGridLidarZs(idxPt);
+
+    % Fetch the points in the local circle. Note that rangesearch_fast is
+    % way faster than rangesearch. One test we did costed rangesearch_fast
+    % 0.023713 s, while rangesearch used 3.491118 s. The outputs are only a
+    % little different near the edge. The results from rangesearch contains
+    % more points there.
+    %     indicesNearbyPts = rangesearch( ...
+    %         simConfigs.mapGridXYPts, curGridPtXY, LOCAL_CIRCLE_R_IN_M);
+    [indicesNearbyPts, distsNearbyPts] = rangesearch_fast( ...
+        curGridPtXY, LOCAL_CIRCLE_R_IN_M, ...
+        simConfigs.mapGridXYPts);
+
+    latLonsNearbyPts = simConfigs.mapGridLatLonPts(indicesNearbyPts, :);
+    lidarZsNearbyPts = simConfigs.mapGridLidarZs(indicesNearbyPts);
+    structHsNearbyPts = mapGridStructHInM(indicesNearbyPts);
+
+    % Make sure the current grid point of interest is the highest location
+    % in the inspected circle.
+    if curGridPtLidarZ<max(lidarZsNearbyPts)
+        boolsGridPtIsCand(idxPt) = false;
+        continue;
+    end
+
+    % Make sure the LiDAR z difference between the lowest point in the
+    % circle and the grid point of interest is also within the expected
+    % candidate height range.
+    maxLidarZDiffInM = curGridPtLidarZ - min(lidarZsNearbyPts);
+    if (maxLidarZDiffInM>MAX_CANDIDATE_HEIGHT_IN_M) ...
+            || (maxLidarZDiffInM<MIN_CANDIDATE_HEIGHT_IN_M)
+        boolsGridPtIsCand(idxPt) = false;
+        continue;
+    end
+
+    % Make sure points near the edge of the circle are low enough compared
+    % with the grid point of interest. Note that there is a bug in
+    % rangesearch_fast where the output distance is not correct.
+    distsNearbyPts = sqrt(distsNearbyPts);
+    boolsNearEdgePts = distsNearbyPts>=MIN_NEAR_EDGE_R_IN_M;
+    if min(curGridPtLidarZ-lidarZsNearbyPts(boolsNearEdgePts)) ...
+            < MIN_CANDIDATE_HEIGHT_IN_M
+        boolsGridPtIsCand(idxPt) = false;
+        continue;
+    end
+
+    % Make sure the nearest points are high enough to avoid single peaks.
+    [distsNearbyPtsSorted, indicesDistsNearbyPtsSorted] ...
+        = sort(distsNearbyPts);
+    % Note that we skip the first point because that should be the grid
+    % point of interest itself with a distance of zero.
+    indicesClosestPts = ...
+        indicesDistsNearbyPtsSorted(2:(NUM_OF_CLOSEST_HIGH_PT+1));
+    if any(structHsNearbyPts(indicesClosestPts) ...
+            < MIN_CANDIDATE_HEIGHT_IN_M)
+        boolsGridPtIsCand(idxPt) = false;
+        continue;
+    end
+
+    if DEBUG
+        hOverviewMap = figure; hold on;
+        hCurPt = plot(curGridPtLatLon(2), curGridPtLatLon(1), 'r*');
+        hClosestPts = plot( ...
+            latLonsNearbyPts(indicesClosestPts, 2), ...
+            latLonsNearbyPts(indicesClosestPts, 1), 'r^');
+        hEdgePts = plot( ...
+            latLonsNearbyPts(boolsNearEdgePts, 2), ...
+            latLonsNearbyPts(boolsNearEdgePts, 1), 'rs');
+        hSca3 = scatter3(latLonsNearbyPts(:,2), latLonsNearbyPts(:,1), ...
+            lidarZsNearbyPts, ...
+            scatterPtSize, lidarZsNearbyPts, 'filled');
+        plot_google_map('MapType', 'hybrid');
+        % plot_google_map('MapType', 'hybrid', 'MapScale', true);
+        xlabel('Longitude'); ylabel('Latitude');
+        hCb = colorbar; hCb.Label.String = 'LiDAR z (m)';
+
+        saveas(hOverviewMap, fullfile(pathToSaveDebugResults, ...
+            ['candGridPt_', num2str(idxPt), '.jpg']));
+
+        close(hOverviewMap);
+    end
+end
+
+disp(['    [', datestr(now, datetimeFormat), '] Done!'])
+
 %% Overview Plot for the Candidate Locations
+
+
 
 % EOF

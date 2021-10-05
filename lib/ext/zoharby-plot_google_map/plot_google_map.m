@@ -56,6 +56,14 @@ function varargout = plot_google_map(varargin)
 %                     of the plot to avoid the map being stretched.
 %                     This will adjust the span to be correct
 %                     according to the shape of the map axes.
+%    MapScale (0)  - (0/1) defines wheteher to add a scale indicator to
+%                     the map.
+%    ScaleWidth (0.25) - (0.1-0.9) defines the max width of the scale
+%                     indicator relative to the map width.
+%    ScaleLocation (sw) - (ne, n, se, s, sw, nw) defines the location of
+%                     scale indicator on the map.
+%    ScaleUnits (si) - (si/imp) changes the scale indicator units between 
+%                     SI and imperial units.
 %    FigureResizeUpdate (1) - (0/1) defines whether to automatically refresh the
 %                     map upon resizing the figure. This will ensure map
 %                     isn't stretched after figure resize.
@@ -79,20 +87,25 @@ function varargout = plot_google_map(varargin)
 % EXAMPLE - plot a map showing some capitals in Europe:
 %    lat = [48.8708   51.5188   41.9260   40.4312   52.523   37.982];
 %    lon = [2.4131    -0.1300    12.4951   -3.6788    13.415   23.715];
-%    plot(lon,lat,'.r','MarkerSize',20)
-%    plot_google_map
+%    plot(lon, lat, '.r', 'MarkerSize', 20)
+%    plot_google_map('MapScale', 1)
 %
 % References:
 %  http://www.mathworks.com/matlabcentral/fileexchange/24113
 %  http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 %  http://developers.google.com/maps/documentation/staticmaps/
+%  https://www.mathworks.com/matlabcentral/fileexchange/33545-automatic-map-scale-generation
 %
 % Acknowledgements:
-%  Val Schmidt for his submission of get_google_map.m
+%  Val Schmidt for the submission of get_google_map.m
+%  Jonathan Sullivan for the submission of makescale.m
 %
 % Author:
 %  Zohar Bar-Yehuda
 %
+% Version 2.0 - 08/04/2018
+%       - Add an option to show a map scale
+%       - Several bugfixes
 % Version 1.8 - 25/04/2016 - By Hannes Diethelm
 %       - Add resize parameter to resize image using imresize()
 %       - Fix scale parameter
@@ -150,6 +163,7 @@ hold on
 
 % Default parametrs
 axHandle = gca;
+set(axHandle, 'Layer','top'); % Put axis on top of image, so it doesn't hide the axis lines and ticks
 height = 640;
 width = 640;
 scale = 2;
@@ -164,6 +178,10 @@ language = '';
 markeridx = 1;
 markerlist = {};
 style = '';
+mapScale = 0;
+scaleWidth = 0.25;
+scaleLocation = 'se';
+scaleUnits = 'si';
 
 % Handle input arguments
 if nargin >= 2
@@ -208,6 +226,14 @@ if nargin >= 2
                 save(keyFile,'apiKey')
             case 'style'
                 style = varargin{idx+1};
+            case 'mapscale'
+                mapScale = varargin{idx+1};
+            case 'scalewidth'
+                scaleWidth = varargin{idx+1};
+            case 'scalelocation'
+                scaleLocation = varargin{idx+1};
+            case 'scaleunits'
+                scaleUnits = varargin{idx+1};
             otherwise
                 error(['Unrecognized variable: ' varargin{idx}])
         end
@@ -332,8 +358,11 @@ if nargout <= 1 % only if in plotting mode
             bd_callback = get(map_objs(idx),'ButtonDownFcn');
         end
     end
-    delete(map_objs)
-    
+    ud = get(axHandle, 'UserData');
+    delete(map_objs);
+    delete(findobj(curChildren,'tag','MapScale'));
+    % Recover userdata of axis (cleared in cleanup function)
+    set(axHandle, 'UserData', ud);
 end
 
 % Calculate zoom level for current axis limits
@@ -379,7 +408,7 @@ end
 
 if showLabels == 0
     if ~isempty(style)
-        style(end+1) = '|';
+        style = [style '&style='];
     end
     style = [style 'feature:all|element:labels|visibility:off'];
 end
@@ -495,7 +524,7 @@ if nargout <= 1 % plot map
     set(h,'AlphaData',alphaData)
     
     % add a dummy image to allow pan/zoom out to x2 of the image extent
-    h_tmp = image(lonVect([1 end]),latVect([1 end]),zeros(2),'Visible','off', 'Parent', axHandle);
+    h_tmp = image(lonVect([1 end]),latVect([1 end]),zeros(2),'Visible','off', 'Parent', axHandle, 'CDataMapping', 'scaled');
     set(h_tmp,'tag','gmap')
    
     uistack(h,'bottom') % move map to bottom (so it doesn't hide previously drawn annotations)
@@ -503,6 +532,7 @@ if nargout <= 1 % plot map
     if nargout == 1
         varargout{1} = h;
     end
+    set(h, 'UserData', onCleanup(@() cleanupFunc(axHandle)));
     
     % if auto-refresh mode - override zoom callback to allow autumatic 
     % refresh of map upon zoom actions.
@@ -531,6 +561,11 @@ if nargout <= 1 % plot map
     
     % set callback properties 
     set(h,'ButtonDownFcn',bd_callback);
+    
+    if mapScale
+       makescale(axHandle, 'set_callbacks', 0, 'units', scaleUnits, ...
+                 'location', scaleLocation, 'width', scaleWidth);
+    end
 else % don't plot, only return map
     varargout{1} = lonVect;
     varargout{2} = latVect;
@@ -638,3 +673,11 @@ for idx = 1:length(axes_objs)
         plot_google_map(params{:});
     end
 end
+
+function cleanupFunc(h)
+ud = get(h, 'UserData');
+if isstruct(ud) && isfield(ud, 'gmap_params')
+    ud = rmfield(ud, 'gmap_params');
+    set(h, 'UserData', ud);
+end
+
