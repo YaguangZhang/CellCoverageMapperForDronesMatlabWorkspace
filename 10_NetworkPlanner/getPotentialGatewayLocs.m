@@ -249,7 +249,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
     xlabel('Longitude'); ylabel('Latitude');
     hCb = colorbar; hCb.Label.String = 'Ground Elevation (m)';
     plot_google_map('MapType', 'hybrid');
-    saveas(hOverviewForGrid, fullfile(pathToSaveDebugResults, ...
+    saveas(hOverviewForGrid, fullfile(pathToSaveResults, ...
         'overviewForGrid_eles.jpg'));
     close(hOverviewForGrid);
 
@@ -261,7 +261,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
     xlabel('Longitude'); ylabel('Latitude');
     hCb = colorbar; hCb.Label.String = 'LiDAR z (m)';
     plot_google_map('MapType', 'hybrid');
-    saveas(hOverviewForGrid, fullfile(pathToSaveDebugResults, ...
+    saveas(hOverviewForGrid, fullfile(pathToSaveResults, ...
         'overviewForGrid_lidarZs.jpg'));
     close(hOverviewForGrid);
 
@@ -274,7 +274,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
     xlabel('Longitude'); ylabel('Latitude');
     hCb = colorbar; hCb.Label.String = 'Struct Height (m)';
     plot_google_map('MapType', 'hybrid');
-    saveas(hOverviewForGrid, fullfile(pathToSaveDebugResults, ...
+    saveas(hOverviewForGrid, fullfile(pathToSaveResults, ...
         'overviewForGrid_structHs.jpg'));
     close(hOverviewForGrid);
 
@@ -388,13 +388,17 @@ for idxPt = find(boolsGridPtIsCand)'
         hSca3 = scatter3(latLonsNearbyPts(:,2), latLonsNearbyPts(:,1), ...
             lidarZsNearbyPts, ...
             scatterPtSize, lidarZsNearbyPts, 'filled');
-        plot_google_map('MapType', 'hybrid');
-        % plot_google_map('MapType', 'hybrid', 'MapScale', true);
         xlabel('Longitude'); ylabel('Latitude');
         hCb = colorbar; hCb.Label.String = 'LiDAR z (m)';
+        plot_google_map('MapType', 'hybrid');
+        % plot_google_map('MapType', 'hybrid', 'MapScale', true);
 
         saveas(hOverviewMap, fullfile(pathToSaveDebugResults, ...
             ['candGridPt_', num2str(idxPt), '.jpg']));
+
+        view(3);
+        saveas(hOverviewMap, fullfile(pathToSaveDebugResults, ...
+            ['candGridPt_', num2str(idxPt), '_3D.jpg']));
 
         close(hOverviewMap);
     end
@@ -403,7 +407,5 @@ end
 disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 
 %% Overview Plot for the Candidate Locations
-
-
 
 % EOF
