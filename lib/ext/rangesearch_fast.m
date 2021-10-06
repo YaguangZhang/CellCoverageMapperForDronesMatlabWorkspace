@@ -15,6 +15,8 @@ function [idx,dist]=rangesearch_fast(c,r,X,mode)
 
 % Version 2.0 by Yi Cao at Cranfield University on 6th April 2008
 %
+% 20211005: renamed to rangesearch_fast; fixed a bug of wrong distance in
+% range2.
 
 %Examples
 %Example 1: Radial range 
@@ -86,7 +88,7 @@ for d=1:nVariables
 end
 fidx=s<r2;
 idx=find(fidx);
-dist=s(fidx);
+dist=sqrt(s(fidx));
 
 % function [idx,dist]=range1(c,r,X)
 % [nPoints,nVariables]=size(X);
