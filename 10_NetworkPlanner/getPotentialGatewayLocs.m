@@ -63,9 +63,10 @@ MIN_CANDIDATE_DIST_IN_M = 10;
 % Change PRESET to run the code for different areas.
 %   - 'ACRE_EXACT'
 %     Purdue Agronomy Center for Research and Education (ACRE).
-%   - 'ACRE_EXTENDED_8KM'
-%     Extended area for ACRE_EXACT with 8 km radius (about 5 miles).
-PRESET = 'ACRE_EXTENDED_8KM';
+%   - 'ACRE_EXTENDED_2KM' / 'ACRE_EXTENDED_4KM' / 'ACRE_EXTENDED_8KM'
+%     Extended area for ACRE_EXACT with 2 km radius (about 1.2 miles) / 4
+%     km radius (about 2.5 miles) / 8 km radius (about 5 miles).
+PRESET = 'ACRE_EXTENDED_2KM';
 
 % The LiDAR data set to use. Currently we only suppor the 2019 Indiana
 % state-wide digital surface model (DSM) data from:
@@ -160,7 +161,9 @@ switch PRESET
             = extractBoundaryFromKmzFile( ...
             fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz'));
-    case 'ACRE_EXTENDED_8KM'
+    case {'ACRE_EXTENDED_2KM', 'ACRE_EXTENDED_4KM', 'ACRE_EXTENDED_8KM'}
+        idxStartOfKM = strfind(PRESET, 'KM');
+        padDistInKm = str2double(PRESET(15:(idxStartOfKM-1)));
         % Read in the ACRE boundary.
         [UTM_X_Y_BOUNDARY_OF_INTEREST, ~] ...
             = extractBoundaryFromKmzFile( ...
@@ -168,7 +171,7 @@ switch PRESET
             'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz'));
         % Extend the boundary.
         UTM_X_Y_BOUNDARY_OF_INTEREST = polybuffer( ...
-            polyshape(UTM_X_Y_BOUNDARY_OF_INTEREST), 8000);
+            polyshape(UTM_X_Y_BOUNDARY_OF_INTEREST), padDistInKm*1000);
         UTM_X_Y_BOUNDARY_OF_INTEREST = ...
             UTM_X_Y_BOUNDARY_OF_INTEREST.Vertices;
     otherwise
