@@ -27,6 +27,7 @@ curFileName = mfilename;
 
 prepareSimulationEnv;
 % Set this to true for extra plots.
+%#ok<*UNRCH>
 DEBUG = true;
 
 %% Script Parameters
@@ -66,7 +67,7 @@ MIN_CANDIDATE_DIST_IN_M = 10;
 %   - 'ACRE_EXTENDED_2KM' / 'ACRE_EXTENDED_4KM' / 'ACRE_EXTENDED_8KM'
 %     Extended area for ACRE_EXACT with 2 km radius (about 1.2 miles) / 4
 %     km radius (about 2.5 miles) / 8 km radius (about 5 miles).
-PRESET = 'ACRE_EXTENDED_2KM';
+PRESET = 'ACRE_EXACT';
 
 % The LiDAR data set to use. Currently we only suppor the 2019 Indiana
 % state-wide digital surface model (DSM) data from:
@@ -114,7 +115,7 @@ if exist(dirToSaveSimConfigs, 'file')
         '] Loading history results ...'])
     histSimConfigs = load(dirToSaveSimConfigs);
     simConfigs = histSimConfigs.simConfigs;
-    
+
     disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 end
 
@@ -154,28 +155,40 @@ disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Configuring the simulation for PRESET ', PRESET, ' ...'])
 
+if strcmp(PRESET(1:4), 'ACRE')
+    % Read in the ACRE boundary.
+    [utmXYBoundaryOfAcre, ~] = extractBoundaryFromKmzFile( ...
+        fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+        'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz'));
+    % Convert the boundary to (lat, lon) for plotting.
+    [gpsLatsBoundaryOfAcre, gpsLonsBoundaryOfAcre] ...
+        = simConfigs.utm2deg_speZone( ...
+        utmXYBoundaryOfAcre(:,1), ...
+        utmXYBoundaryOfAcre(:,2));
+    gpsLatLonBoundaryOfAcre ...
+        = [gpsLatsBoundaryOfAcre, gpsLonsBoundaryOfAcre];
+end
+
 switch PRESET
     case 'ACRE_EXACT'
-        % Read in the ACRE boundary.
-        [UTM_X_Y_BOUNDARY_OF_INTEREST, ~] ...
-            = extractBoundaryFromKmzFile( ...
-            fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-            'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz'));
+        UTM_X_Y_BOUNDARY_OF_INTEREST = utmXYBoundaryOfAcre;
     case {'ACRE_EXTENDED_2KM', 'ACRE_EXTENDED_4KM', 'ACRE_EXTENDED_8KM'}
         idxStartOfKM = strfind(PRESET, 'KM');
         padDistInKm = str2double(PRESET(15:(idxStartOfKM-1)));
-        % Read in the ACRE boundary.
-        [UTM_X_Y_BOUNDARY_OF_INTEREST, ~] ...
-            = extractBoundaryFromKmzFile( ...
-            fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-            'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz'));
         % Extend the boundary.
         UTM_X_Y_BOUNDARY_OF_INTEREST = polybuffer( ...
-            polyshape(UTM_X_Y_BOUNDARY_OF_INTEREST), padDistInKm*1000);
+            polyshape(utmXYBoundaryOfAcre), padDistInKm*1000);
         UTM_X_Y_BOUNDARY_OF_INTEREST = ...
             UTM_X_Y_BOUNDARY_OF_INTEREST.Vertices;
     otherwise
         error(['Unsupported preset "', PRESET, '"!'])
+end
+
+% Make sure the UTM boundary is closed.
+if ~all( UTM_X_Y_BOUNDARY_OF_INTEREST(1, :) ...
+        == UTM_X_Y_BOUNDARY_OF_INTEREST(end, :) )
+    UTM_X_Y_BOUNDARY_OF_INTEREST(end+1, :) ...
+        = UTM_X_Y_BOUNDARY_OF_INTEREST(1, :);
 end
 
 % Boundary in GPS (lat, lon) system.
@@ -213,21 +226,21 @@ if ~exist(dirToSaveSimConfigs, 'file')
     disp(' ')
     disp(['    [', datestr(now, datetimeFormat), ...
         '] Creating a grid for the extended area of interest ...'])
-    
+
     disp(['        [', datestr(now, datetimeFormat), ...
         '] Generating grid points ...'])
     utmXYBoundaryOfInterestExt = polybuffer( ...
         polyshape(UTM_X_Y_BOUNDARY_OF_INTEREST), LOCAL_CIRCLE_R_IN_M);
     utmXYBoundaryOfInterestExt = utmXYBoundaryOfInterestExt.Vertices;
-    
+
     mapMinX = min(utmXYBoundaryOfInterestExt(:,1));
     mapMaxX = max(utmXYBoundaryOfInterestExt(:,1));
     mapMinY = min(utmXYBoundaryOfInterestExt(:,2));
     mapMaxY = max(utmXYBoundaryOfInterestExt(:,2));
-    
+
     mapWidthInM = mapMaxX-mapMinX;
     mapHeightInM = mapMaxY-mapMinY;
-    
+
     mapXLabels = constructAxisGrid( ...
         mean([mapMaxX, mapMinX]), ...
         floor((mapMaxX-mapMinX)./GRID_RESOLUTION_IN_M), ...
@@ -237,23 +250,23 @@ if ~exist(dirToSaveSimConfigs, 'file')
         floor((mapMaxY-mapMinY)./GRID_RESOLUTION_IN_M), ...
         GRID_RESOLUTION_IN_M);
     [mapXs,mapYs] = meshgrid(mapXLabels,mapYLabels);
-    
+
     % Discard map grid points out of the area of interest.
     boolsMapGridPtsToKeep = InPolygon(mapXs(:), mapYs(:), ...
         utmXYBoundaryOfInterestExt(:,1), ...
         utmXYBoundaryOfInterestExt(:,2));
-    
+
     simConfigs.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
         mapYs(boolsMapGridPtsToKeep)];
-    
+
     % Convert UTM (x, y) to (lat, lon).
     [mapGridLats, mapGridLons] = simConfigs.utm2deg_speZone( ...
         simConfigs.mapGridXYPts(:,1), simConfigs.mapGridXYPts(:,2));
     simConfigs.mapGridLatLonPts = [mapGridLats, mapGridLons];
-    
+
     disp(['        [', datestr(now, datetimeFormat), ...
         '] Fetching ground elevation and LiDAR z ...'])
-    
+
     % Fetch ground elevation and LiDAR z data for the grid points.
     [simConfigs.mapGridGroundEles, simConfigs.mapGridLidarZs, ...
         curEleForNanPts] ...
@@ -264,11 +277,11 @@ if ~exist(dirToSaveSimConfigs, 'file')
     boolsNanMapGridGroundEles = isnan(simConfigs.mapGridGroundEles);
     simConfigs.mapGridGroundEles(boolsNanMapGridGroundEles) ...
         = curEleForNanPts(boolsNanMapGridGroundEles);
-    
+
     disp(['        [', datestr(now, datetimeFormat), ...
         '] Saving results ...'])
     save(dirToSaveSimConfigs, 'simConfigs', '-v7.3');
-    
+
     % Generate overview plots for the grid.
     hOverviewForGrid = figure; hold on;
     scatter3(simConfigs.mapGridLatLonPts(:, 2), ...
@@ -281,7 +294,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
     saveas(hOverviewForGrid, fullfile(pathToSaveResults, ...
         'overviewForGrid_eles.jpg'));
     close(hOverviewForGrid);
-    
+
     hOverviewForGrid = figure; hold on;
     scatter3(simConfigs.mapGridLatLonPts(:, 2), ...
         simConfigs.mapGridLatLonPts(:, 1), ...
@@ -293,7 +306,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
     saveas(hOverviewForGrid, fullfile(pathToSaveResults, ...
         'overviewForGrid_lidarZs.jpg'));
     close(hOverviewForGrid);
-    
+
     hOverviewForGrid = figure; hold on;
     structHs = simConfigs.mapGridLidarZs - simConfigs.mapGridGroundEles;
     scatter3(simConfigs.mapGridLatLonPts(:, 2), ...
@@ -306,7 +319,7 @@ if ~exist(dirToSaveSimConfigs, 'file')
     saveas(hOverviewForGrid, fullfile(pathToSaveResults, ...
         'overviewForGrid_structHs.jpg'));
     close(hOverviewForGrid);
-    
+
     disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 end
 
@@ -337,19 +350,19 @@ numOfCandsProgress = ceil(totalCands/10);
 for idxPt = find(boolsGridPtIsCand)'
     candCnt = candCnt+1;
     progCnt = progCnt+1;
-    
+
     if progCnt>=numOfCandsProgress
         disp(['        [', datestr(now, datetimeFormat), ...
             '] ', num2str(candCnt/totalCands*100), ...
             '% (', num2str(candCnt), '/', num2str(totalCands), ') ...'])
         progCnt = 0;
     end
-    
+
     % Now we need to make sure the candidate is a local maxima.
     curGridPtXY = simConfigs.mapGridXYPts(idxPt, :);
     curGridPtLatLon = simConfigs.mapGridLatLonPts(idxPt, :);
     curGridPtLidarZ = simConfigs.mapGridLidarZs(idxPt);
-    
+
     % Fetch the points in the local circle. Note that rangesearch_fast is
     % way faster than rangesearch. One test we did costed rangesearch_fast
     % 0.023713 s, while rangesearch used 3.491118 s. The outputs are only a
@@ -360,18 +373,18 @@ for idxPt = find(boolsGridPtIsCand)'
     [indicesNearbyPts, distsNearbyPts] = rangesearch_fast( ...
         curGridPtXY, LOCAL_CIRCLE_R_IN_M, ...
         simConfigs.mapGridXYPts);
-    
+
     latLonsNearbyPts = simConfigs.mapGridLatLonPts(indicesNearbyPts, :);
     lidarZsNearbyPts = simConfigs.mapGridLidarZs(indicesNearbyPts);
     structHsNearbyPts = mapGridStructHInM(indicesNearbyPts);
-    
+
     % Make sure the current grid point of interest is the highest location
     % in the inspected circle.
     if curGridPtLidarZ<max(lidarZsNearbyPts)
         boolsGridPtIsCand(idxPt) = false;
         continue;
     end
-    
+
     % Make sure the LiDAR z difference between the lowest point in the
     % circle and the grid point of interest is also within the expected
     % candidate height range.
@@ -381,7 +394,7 @@ for idxPt = find(boolsGridPtIsCand)'
         boolsGridPtIsCand(idxPt) = false;
         continue;
     end
-    
+
     % Make sure points near the edge of the circle are low enough compared
     % with the grid point of interest. Note that there is a bug in the
     % original rangesearch function (it is fixed in rangesearch_fast) where
@@ -396,7 +409,7 @@ for idxPt = find(boolsGridPtIsCand)'
             continue;
         end
     end
-    
+
     % Make sure the nearest points are high enough to avoid very narrow
     % single peaks.
     [distsNearbyPtsSorted, indicesDistsNearbyPtsSorted] ...
@@ -415,7 +428,7 @@ for idxPt = find(boolsGridPtIsCand)'
         boolsGridPtIsCand(idxPt) = false;
         if DEBUG
             if exist('debugInfo', 'var')
-                debugInfo = [debugInfo, ' & Low Closest Pts'];
+                debugInfo = [debugInfo, ' & Low Closest Pts']; %#ok<AGROW>
             else
                 debugInfo = 'Rejected: Low Closest Pts';
             end
@@ -423,7 +436,7 @@ for idxPt = find(boolsGridPtIsCand)'
             continue;
         end
     end
-    
+
     hOverviewMap = figure; hold on;
     hClosestPts = plot( ...
         latLonsNearbyPts(indicesClosestPts, 2), ...
@@ -453,7 +466,7 @@ for idxPt = find(boolsGridPtIsCand)'
     end
     plot_google_map('MapType', 'hybrid');
     % plot_google_map('MapType', 'hybrid', 'MapScale', true);
-    
+
     if DEBUG
         saveas(hOverviewMap, fullfile(pathToSaveDebugResults, ...
             ['candGridPt_', num2str(idxPt), '.jpg']));
@@ -462,7 +475,7 @@ for idxPt = find(boolsGridPtIsCand)'
         saveas(hOverviewMap, fullfile(pathToSaveResults, ...
             ['candGridPt_', num2str(idxPt), '.jpg']));
     end
-    
+
     view(3);
     if DEBUG
         saveas(hOverviewMap, fullfile(pathToSaveDebugResults, ...
@@ -472,8 +485,13 @@ for idxPt = find(boolsGridPtIsCand)'
         saveas(hOverviewMap, fullfile(pathToSaveResults, ...
             ['candGridPt_', num2str(idxPt), '_3D.jpg']));
     end
-    
+
     view(2);
+    if exist('gpsLatLonBoundaryOfAcre', 'var')
+        plot(gpsLatLonBoundaryOfAcre(:,2), ...
+            gpsLatLonBoundaryOfAcre(:,1), 'w:', ...
+            'LineWidth', markerThickLineWidth);
+    end
     plot(GPS_LAT_LON_BOUNDARY_OF_INTEREST(:,2), ...
         GPS_LAT_LON_BOUNDARY_OF_INTEREST(:,1), 'w-', ...
         'LineWidth', markerThickLineWidth);
@@ -486,7 +504,7 @@ for idxPt = find(boolsGridPtIsCand)'
         saveas(hOverviewMap, fullfile(pathToSaveResults, ...
             ['candGridPt_', num2str(idxPt), '_ZoomedOut.jpg']));
     end
-    
+
     close(hOverviewMap);
 end
 
