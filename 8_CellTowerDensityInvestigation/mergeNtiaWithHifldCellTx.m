@@ -130,7 +130,7 @@ saveas(hFigDistMinECDF, ...
 
 %% Plot the Low Dist Locs on Map
 
-distsToInspectInM = [50, 100, 250, 500, 1000];
+distsToInspectInM = [50, 100, 250, 500, 1000, 1500, 1600];
 numOfDistsToIns = length(distsToInspectInM);
 
 figResolutionFactor = 1.25;
@@ -238,10 +238,10 @@ hInM = towerLatLonHsHifld(:,3);
 towerLatLonHsNtiaNew = towerLatLonHsNtia;
 towerLatLonHsNtiaNew( ...
     indicesToNearestExT(boolsDistLessThanThreshold), :) = [];
-lats = [lats; towerLatLonHsNtia(:,1)];
-lons = [lons; towerLatLonHsNtia(:,2)];
+lats = [lats; towerLatLonHsNtiaNew(:,1)];
+lons = [lons; towerLatLonHsNtiaNew(:,2)];
 % Tower heights are not available in the NTIA data set.
-hInM = [hInM; nan(length(towerLatLonHsNtia(:,1)),1)];
+hInM = [hInM; nan(length(towerLatLonHsNtiaNew(:,1)),1)];
 
 % Sort by lat and lon.
 latLonHInMs = sortrows([lats, lons, hInM],[1 2 3]);
