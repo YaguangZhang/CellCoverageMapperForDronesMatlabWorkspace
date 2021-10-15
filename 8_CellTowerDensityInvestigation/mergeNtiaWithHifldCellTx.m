@@ -90,23 +90,23 @@ if exist(pathToSaveDistMin, 'file')
 else
     [distMinInMToExistingT, indicesToNearestExT] ...
         = deal(nan(numOfNewTs, 1));
-    
+
     towerLatLonsNtia = towerLatLonHsNtia(:, 1:2);
     for idxNewT = 1:numOfNewTs
         curNewTLatLon = towerLatLonHsHifld(idxNewT, 1:2);
-        
+
         curDistsInM = nan(numOfExistingTs, 1);
-        
+
         parfor idxExistingT = 1:numOfExistingTs
             curDistsInM(idxExistingT) = lldistkm(curNewTLatLon, ...
                 towerLatLonsNtia(idxExistingT, :)).*1000;
         end
         assert(~any(isnan(curDistsInM)), 'NaN distance value found!');
-        
+
         [distMinInMToExistingT(idxNewT), indicesToNearestExT(idxNewT)] ...
             = min(curDistsInM);
     end
-    
+
     save(pathToSaveDistMin, ...
         'distMinInMToExistingT', 'indicesToNearestExT', '-v7.3');
 end
@@ -140,22 +140,24 @@ curDotSize = 10;
 for idxDistToIns = 1:numOfDistsToIns
     curDistToInsInM = distsToInspectInM(idxDistToIns);
     boolsDistLessThanThreshold = distMinInMToExistingT<curDistToInsInM;
-    
-    curPathToSaveFig = fullfile(pathToSaveResults, 'lowDistNewLocs');
-    
+
+    curPathToSaveFig = fullfile(pathToSaveResults, ...
+        ['lowDistNewLocs_NoTsWithDistsLessThan_', ...
+        num2str(curDistToInsInM), 'm']);
+
     hFigLowDistNewLocs = figure('Visible', true, ...
         'Unit', 'pixel', 'Position', [0,0,1600,1200].*figResolutionFactor);
     hold on;
-    
+
     hPolyIn = plot(boundOfInterestLons, boundOfInterestLats, ...
         'r-', 'LineWidth', 7);
     axisToSetIn = axis;
     set(hPolyIn, 'Visible', false);
-    
+
     hNtia = plot(towerLatLonHsNtia(:,2), towerLatLonHsNtia(:,1), ...
         'b.', 'MarkerSize', curDotSize);
     axisToSet = axis;
-    
+
     hNewLocs = scatter( ...
         towerLatLonHsHifld(~boolsDistLessThanThreshold,2), ...
         towerLatLonHsHifld(~boolsDistLessThanThreshold,1), ...
@@ -171,7 +173,7 @@ for idxDistToIns = 1:numOfDistsToIns
         towerLatLonHsNtia( ...
         indicesToNearestExT(boolsDistLessThanThreshold),1), ...
         'r.', 'MarkerSize', curDotSize);
-    
+
     curNumOfLocsDisc = sum(boolsDistLessThanThreshold);
     title(['Threshold = ', num2str(curDistToInsInM), ' m (', ...
         num2str(curNumOfLocsDisc), '/', num2str(numOfNewTs), ...
@@ -181,20 +183,20 @@ for idxDistToIns = 1:numOfDistsToIns
         'NTIA', 'Old Locs To Update', 'Updated New Locs', ...
         'Added New Locs');
     xticks([]); yticks([]); box on;
-    
+
     plot_google_map('MapType', 'roadmap');
-    
+
     % Overview plot for all data plotted.
     saveas(hFigLowDistNewLocs, [curPathToSaveFig, '_All.png']);
     saveas(hFigLowDistNewLocs, [curPathToSaveFig, '_All.fig']);
-    
+
     % Overview plot over the area covered by the NTIA data set.
     axis(axisToSet);
     plot_google_map('MapType', 'roadmap');
-    
+
     saveas(hFigLowDistNewLocs, [curPathToSaveFig, '_All.png']);
     saveas(hFigLowDistNewLocs, [curPathToSaveFig, '_All.fig']);
-    
+
     % Overview plot for Indiana.
     curNumOfLocsDiscIndiana = ...
         sum(boolsNewTxInAreaOfInt&boolsDistLessThanThreshold);
@@ -206,13 +208,15 @@ for idxDistToIns = 1:numOfDistsToIns
     legend([hPolyIn, hNtia, hReplacedNtia, hLowDistNewLocs, hNewLocs], ...
         'Indiana', 'NTIA', 'Old Locs To Update', 'Updated New Locs', ...
         'Added New Locs');
-    
+
     set(hPolyIn, 'Visible', true); uistack(hPolyIn,'top');
     axis(axisToSetIn);
     plot_google_map('MapType', 'roadmap');
-    
+
     saveas(hFigLowDistNewLocs, [curPathToSaveFig, '_IN.png']);
     saveas(hFigLowDistNewLocs, [curPathToSaveFig, '_IN.fig']);
+
+    close all;
 end
 
 %% Export the Merged Results as a .csv File
