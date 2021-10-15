@@ -120,17 +120,14 @@ switch PRESET
             = constructUtmRectanglePolyMat(...
             [40.216047, -87.093700; ...
             40.562743, -86.695913]);
-    case {'ExtendedTipp', 'ShrinkedWHIN'}
-        % For ShrinkedWHIN, we will start with the ExtendedTipp/WHIN
-        % boundary and shrink it after the maximum radius to consider
-        % around a cell tower is specified.
+    case 'ExtendedTipp'
         extTippBoundary = load(fullfile(pathToStateInfoFolder, ...
             'Tipp_Extended', 'boundary.mat'));
         assert(strcmp(simConfigs.UTM_ZONE, ...
             extTippBoundary.boundary.UTM_ZONE), 'UTM zone mismatch!');
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = extTippBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST;
-    case {'IN', 'ShrinkedIN'}
+    case {'IN', 'ShrinkedIN', 'ShrinkedWHIN'}
         % For ShrinkedIN, we will start with the IN boundary and shrink it
         % after the maximum radius to consider around a cell tower is
         % specified.
@@ -235,6 +232,23 @@ if strcmp(PRESET, 'ShrinkedIN') || strcmp(PRESET, 'ShrinkedWHIN')
     utmXYPolyAreaOfInt = polybuffer( ...
         polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
         -simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = utmXYPolyAreaOfInt.Vertices;
+end
+
+% Refine the outline for PRESET 'ShrinkedWHIN'.
+if strcmp(PRESET, 'ShrinkedWHIN')
+    utmXYPolyShrinkedIN = ...
+        polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST);
+
+    extTippBoundary = load(fullfile(pathToStateInfoFolder, ...
+        'Tipp_Extended', 'boundary.mat'));
+    assert(strcmp(simConfigs.UTM_ZONE, ...
+        extTippBoundary.boundary.UTM_ZONE), 'UTM zone mismatch!');
+    utmXYPolyExtendedTipp = polyshape( ...
+        extTippBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST);
+
+    utmXYPolyAreaOfInt ...
+        = intersect(utmXYPolyShrinkedIN, utmXYPolyExtendedTipp);
     simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST = utmXYPolyAreaOfInt.Vertices;
 end
 
