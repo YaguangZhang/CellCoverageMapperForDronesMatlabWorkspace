@@ -40,6 +40,7 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
             diary off;
             analyzeCellularCoverage;
             diary(pathToSaveSimManDiary);
+            delete(gcp('nocreate'));
         catch err
             diary(pathToSaveSimManDiary);
             disp(getReport(err))
