@@ -19,7 +19,7 @@ pathToSaveSimManDiary = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 diary(pathToSaveSimManDiary);
 
 % Presets.
-PRESETS = {'Tipp', 'ExtendedTipp', 'ShrinkedIN'};
+PRESETS = {'ShrinkedWHIN'}; % {'Tipp', 'ExtendedTipp', 'ShrinkedIN'};
 % Carrier frequencies.
 %	- 1900 MHz
 %     For cellular 4G LTE
@@ -35,7 +35,7 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
     for idxPreset = 1:length(PRESETS)
         PRESET = PRESETS{idxPreset};
         CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
-        
+
         try
             diary off;
             analyzeCellularCoverage;
