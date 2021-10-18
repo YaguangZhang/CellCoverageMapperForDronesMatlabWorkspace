@@ -70,10 +70,13 @@ end
 % Make sure Python is available and it is of the correct version. Note:
 %   pyenv('Version', ABS_PATH_TO_PYTHON, 'ExecutionMode', 'OutOfProcess');
 % may help fix the "Segmentation Failure" error.
-curPyEnv = pyenv('Version', ABS_PATH_TO_PYTHON);
-assert(strcmp(curPyEnv.Version, '3.7'), ...
-    ['Loaded Python is not version 3.7.', ...
-    ' Please restart Matlab and try again!']);
+curPyEnv = pyenv;
+if ~strcmp(curPyEnv.Executable, ABS_PATH_TO_PYTHON)
+    curPyEnv = pyenv('Version', ABS_PATH_TO_PYTHON);
+    assert(strcmp(curPyEnv.Version, '3.7'), ...
+        ['Loaded Python is not version 3.7.', ...
+        ' Please restart Matlab and try again!']);
+end
 % Make sure our Python module is available.
 try
     py_addpath(fullfile(pwd, 'lib', 'python'));
