@@ -67,17 +67,13 @@ end
 % We need Python for concurrent HTTP requests to get elevation data from
 % USGS faster. Make sure Python and its lib folder is added to path.
 
-% Make sure Python is available.
-curPythonVersion = pyversion;
-if isempty(curPythonVersion) || (~strcmp(curPythonVersion(1:3), '3.7'))
-    pyversion(ABS_PATH_TO_PYTHON);
-end
-% Check the version again.
-curPythonVersion = pyversion;
-if ~strcmp(curPythonVersion(1:3), '3.7')
-    error(['Loaded Python is not version 3.7.', ...
-        ' Please restart Matlab and try again!']);
-end
+% Make sure Python is available and it is of the correct version. Note:
+%   pyenv('Version', ABS_PATH_TO_PYTHON, 'ExecutionMode', 'OutOfProcess');
+% may help fix the "Segmentation Failure" error.
+curPyEnv = pyenv('Version', ABS_PATH_TO_PYTHON);
+assert(strcmp(curPyEnv.Version, '3.7'), ...
+    ['Loaded Python is not version 3.7.', ...
+    ' Please restart Matlab and try again!']);
 % Make sure our Python module is available.
 try
     py_addpath(fullfile(pwd, 'lib', 'python'));

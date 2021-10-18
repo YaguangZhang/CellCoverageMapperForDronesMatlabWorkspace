@@ -239,7 +239,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
         case 'extendedtipp'
             set(hLeg, 'Location', 'northwest');
             transparentizeCurLegends;
-            
+
             annotation(hFigAreaOfInterest, 'textbox',...
                 [0.1609 0.8369 0.1785 0.0945],...
                 'String', ['\times10^', ...
@@ -252,7 +252,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
         case 'shrinkedin'
             set(hLeg, 'Location', 'SouthEast');
     end
-    
+
     saveEpsFigForPaper(hFigAreaOfInterest, curDirToSave);
 end
 
@@ -337,7 +337,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
     [inEffeCellAntsLats, inEffeCellAntsLons] ...
         = simConfigs.utm2deg_speZone(inEffeCellAntsXYH(:,1), ...
         inEffeCellAntsXYH(:,2));
-    
+
     if simConfigs.RESIZE_FIG_FOR_PUBLICATION
         curCustomFigSize = customFigSize.*0.8;
     else
@@ -391,7 +391,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
         makescale('nw', 'units', 'si');
     end
     saveEpsFigForPaper(hFigCellOverview, curDirToSave);
-    
+
     plot_google_map('MapType', 'satellite');
     curDirToSave = fullfile(pathToSaveResults, ...
         'Overview_CellularTowersToConsider_SatelliteMap');
@@ -430,9 +430,9 @@ pathToCache = fullfile(pathToSaveResults, ...
 if exist(pathToCache, 'file')
     disp(' ')
     disp('        Loading cached history path loss results ...')
-    
+
     load(pathToCache); %#ok<LOAD>
-    
+
     disp('        Done!')
 end
 
@@ -447,13 +447,13 @@ if ~isfield(simState, 'blockageMapsForEachCell')
         simState.blockageDistMapsForEachCell, ...
         simState.TimeUsedInSForEachPixel] ...
         = deal(cell(numOfEffeCellAnts, 1));
-    
+
     % Progress monitor (proMon): for reporting progress and estimating the
     % remaining simulation time.
     proMon.floatFomatter = '%.2f';
     proMon.pixCnt = 0;
     proMon.numOfPixToProcess = 0;
-    
+
     % For each effective cellular tower, find grid pixels that are within
     % the coverage range and pre-assign them to workers. Also, initialize
     % result cells and count the total number of pixels to be processed for
@@ -462,7 +462,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
     for idxEffeCellAnt = 1:numOfEffeCellAnts
         % Cellular location.
         curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);
-        
+
         % Find drone locations that are within the current cellular tower's
         % coverage range in the UTM (x,y) system.
         curTxToRxDistsInM ...
@@ -470,7 +470,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
         curIndicesRxLocsToConsider ...
             = find(curTxToRxDistsInM ...
             < simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
-        
+
         % We will use multiple workers to churn through the drone
         % locations. To avoid repeative environment set up and data
         % transfer, here we pre-assign the pixels to be processed by each
@@ -483,7 +483,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
             = cellfun(@(indices) ...
             curIndicesRxLocsToConsider(indices)', ...
             locIndicesForAllWorkers, 'UniformOutput', false);
-        
+
         % Initialize results.
         for idxDroneHeightInM = 1:numOfRxHeightToInspect
             simState.blockageMapsForEachCell{idxEffeCellAnt} ...
@@ -495,16 +495,16 @@ if ~isfield(simState, 'blockageMapsForEachCell')
             simState.TimeUsedInSForEachPixel{idxEffeCellAnt} ...
                 {idxDroneHeightInM} = zeros(1, numPixelsPerMap);
         end
-        
+
         % Update the total number of pixels to be processed.
         proMon.numOfPixToProcess = proMon.numOfPixToProcess ...
             + length(curIndicesRxLocsToConsider);
     end
-    
+
     % Cache the results.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
         'locIndicesForAllWorkersForAllCellsEff', 'proMon', '-v7.3');
-    
+
     disp('        Done!')
 end
 
@@ -525,21 +525,21 @@ end
 
 mapGridXYPts = simState.mapGridXYPts;
 for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
-    
+
     disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
         '] Effective cellular tower #', ...
         num2str(idxEffeCellAnt), '/', num2str(numOfEffeCellAnts), ' ...']);
-    
+
     % Cellular location.
     curCellXYH = effeCellAntsXYH(idxEffeCellAnt, :);
-    
+
     % Load the task assignment results.
     locIndicesForAllWorkers ...
         = locIndicesForAllWorkersForAllCellsEff{idxEffeCellAnt};
     numOfWorkers = length(locIndicesForAllWorkers);
     assert(numOfWorkers==numOfWorkersInCurCluster, ...
         'Preassigned tasks do not match current number of workers!');
-    
+
     % Pre-allocate space. To make sure parfor works, we will store all
     % results from one worker into one matrix with each row being:
     % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
@@ -550,7 +550,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             = nan(length(locIndicesForAllWorkers{idxWorker}) ...
             .*numOfRxHeightToInspect, 6);
     end
-    
+
     % Utilize parfor only when some workers will get something to process.
     if (sum(cellfun(@(c) isempty(c), locIndicesForAllWorkers))...
             /numOfWorkers)>=MIN_RATIO_OF_EMPTY_WORKERS_TO_AVOID_PAR
@@ -558,11 +558,11 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     else
         parforArg = numOfWorkers;
     end
-    
+
     % To make sure the overhead time is recorded by the first pixel
     % processed by the work.
     curExecTimeStartTic = tic;
-    
+
     % For recording and estimating processing time in parfor.
     pathToSaveOverheadTimeMats = fullfile(pathToSaveResults, ...
         'ProcessingTimeCacheRecords');
@@ -593,8 +593,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         pathsToOverheadTimeInSecStarts{1} ...
             = curPathToOverheadTimeInSecStart;
     end
-    
-    
+
     parfor (idxWorker = 1:numOfWorkers, parforArg)
         % Processing time considering the overhead.
         if parforArg ~= 0
@@ -603,22 +602,22 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         else
             curTaskId = 1;
         end
-        
+
         curExecTimeInSecStartMatContent ...
             = load(pathsToOverheadTimeInSecStarts{curTaskId}); %#ok<PFBNS>
         curExecTimeStartTic = curExecTimeInSecStartMatContent ...
             .curExecTimeStartTic;
-        
+
         % Load the NTIA eHata library first, if necessary, to avoid the
         % "unable to find ehata" error. Note that a compiler is needed:
         %    https://www.mathworks.com/support/requirements/supported-compilers.html
         if ~libisloaded('ehata')
             loadlibrary('ehata');
         end
-        
+
         % Load our Python module.
         py_addpath(fullfile(pwd, 'lib', 'python'));
-        
+
         curWorkerPixCnt = 0;
         curDroneLocIndices = locIndicesForAllWorkers{idxWorker};
         curWorkerNumPixs = length(curDroneLocIndices);
@@ -627,7 +626,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         % Make sure curDroneLocIndices is a row vector.
         curDroneLocIndices = curDroneLocIndices(:)';
         for idxDroneLoc = curDroneLocIndices
-            
+
             % Report progress when necessary.
             if mod(curWorkerPixCnt, ...
                     curWorkerNumPixsToReportProgress)==0
@@ -638,10 +637,10 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                     /numOfRxHeightToInspect*100, ...
                     '%.2f'), '%) ...']);
             end
-            
+
             % Drone location.
             curDroneXY = mapGridXYPts(idxDroneLoc, :); %#ok<PFBNS>
-            
+
             % Generate terrain and LiDAR profiles. We will use an empty
             % cache path to skip saving the profiles.
             absPathToCacheMatFile = '';
@@ -653,7 +652,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                 lidarFileXYCentroids, ...
                 lidarFileXYCoveragePolyshapes, ...
                 lidarMatFileAbsDirs); %#ok<PFBNS>
-            
+
             % Fill NaN elements to the minimum value in that profile.
             numOfNanProfEles ...
                 = sum(isnan([curTerrainProfile; curLidarProfile]));
@@ -665,21 +664,21 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                 curLidarProfile(isnan(curLidarProfile)) ...
                     = min(curLidarProfile);
             end
-            
+
             for idxDroneHeightInM = 1:numOfRxHeightToInspect
                 % Drone height.
                 curDroneH ...
                     = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M( ...
                     idxDroneHeightInM);
-                
+
                 [curBlockagePL, curCoveragePL, curBlockageDistInM] ...
                     = computeBlockageAndCoveragePLs( ...
                     curLidarProfile, curTerrainProfile, ...
                     curCellXYH, [curDroneXY, curDroneH], ...
                     simConfigs);
-                
+
                 curExecTime = toc(curExecTimeStartTic);
-                
+
                 % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
                 % idxDroneHeightInM, curBlockageDistInM].
                 curWorkerPixCnt = curWorkerPixCnt+1;
@@ -687,7 +686,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                     (curWorkerPixCnt, :) ...
                     = [curBlockagePL, curCoveragePL, curExecTime, ...
                     idxDroneLoc, idxDroneHeightInM, curBlockageDistInM];
-                
+
                 % Reset timer.
                 curExecTimeStartTic = tic;
                 curPathToSaveOverheadTimeInSecStart ...
@@ -696,7 +695,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                     curExecTimeStartTic);
             end
         end
-        
+
         % Final progress report which is expected to be 100% done.
         disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
             '] Worker #', num2str(idxWorker), ...
@@ -704,13 +703,13 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             num2str(curWorkerPixCnt/curWorkerNumPixs ...
             /numOfRxHeightToInspect*100, ...
             '%.2f'), '%) ...']);
-        
+
         % Clean up the library.
         if libisloaded('ehata')
             unloadlibrary('ehata');
         end
     end
-    
+
     % [blockagePl, coveragePl, pixelExecTime, idxDroneLoc,
     % idxDroneHeightInM].
     resultsFromWorkersMat = vertcat(resultsFromWorkersCell{:});
@@ -718,14 +717,14 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     % Output the results.
     for idxResult = 1:numOfResultsFromWorkers
         curResult = resultsFromWorkersMat(idxResult, :);
-        
+
         curBlockagePL = curResult(1);
         curCoveragePL = curResult(2);
         curPixelExecTime = curResult(3);
         curIdxDroneLoc = curResult(4);
         curIdxDroneHeightInM = curResult(5);
         curBlockageDistInM = curResult(6);
-        
+
         simState.blockageMapsForEachCell{idxEffeCellAnt} ...
             {curIdxDroneHeightInM}(curIdxDroneLoc) = curBlockagePL;
         simState.coverageMapsForEachCell{idxEffeCellAnt} ...
@@ -735,14 +734,14 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         simState.TimeUsedInSForEachPixel{idxEffeCellAnt} ...
             {curIdxDroneHeightInM}(curIdxDroneLoc) = curPixelExecTime;
     end
-    
+
     latestEstiPixExecTimeInS = mean(resultsFromWorkersMat(:,3));
     latestEstiTowerExecTimeInS = sum(resultsFromWorkersMat(:,3)) ...
         ./numOfWorkersInCurCluster;
     % Take into account all the heights inspected.
     proMon.pixCnt = proMon.pixCnt ...
         + numOfResultsFromWorkers./numOfRxHeightToInspect;
-    
+
     disp(' ')
     disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
         '] Finished cellular tower #', ...
@@ -771,7 +770,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             seconds2human(remainingTimeInS), ')']);
     end
     disp(' ');
-    
+
     nextIdxEffeCellAnt = idxEffeCellAnt+1;
     % We will update simState for each tower.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
@@ -803,7 +802,7 @@ for idxH = 1:numOfRxHeightToInspect
     simState.blockageDistMaps{idxH} ...
         = fetchPathlossResultsFromSimState(simState, ...
         1, idxH, 'BlockageDist', simConfigs, 'utm');
-    
+
     for idxEffeCell = 2:numOfEffeCellAnts
         simState.blockageMaps{idxH} = min(simState.blockageMaps{idxH}, ...
             fetchPathlossResultsFromSimState(simState, ...
@@ -816,7 +815,7 @@ for idxH = 1:numOfRxHeightToInspect
             fetchPathlossResultsFromSimState(simState, ...
             idxEffeCell, idxH, 'BlockageDist', simConfigs, 'utm'));
     end
-    
+
     % Discard the location information in the aggregated path loss maps.
     simState.blockageMaps{idxH} = simState.blockageMaps{idxH}(:,3);
     simState.coverageMaps{idxH} = simState.coverageMaps{idxH}(:,3);
