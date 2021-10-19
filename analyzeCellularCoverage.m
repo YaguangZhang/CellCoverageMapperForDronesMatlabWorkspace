@@ -300,7 +300,8 @@ diary(dirToSaveDiary);
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
-    '] Configuring the simulation for PRESET ', PRESET, ' ...'])
+    '] Configuring the simulation for PRESET ', PRESET, ...
+    ' (', num2str(CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
 
 % Save simConfigs if it is not yet done.
 dirToSaveSimConfigs = fullfile(pathToSaveResults, 'simConfigs_Raw.mat');
