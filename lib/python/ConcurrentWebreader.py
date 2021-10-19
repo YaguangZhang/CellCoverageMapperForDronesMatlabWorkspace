@@ -21,9 +21,9 @@ def fetch_url(url, htmls, idx):
         htmls[idx] = urllib.request.urlopen(url,
             timeout=TIMEOUT_IN_S, context=ctx).read()
     except (HTTPError, URLError) as error:
-        logging.error('Data not retrieved because %s\nURL: %s', error, url)
+        logging.warning('Data not retrieved because %s\nURL: %s', error, url)
     except timeout:
-        logging.error('Socket timed out - URL %s', url)
+        logging.warning('Socket timed out - URL %s', url)
     else:
         logging.info('Access successful.')
 
