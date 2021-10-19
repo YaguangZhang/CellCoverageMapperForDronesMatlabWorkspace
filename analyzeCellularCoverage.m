@@ -10,7 +10,7 @@
 %     of the viable PRESET below to choose the desired simulation.
 %   - If new simulation is needed, please delete previous result files to
 %     avoid progress recovery.
-%   - Matlab R2020b has been used for developing and testing this
+%   - Matlab R2020b & R2021a have been used for developing and testing this
 %     simulator.
 %
 % Yaguang Zhang, Purdue, 05/05/2021
