@@ -29,7 +29,7 @@ if strcmpi(language, 'Python')
     if isempty(curPythonVersion)
         pyversion(evalin('base', 'ABS_PATH_TO_PYTHON'));
     end
-    
+
     % Limit the number of concurrent HTTP requests to reduce the number of
     % failures.
     MAX_NUM_OF_CONCURRENT_REQUESTS = 100;
@@ -102,15 +102,16 @@ switch lower(language)
                         curIdxEnd ...
                             = curIdxStart+MAX_NUM_OF_CONCURRENT_REQUESTS-1;
                     end
+                    curUrls = urls(curIdxStart:curIdxEnd);
                     fetchedPyJsons = py.ConcurrentWebreader ...
                         .concurrent_fetch_urls( ...
-                        py.list(urls(curIdxStart:curIdxEnd)));
+                        py.list(curUrls));
                     fetchedJsonsCell = cell(fetchedPyJsons);
-                    
+
                     boolsIsValidJson = cellfun( ...
                         @(json) ~isa(json, 'py.NoneType'), ...
                         fetchedJsonsCell);
-                    
+
                     try
                         fetchedJsons = cellfun(@(jo) ...
                             jsondecode(native2unicode(jo)), ...
@@ -123,17 +124,17 @@ switch lower(language)
                             ['Unable to process fetchedPyJsons: ', ...
                             fetchedPyJsonsChar]);
                         parsave('./degbugFetchedPyJsonsChar', ...
-                            fetchedPyJsonsChar);
+                            curUrls, fetchedPyJsonsChar);
                         throw(err);
                     end
-                    
+
                     indicesToUpdate = curIdxStart:curIdxEnd;
                     indicesToUpdate = indicesToUpdate(boolsIsValidJson);
                     eles(indicesToUpdate) = arrayfun(@(resp) resp ...
                         .USGS_Elevation_Point_Query_Service ...
                         .Elevation_Query.Elevation, fetchedJsons');
                 end
-                
+
                 eles(eles==usgsNanValue) = nan;
                 ctnTrials = inf;
             catch err
