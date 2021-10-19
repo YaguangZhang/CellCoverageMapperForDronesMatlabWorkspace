@@ -404,7 +404,9 @@ end
 disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 
 % Plot results.
-plotSimulationResults(pathToSaveResults, simState, simConfigs);
+if ~isunix % Adoid generating plots on the headless Linux clusters.
+    plotSimulationResults(pathToSaveResults, simState, simConfigs);
+end
 
 diary off;
 
