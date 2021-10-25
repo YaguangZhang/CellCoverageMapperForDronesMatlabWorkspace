@@ -67,7 +67,9 @@ MIN_CANDIDATE_DIST_IN_M = 10;
 %   - 'ACRE_EXTENDED_2KM' / 'ACRE_EXTENDED_4KM' / 'ACRE_EXTENDED_8KM'
 %     Extended area for ACRE_EXACT with 2 km radius (about 1.2 miles) / 4
 %     km radius (about 2.5 miles) / 8 km radius (about 5 miles).
-PRESET = 'ACRE_EXACT';
+%   - 'Purdue'
+%     A square area covering the West Lafayette Purdue campus.
+PRESET = 'Purdue';
 
 % The LiDAR data set to use. Currently we only suppor the 2019 Indiana
 % state-wide digital surface model (DSM) data from:
@@ -180,6 +182,11 @@ switch PRESET
             polyshape(utmXYBoundaryOfAcre), padDistInKm*1000);
         UTM_X_Y_BOUNDARY_OF_INTEREST = ...
             UTM_X_Y_BOUNDARY_OF_INTEREST.Vertices;
+    case 'Purdue'
+        UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = constructUtmRectanglePolyMat(...
+            [40.467341, -87.015762; ...
+            40.501484, -86.979905]);
     otherwise
         error(['Unsupported preset "', PRESET, '"!'])
 end
