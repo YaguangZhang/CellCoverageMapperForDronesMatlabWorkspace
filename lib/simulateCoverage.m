@@ -224,7 +224,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
     hLeg = legend([hAreaOfInterest, hGridPts], ...
         'Area of interest', 'UAV location grid');
     xlabel('UTM x (m)'); ylabel('UTM y (m)');
-    % Adjust legend the exponent label for y axis.
+    % Adjust legend and the exponent label for y axis.
     switch lower(simConfigs.CURRENT_SIMULATION_TAG)
         case 'tipp'
             annotation(hFigAreaOfInterest, 'textbox',...
