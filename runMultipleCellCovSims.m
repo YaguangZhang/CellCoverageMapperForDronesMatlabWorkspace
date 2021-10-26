@@ -35,6 +35,10 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
     for idxPreset = 1:length(PRESETS)
         PRESET = PRESETS{idxPreset};
         CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
+        disp(' ')
+        disp(['    [', datestr(now, datetimeFormat), ...
+            '] Running sim for ', PRESET, ' (', ...
+            num2str(CARRIER_FREQUENCY_IN_MHZ), ' MHz) ...'])
 
         try
             diary off;
@@ -45,6 +49,8 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
             diary(pathToSaveSimManDiary);
             disp(getReport(err))
         end
+        disp(['    [', datestr(now, datetimeFormat), ...
+            '] Done!'])
     end
 end
 
