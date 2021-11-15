@@ -1,5 +1,5 @@
 function [osVersion, carrier, downSpeedBps, upSpeedBps, ...
-    downEndLatLon, upEndLatLon, flagIsCell] ...
+    downEndLatLon, upEndLatLon, flagIsCell, testId] ...
     = parseFccSpeedTestAppLog(logStruct)
 %PARSEFCCSPEEDTESTAPPLOG Extract the information of interest from the logs
 %of the FCC Speed Test app.
@@ -12,7 +12,11 @@ if isfield(logStruct, 'operating_system_version')
     assert(strcmp(osVersion(1:7), 'Android'), ...
         ['Error! Expecting Android logs based on the log structure ', ...
         'instead of ', osVersion, '!']);
-
+    try
+        testId = logStruct.tests.testId;
+    catch
+        testId = '';
+    end
     carrier = logStruct.carrier_name;
     downSpeedBps = ...
         logStruct.tests.download.bytes_transferred * 8 / ...
@@ -45,6 +49,11 @@ elseif isfield(logStruct, 'device_environment')
         ['Error! Expecting iOS logs based on the log structure ', ...
         'instead of ', osVersion, '!']);
 
+    try
+        testId = logStruct.tests.Download.referenceNumber;
+    catch
+        testId = '';
+    end
     carrier = logStruct.device_environment.carrier_name;
     downSpeedBps = ...
         logStruct.tests.Download.testResult*10^6;
