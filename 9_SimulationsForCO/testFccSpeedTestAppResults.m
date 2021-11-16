@@ -2,8 +2,12 @@
 %the FCC speed test app.
 %
 % Yaguang Zhang, Purdue, 10/14/2021
-
-clear; clc; close all; dbstop if error;
+if exist('testManPresets', 'var')
+    clearvars -except PRESET testManPresets;
+else
+    clear;
+end
+clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
 cd(fileparts(mfilename('fullpath'))); cd('..');
@@ -29,7 +33,9 @@ prepareSimulationEnv;
 %     Only show tests conducted in Longmont.
 %   - FCC_SpeedTest_LongmontCampaign_20211105_LongmontExt
 %     Only show tests conducted in and around Longmont.
-PRESET = 'FCC_SpeedTest_LongmontCampaign_20211105_LongmontExt';
+if ~exist('PRESET', 'var')
+    PRESET = 'FCC_SpeedTest_LongmontCampaign_20211105_LongmontExt';
+end
 if ismember(PRESET, ...
         {'FCC_SpeedTest_LongmontCampaign_20211105_Longmont', ...
         'FCC_SpeedTest_LongmontCampaign_20211105_LongmontExt', ...
