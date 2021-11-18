@@ -170,37 +170,50 @@ MIN_RATIO_OF_EMPTY_WORKERS_TO_AVOID_PAR = 1;
 
 %% Create the Map Grid
 
-mapMinX = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
-mapMaxX = max(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
-mapMinY = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
-mapMaxY = max(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+switch simConfigs.CURRENT_SIMULATION_TAG
+    case 'WHIN_WEATHER_STATIONS'
+        [mapGridLats, mapGridLons] ...
+            = loadWhinWeatherStationInfo();
+        simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
 
-mapWidthInM = mapMaxX-mapMinX;
-mapHeightInM = mapMaxY-mapMinY;
+        % Convert (lat, lon) to UTM (x, y).
+        [mapGridXs, mapGridYs] = simConfigs.deg2utm_speZone( ...
+            simState.mapGridLatLonPts(:,1), ...
+            simState.mapGridLatLonPts(:,2));
+        simState.mapGridXYPts = [mapGridXs, mapGridYs];
+    otherwise
+        mapMinX = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
+        mapMaxX = max(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
+        mapMinY = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+        mapMaxY = max(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
 
-gridResolution = max([mapWidthInM, mapHeightInM]) ...
-    ./simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE;
+        mapWidthInM = mapMaxX-mapMinX;
+        mapHeightInM = mapMaxY-mapMinY;
 
-mapXLabels = constructAxisGrid( ...
-    mean([mapMaxX, mapMinX]), ...
-    floor((mapMaxX-mapMinX)./gridResolution), gridResolution);
-mapYLabels = constructAxisGrid( ...
-    mean([mapMaxY, mapMinY]), ...
-    floor((mapMaxY-mapMinY)./gridResolution), gridResolution);
-[mapXs,mapYs] = meshgrid(mapXLabels,mapYLabels);
+        gridResolution = max([mapWidthInM, mapHeightInM]) ...
+            ./simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE;
 
-% Discard map grid points out of the area of interest.
-boolsMapGridPtsToKeep = inpolygon(mapXs(:), mapYs(:), ...
-    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
-    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+        mapXLabels = constructAxisGrid( ...
+            mean([mapMaxX, mapMinX]), ...
+            floor((mapMaxX-mapMinX)./gridResolution), gridResolution);
+        mapYLabels = constructAxisGrid( ...
+            mean([mapMaxY, mapMinY]), ...
+            floor((mapMaxY-mapMinY)./gridResolution), gridResolution);
+        [mapXs,mapYs] = meshgrid(mapXLabels,mapYLabels);
 
-simState.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
-    mapYs(boolsMapGridPtsToKeep)];
+        % Discard map grid points out of the area of interest.
+        boolsMapGridPtsToKeep = inpolygon(mapXs(:), mapYs(:), ...
+            simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+            simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
 
-% Convert UTM (x, y) to (lat, lon).
-[mapGridLats, mapGridLons] = simConfigs.utm2deg_speZone( ...
-    simState.mapGridXYPts(:,1), simState.mapGridXYPts(:,2));
-simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
+        simState.mapGridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
+            mapYs(boolsMapGridPtsToKeep)];
+
+        % Convert UTM (x, y) to (lat, lon).
+        [mapGridLats, mapGridLons] = simConfigs.utm2deg_speZone( ...
+            simState.mapGridXYPts(:,1), simState.mapGridXYPts(:,2));
+        simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
+end
 
 % Plot. Only generate figures if they are not there.
 curDirToSave = fullfile(pathToSaveResults, 'Overview_RxLocGrid');

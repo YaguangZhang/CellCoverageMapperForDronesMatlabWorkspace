@@ -37,7 +37,9 @@ if ~exist('PRESET', 'var')
     % For LoRaWAN on ACRE:
     %   {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R',
     %    'ACRE_LORA_HALF_MILE_R'}.
-    PRESET = 'ACRE_LORA_HALF_MILE_R';
+    % For WHIN weather stations:
+    %   {'WHIN_WEATHER_STATIONS'}
+    PRESET = 'WHIN_WEATHER_STATIONS';
 end
 
 %% Script Parameters
@@ -57,6 +59,11 @@ switch PRESET
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
             ABS_PATH_TO_SHARED_FOLDER, ...
             'CellTowerInfo', 'PurdueAcreLoraWanTowers.csv');
+    case {'WHIN_WEATHER_STATIONS'}
+        % The WHIN gateway locations.
+        pathToWhinGatewayLocs = parseWhinGatewayInfo(...
+            ABS_PATH_TO_SHARED_FOLDER);
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = pathToWhinGatewayLocs;
     otherwise
         % Default to the NTIA+HIFLD cell tower locations.
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
@@ -120,7 +127,11 @@ switch PRESET
             = constructUtmRectanglePolyMat(...
             [40.216047, -87.093700; ...
             40.562743, -86.695913]);
-    case 'ExtendedTipp'
+    case {'ExtendedTipp', 'WHIN_WEATHER_STATIONS'}
+        % Note that for the WHIN weather station case, we will set the
+        % simulation boundary, but the grid points will be set to the
+        % weather station locations. Please refer to simulateCoverage.m for
+        % more information.
         extTippBoundary = load(fullfile(pathToStateInfoFolder, ...
             'Tipp_Extended', 'boundary.mat'));
         assert(strcmp(simConfigs.UTM_ZONE, ...
@@ -153,9 +164,20 @@ end
 %       - mmWave 28000 MHz (28 GHz)
 %         For cellular 5G millimeter wave
 if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
-    CARRIER_FREQUENCY_IN_MHZ = 915;
+    if ismember(PRESET, {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
+            'ACRE_LORA_HALF_MILE_R', 'WHIN_WEATHER_STATIONS'})
+        % LoRa simulations.
+        CARRIER_FREQUENCY_IN_MHZ = 915;
+    else
+        % The cellular carrier frequency can be specified here.
+        CARRIER_FREQUENCY_IN_MHZ = 1900;
+    end
 end
 simConfigs.CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCY_IN_MHZ;
+% Clear the user-set parameter CARRIER_FREQUENCY_IN_MHZ to make sure it is
+% properly loaded for each simulation.
+clearvars CARRIER_FREQUENCY_IN_MHZ;
+
 simConfigs.CARRIER_WAVELENGTH_IN_M ...
     = physconst('LightSpeed')/simConfigs.CARRIER_FREQUENCY_IN_MHZ/1e6;
 
@@ -191,8 +213,14 @@ simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 %         inspection
 %        - 1.5 for 3500 MHz (3.5 GHz) areostat application
 %       - 0.1 for 915 MHz areostat application
-simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
-    = [1.5; (10:10:120)'; 125];
+switch PRESET
+    case 'WHIN_WEATHER_STATIONS'
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+            = [1.5; 2.5];
+    otherwise
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+            = [1.5; (10:10:120)'; 125];
+end
 
 %   - The function to calculate, according to the TX and RX heights, the
 %   maximum cellular tower coverage radius. For example, it can be set to
@@ -301,7 +329,7 @@ diary(dirToSaveDiary);
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Configuring the simulation for PRESET ', PRESET, ...
-    ' (', num2str(CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
+    ' (', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
 
 % Save simConfigs if it is not yet done.
 dirToSaveSimConfigs = fullfile(pathToSaveResults, 'simConfigs_Raw.mat');
