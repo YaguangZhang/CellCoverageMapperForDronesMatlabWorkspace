@@ -37,9 +37,13 @@ if ~exist('PRESET', 'var')
     % For LoRaWAN on ACRE:
     %   {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R',
     %    'ACRE_LORA_HALF_MILE_R'}.
-    % For WHIN weather stations:
+    % For WHIN weather stations (ExtendedTipp as area of interest with
+    % weather station locs as the grid):
     %   {'WHIN_WEATHER_STATIONS'}
-    PRESET = 'WHIN_WEATHER_STATIONS';
+    % For LoRaWAN built by WHIN (ExtendedTipp as area of interest with full
+    % grid user locs):
+    %   {'WHIN_LORAWAN'}
+    PRESET = 'WHIN_LORAWAN';
 end
 
 %% Script Parameters
@@ -59,7 +63,7 @@ switch PRESET
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
             ABS_PATH_TO_SHARED_FOLDER, ...
             'CellTowerInfo', 'PurdueAcreLoraWanTowers.csv');
-    case {'WHIN_WEATHER_STATIONS'}
+    case {'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}
         % The WHIN gateway locations.
         pathToWhinGatewayLocs = parseWhinGatewayInfo(...
             ABS_PATH_TO_SHARED_FOLDER);
@@ -127,7 +131,7 @@ switch PRESET
             = constructUtmRectanglePolyMat(...
             [40.216047, -87.093700; ...
             40.562743, -86.695913]);
-    case {'ExtendedTipp', 'WHIN_WEATHER_STATIONS'}
+    case {'ExtendedTipp', 'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}
         % Note that for the WHIN weather station case, we will set the
         % simulation boundary, but the grid points will be set to the
         % weather station locations. Please refer to simulateCoverage.m for
@@ -165,7 +169,8 @@ end
 %         For cellular 5G millimeter wave
 if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
     if ismember(PRESET, {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
-            'ACRE_LORA_HALF_MILE_R', 'WHIN_WEATHER_STATIONS'})
+            'ACRE_LORA_HALF_MILE_R', ...
+            'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'})
         % LoRa simulations.
         CARRIER_FREQUENCY_IN_MHZ = 915;
     else
@@ -214,7 +219,7 @@ simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 %        - 1.5 for 3500 MHz (3.5 GHz) areostat application
 %       - 0.1 for 915 MHz areostat application
 switch PRESET
-    case 'WHIN_WEATHER_STATIONS'
+    case {'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
             = [1.5; 2.5];
     otherwise
