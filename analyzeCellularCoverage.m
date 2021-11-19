@@ -436,6 +436,11 @@ if ~isunix % Adoid generating plots on the headless Linux clusters.
     plotSimulationResults(pathToSaveResults, simState, simConfigs);
 end
 
+if strcmp(PRESET, 'WHIN_WEATHER_STATIONS')
+    addpath('10_NetworkPlanner');
+    genExtraPlotsForWhinWeatherStations;
+end
+
 diary off;
 
 % EOF

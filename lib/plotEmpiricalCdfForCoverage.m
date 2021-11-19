@@ -91,7 +91,7 @@ for idxMap = 1:numMaps
     curM = maps{idxMap};
     assert(length(curM(:))==cdfMeta.totalNumOfPixelsOnMap, ...
         'All maps should have the same number of pixels!');
-    
+
     switch lower(mapType)
         case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
@@ -100,7 +100,7 @@ for idxMap = 1:numMaps
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
     end
     numsOfCovPixels(idxMap) = sum(boolsCovPs);
-    
+
     curMNanToInf = curM; curMNanToInf(~boolsCovPs) = inf;
     [cdfVs{idxMap}, cdfXs{idxMap}] = ecdf(curMNanToInf(:));
 end
@@ -125,10 +125,10 @@ for idxMap = 1:numMaps
     if isempty(maxPtIdxToShow)
         maxPtIdxToShow = length(cdfXs{idxMap});
     end
-    
+
     xs{idxMap} = cdfXs{idxMap}(1:maxPtIdxToShow);
     ys{idxMap} = cdfVs{idxMap}(1:maxPtIdxToShow);
-    
+
     xMax = max(cdfXs{idxMap}(maxPtIdxToShow), xMax);
     % Find the last point with y less than 5% and keep a record of the
     % corresponding x. We will use the minimus x for the axis xMin.
@@ -151,27 +151,30 @@ hold on; set(gca, 'fontWeight', 'bold');
 for idxMap = 1:numMaps
     curXs = xs{idxMap};
     curYs = ys{idxMap};
-    
+
     if curXs(1)>xMin
         curXs = [xMin; curXs]; %#ok<AGROW>
         curYs = [curYs(1); curYs]; %#ok<AGROW>
     end
-    
+
     if curXs(end)<xMax
-        if strcmpi(mapType, 'blockagedist')
-            assert(curYs(end)==1, 'The max Y is expected to be 1!');
+        if strcmpi(mapType, 'blockagedist') && (curYs(end)~=1)
+            warning(['Map #', num2str(idxMap), ...
+                '/', num2str(numMaps), ...
+                ': the max Y is expected to be 1!', ...
+                ' We have ', num2str(curYs(end)), ' instead.']);
         end
         curXs = [curXs; xMax]; %#ok<AGROW>
         curYs = [curYs; curYs(end)]; %#ok<AGROW>
     end
-    
+
     if strcmpi(mapType, 'blockagedist')
         % Adjust xs for log scale.
         xMin = 1;
         idxFirstNonZeroX = find(curXs~=0, 1, 'first');
         if ~isempty(idxFirstNonZeroX)
             curXs = [xMin; curXs(idxFirstNonZeroX:end)];
-            
+
             idxFirstNonZeroY = find(curYs~=0, 1, 'first');
             curYs = [curYs(idxFirstNonZeroY); curYs(idxFirstNonZeroX:end)];
         else
@@ -179,7 +182,7 @@ for idxMap = 1:numMaps
             curYs = [];
         end
     end
-    
+
     curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
     hsCdf(idxMap) = plot(curXs, curYs, ...
         curMarker, 'LineWidth', lineWidth); %#ok<AGROW>
