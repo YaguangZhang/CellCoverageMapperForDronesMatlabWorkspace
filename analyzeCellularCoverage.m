@@ -392,6 +392,12 @@ lidarFileAbsDirs = cellfun(@(d) ...
     [dirToLidarFiles, strrep(d, '\', filesep)], ...
     lidarFileRelDirs, 'UniformOutput', false);
 
+% Save simConfigs again if it is not yet done.
+dirToSaveSimConfigs = fullfile(pathToSaveResults, 'simConfigs.mat');
+if ~exist(dirToSaveSimConfigs, 'file')
+    save(dirToSaveSimConfigs, 'simConfigs', '-v7.3');
+end
+
 %% Load Cellular Tower Information
 
 disp(' ')
