@@ -18,8 +18,10 @@ pathToSaveSimManDiary = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'PostProcessingResults', 'simManDiary.txt');
 diary(pathToSaveSimManDiary);
 
-% Presets.
-PRESETS = {'Tipp', 'ShrinkedWHIN', 'ShrinkedIN'};
+% Presets of interest.
+%   PRESETS = {'Tipp', 'ShrinkedWHIN', 'ShrinkedIN'};
+PRESETS = {'ShrinkedWHIN'};
+
 % Carrier frequencies.
 %	- 1900 MHz
 %     For cellular 4G LTE

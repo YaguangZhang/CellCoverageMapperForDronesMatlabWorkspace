@@ -1,6 +1,6 @@
 function [ lats, lons, intIds, names ] = loadWhinWeatherStationInfo()
-%PARSEWHINGATEWAYINFO A helper function to extract the WHIN weather station
-%information from the raw log file.
+%LOADWHINWEATHERSTATIONINFO A helper function to extract the WHIN weather
+%station information from the raw log file.
 %
 % Outputs:
 %   - lats, lons
@@ -26,7 +26,7 @@ whinWeatherStationTb = readtable(dirToWhinWeatherStationLog);
 if FLAG_SORT_RECORDS
     % Sort the records by station ID.
     whinWeatherStationTb = sortrows(whinWeatherStationTb, ...
-        'id'); %#ok<UNRCH> 
+        'id'); %#ok<UNRCH>
     assert(all(whinWeatherStationTb.id ...
         ==(1:length(whinWeatherStationTb.id))'), ...
         'Weather station data set is not complete!');
