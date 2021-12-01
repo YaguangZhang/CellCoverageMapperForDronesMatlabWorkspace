@@ -204,6 +204,7 @@ if exist('latLonsForAreaOfInterest', 'var')
     cleanFccLogVars;
 
     flagsIsCell = flagsIsCell(boolsToKeep);
+    clearvars latLonsForAreaOfInterest;
 end
 
 % Output raw results to a .csv file.
@@ -231,7 +232,7 @@ writetable(rawTestResults, ...
 
 %% Plots
 
-% DOWN/up speed on map.
+% Down/up speed on map.
 hDownSpeed = figure; hold on;
 plot3k([downEndLatLons(:, [2, 1]), downSpeedsBps./(10^6)], ...
     'Labels', {'Download Speed on Map', '', '', '', ...
@@ -247,7 +248,6 @@ saveas(hDownSpeed, ...
     fullfile(pathToSaveResults, 'downloadSpeed_2D.jpg'));
 saveas(hDownSpeed, ...
     fullfile(pathToSaveResults, 'downloadSpeed_2D.fig'));
-
 
 hUpSpeed = figure; hold on;
 plot3k([downEndLatLons(:, [2, 1]), upSpeedsBps./(10^6)], ...
@@ -313,7 +313,6 @@ saveas(hUpSpeedByOs, ...
     fullfile(pathToSaveResults, 'uploadSpeedByOs_2D.fig'));
 
 % Down/up speed by carrier.
-
 boolsIsAtt = cellfun(@(v) strcmp(v(1:3), 'AT&'), carriers);
 boolsIsVer = cellfun(@(v) strcmp(v(1:3), 'Ver'), carriers);
 boolsIsTM = cellfun(@(v) strcmp(v(1:3), 'T-M'), carriers);
@@ -385,5 +384,4 @@ saveas(hUpSpeedByCar, ...
     fullfile(pathToSaveResults, 'uploadSpeedByCar_2D.jpg'));
 saveas(hUpSpeedByCar, ...
     fullfile(pathToSaveResults, 'uploadSpeedByCar_2D.fig'));
-
 % EOF
