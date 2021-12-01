@@ -149,7 +149,7 @@ for freqInMhz = 1900
                     'defaultLegendAutoUpdate','off');
                 set(hLeg, 'Position', [0.1302, 0.7615, 0.4249, 0.1655]);
             case 'ShrinkedWHIN'
-                h = makescale(3.55, 'se', 'units', 'si');
+                h = makescale(3.7, 'se', 'units', 'si');
             case 'ShrinkedIN'
                 h = makescale(3.15, 'se', 'units', 'si');
         end
