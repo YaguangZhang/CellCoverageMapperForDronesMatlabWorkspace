@@ -31,7 +31,7 @@ LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
 
 % For plotting.
 areaOfInterestColor = [0.9290 0.6940 0.1250];
-lightBlue = [0.3010 0.7450 0.9330]; %#ok<NASGU>
+lightBlue = [0.3010 0.7450 0.9330];
 darkBlue = [0 0.4470 0.7410];
 colorEffectiveTowers = 'b';
 markerEffectiveTowers = '.';
@@ -50,6 +50,14 @@ pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 if exist(pathToSaveResults, 'dir')~=7
     mkdir(pathToSaveResults);
 end
+
+% Turn the diary logging function on.
+dirToDiaryFile = fullfile(pathToSaveResults, 'diary.txt');
+% Get rid of the old diary if it exists.
+if exist(dirToDiaryFile, 'file')
+    delete(dirToDiaryFile);
+end
+diary(dirToDiaryFile);
 
 %% Cell Towers to Consider on Roadmaps
 
@@ -158,4 +166,9 @@ for freqInMhz = 1900
         saveEpsFigForPaper(hFigCellOverview, curDirToSave);
     end
 end
+
+%% Cleanup
+
+diary off;
+
 % EOF
