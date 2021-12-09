@@ -95,7 +95,9 @@ boolsBlocked(boolsBelowDirectPath) = distsToDirectPath ...
 blockageDistInM = distTxToRx*(sum(boolsBlocked)/length(boolsBlocked));
 
 if all(~boolsBlocked)
-    blockagePL = fspl(distTxToRx, simConfigs.CARRIER_WAVELENGTH_IN_M);
+    % We will consider the 3D distance in FSPL computation.
+    distTxToRx3D = norm(txXYAlt - rxXYAlt);
+    blockagePL = fspl(distTxToRx3D, simConfigs.CARRIER_WAVELENGTH_IN_M);
 end
 end
 % EOF

@@ -74,7 +74,7 @@ function [ medianBPLMap, medianBPLMapXLabels,  medianBPLMapYLabels, ...
 %     can be easily visualized via the command: image(medianBPLMap).
 %   - medianBPLMapXLabels,  medianBPLMapYLabels
 %     The x and y labels in the UTM system, respectively, for the output
-%     map. Note that the Xs are increaseing and Ys are decreasing so that
+%     map. Note that the Xs are increasing and Ys are decreasing so that
 %     the (i,j) element of medianBPLMap corresponds to the median basic
 %     transmission loss at location [Xs(j), Ys(i)].
 %
@@ -175,7 +175,7 @@ parfor (idxWorker = 1:numOfAvailableWorkers, numOfAvailableWorkers)
     if strcmpi(libraryToUse, 'cplusplus') && (~libisloaded('ehata'))
         loadlibrary('ehata');
     end
-    
+
     allMedianBPLs{idxWorker} = computeMedianBPLsForCurWorker(idxWorker, ...
         indicesRxXsYsForAllWorkers, ...
         medianBPLMapXLabels, medianBPLMapYLabels, baseAntXY, ...

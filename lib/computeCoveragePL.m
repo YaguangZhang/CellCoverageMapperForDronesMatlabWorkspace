@@ -50,6 +50,11 @@ function coveragePL = computeCoveragePL(txXYH, rxXYH, ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
+% Set this to true to ignore obstacles for FSPL computation within the
+% distance threshold MIN_TX_TO_RX_DIST_FOR_EHATA_IN_M. Otherwise, we will
+% output NaN if there is obstacles blocking the 1st Fresnel zone.
+FLAG_IGNORE_OBSTACLES_FOR_FSPL = true;
+
 % The minimum and maximum TX-to-RX distance for which the eHata model is
 % valid.
 MIN_TX_TO_RX_DIST_FOR_EHATA_IN_M = 1000;
@@ -75,17 +80,22 @@ if distTxToRx<=MAX_TX_TO_RX_DIST_FOR_EHATA_IN_M
 end
 
 if distTxToRx<MIN_TX_TO_RX_DIST_FOR_EHATA_IN_M
-    % Consider the FSPL model.
-    curFSPL = computeBlockagePL([txXYH(1:2), txAlt], ...
-        [rxXYH(1:2), rxAlt], ...
-        lidarProfile, simConfigs);
-    
+    if FLAG_IGNORE_OBSTACLES_FOR_FSPL
+        % We will consider the 3D distance in FSPL computation.
+        distTxToRx3D = norm([txXYH(1:2), txAlt] - [rxXYH(1:2), rxAlt]);
+        curFSPL = fspl(distTxToRx3D, simConfigs.CARRIER_WAVELENGTH_IN_M);
+    else
+        % Consider the non-blocked FSPL model.
+        curFSPL = computeBlockagePL([txXYH(1:2), txAlt], ...
+            [rxXYH(1:2), rxAlt], ...
+            lidarProfile, simConfigs); %#ok<UNRCH>
+    end
+
     ratioForEHata ...
         = distTxToRx./MIN_TX_TO_RX_DIST_FOR_EHATA_IN_M;
     coveragePL ...
         = ratioForEHata.*curEHataPL ...
         +(1-ratioForEHata).*curFSPL;
-    
 elseif (distTxToRx>=MIN_TX_TO_RX_DIST_FOR_EHATA_IN_M) ...
         && (distTxToRx<=MAX_TX_TO_RX_DIST_FOR_EHATA_IN_M)
     coveragePL = curEHataPL;

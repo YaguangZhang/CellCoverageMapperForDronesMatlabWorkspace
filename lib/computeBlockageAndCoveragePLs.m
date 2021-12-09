@@ -27,8 +27,8 @@ function [blockagePL, coveragePL, blockageDistInM] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
-% Treat the heigher location as the TX location. Note: altitude = elevation
-% + height.
+% Treat the higher location as the TX location. 
+%   Note: altitude = elevation + height.
 startAlt = terrainProfile(1) + startXYH(3);
 endPtAlt = terrainProfile(end) + endXYH(3);
 

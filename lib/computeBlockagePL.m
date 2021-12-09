@@ -57,7 +57,7 @@ losPathHs = polyval(parsLoSPath, obsLidarProfDists);
 if all(losPathHs>obsLidarProfileZs)
     % The direct path is now ensured clear. We need to consider the first
     % Fresnel zone here to more accurately determine the LoS paths.
-    
+
     % Distance between the celluar tower and the lidar z locations.
     d1s = vecnorm( ...
         [obsLidarProfDists(:)'; ...
@@ -70,7 +70,7 @@ if all(losPathHs>obsLidarProfileZs)
     firstFresRadii ...
         = (sqrt( ...
         (simConfigs.CARRIER_WAVELENGTH_IN_M .* d1s .* d2s)./(d1s + d2s)))';
-    
+
     % The distances between the lidar z locations and the TX-RX direct
     % path.
     distsToDirectPath ...
@@ -78,12 +78,15 @@ if all(losPathHs>obsLidarProfileZs)
         [obsLidarProfDists(:), obsLidarProfileZs(:)], ...
         [0, txXYAlt(3)], ...
         [distTxToRx, rxXYAlt(3)]);
-    
+
     % The extra clearance ratio respective to the first Fresnel zone radius
     % for LoS paths.
     if all(distsToDirectPath ...
             > simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadii)
-        blockagePL = fspl(distTxToRx, simConfigs.CARRIER_WAVELENGTH_IN_M);
+        % We will consider the 3D distance in FSPL computation.
+        distTxToRx3D = norm(txXYAlt - rxXYAlt);
+        blockagePL = fspl(distTxToRx3D, ...
+            simConfigs.CARRIER_WAVELENGTH_IN_M);
     end
 end
 

@@ -107,9 +107,11 @@ for idxPixel = 1:curNumOfPixs
                     eleProfYs(end:-1:1));
                 effectiveBaseAntHInM = mobileAntHeightInM;
             end
-            
-            curFsplMedianBPL = fspl(distTxToRx, lambdaInM);
-            
+
+            % We will consider the 3D distance in FSPL computation.
+            distTxToRx3D = norm([distTxToRx, txHeightInM-rxHeightInM]);
+            curFsplMedianBPL = fspl(distTxToRx3D, lambdaInM);
+
             switch lower(libraryToUse)
                 case 'cplusplus'    % C++ eHata
                     curEHataMedianBPL = ExtendedHata_PropLoss_CPP( ...
