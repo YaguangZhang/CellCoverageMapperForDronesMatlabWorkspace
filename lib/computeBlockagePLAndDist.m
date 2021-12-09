@@ -1,5 +1,5 @@
 function [ blockagePL, blockageDistInM ] ...
-    = computeBlockagePL(txXYAlt, rxXYAlt, lidarProfile, simConfigs)
+    = computeBlockagePLAndDist(txXYAlt, rxXYAlt, lidarProfile, simConfigs)
 %COMPUTEBLOCKAGEPL Compute the path loss (in dB) for a pixel of the
 %blockage map.
 %
