@@ -165,8 +165,35 @@ for idxWorker = 1:numOfWorkers
             saveas(hCurPLMap,  pathToSaveCovFig);
             close(hCurPLMap);
         end
+
+        % Coverage path loss map considering vegetation.
+        [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
+            = fetchPathlossResultsFromSimState(simState, ...
+            idxEffeCell, idxH, 'PathLossWithVeg', simConfigs, locType);
+        pathToSaveCovFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
+            ['CellTowerPathLoss_Type_', 'PathLossWithVeg', ...
+            '_RxHeight_', num2str(rxAntH), ...
+            '_EffeCellId_', num2str(idxEffeCell), '.png']);
+        if ~exist(pathToSaveCovFig, 'file')
+            try
+                [ hCurPLMap ] ...
+                    = plotPathLossMap(matRxLonLatWithPathloss, ...
+                    cellAntLonLat, simConfigs, ~curFlagGenFigsSilently);
+            catch
+                if isvalid(hCurPLMap)
+                    close(hCurPLMap);
+                end
+                [ hCurPLMap ] ...
+                    = plotPathLossMap(matRxLonLatWithPathloss, ...
+                    cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
+                    false, 'plot3k');
+            end
+            
+            saveas(hCurPLMap,  pathToSaveCovFig);
+            close(hCurPLMap);
+        end
     end
-    
+
     disp(['        Worker #', num2str(idxWorker), ': ', ...
         num2str(idxFigSet),'/', ...
         num2str(curWorkerNumFigSets), ' (', ...
@@ -369,6 +396,50 @@ for idxH = 1:numOfRxHeightToInspect
     saveas(hCurPLMap, [pathToSaveFig, '.fig']);
     
     close(hCurPLMap);
+
+    %------ 5 ------
+    % For coverage path loss maps considering propogation loss through
+    % vegetation.
+    %---------------
+    curFlagZoomIn = true;
+
+    [ hCurPLMap ] ...
+        = plotPathLossMap( ...
+        [mapGridLonLats, simState.pathLossWithVegMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
+    hLeg = findobj(gcf, 'Type', 'Legend');
+    switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+        case 'extendedtipp'
+            set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
+        case 'tipp'
+            set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
+        case 'shrinkedin'
+            set(hLeg, 'Location', 'best');
+    end
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['PathLossMap_WithVeg_RxHeight_', ...
+        strrep(num2str(rxAntH), '.', '_')]);
+    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurPLMap, [pathToSaveFig, '.png']);
+    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+    %------ 5_extra ------
+    % The version with colorbar hidden.
+    %---------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'off');
+    tightfig(hCurPLMap);
+    
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['PathLossMap_WithVeg_ColorBarHidden_RxHeight_', ...
+        strrep(num2str(rxAntH), '.', '_')]);
+    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurPLMap, [pathToSaveFig, '.png']);
+    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+    
+    close(hCurPLMap);
 end
 
 disp('    Done!')
@@ -479,6 +550,30 @@ end
 mapType = 'BlockageDist';
 
 [curEmpCdfFig, simState.blockageDistMapsCovRatioMeta] ...
+    = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+    mapType, ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['EmpiricalCdf_', mapType]);
+saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
+% Coverage ratio gain.
+[ curCovRatioGainFig ] ...
+    = plotCoverageRatioGain(simState, simConfigs, ...
+    mapType, ~curFlagGenFigsSilently);
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['EmpiricalCdf_', mapType, 'CovRatGain']);
+saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+
+if curFlagGenFigsSilently
+    close(curEmpCdfFig);
+    close(curCovRatioGainFig);
+end
+
+% For coverage path loss maps with vegetation.
+mapType = 'PathLossWithVeg';
+
+[curEmpCdfFig, simState.coverageMapsCovRatioMeta] ...
     = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
     mapType, ~curFlagGenFigsSilently);
 pathToSaveFig = fullfile(pathToSaveResults, ...

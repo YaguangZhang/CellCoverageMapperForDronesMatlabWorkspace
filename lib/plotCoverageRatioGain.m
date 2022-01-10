@@ -62,6 +62,8 @@ switch lower(mapType)
         maps = simState.coverageMaps;
     case 'blockagedist'
         maps = simState.blockageDistMaps;
+    case 'pathlosswithveg'
+        maps = simState.pathLossWithVegMaps;
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
@@ -84,7 +86,7 @@ for idxMap = 1:numMaps
     switch lower(mapType)
         case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
-        case 'coverage'
+        case {'coverage', 'pathlosswithveg'}
             boolsCovPs = (~isnan(curM)) ...
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
     end
@@ -107,7 +109,7 @@ covRatios = cell(numMaps, 1);
 % Find the axis range.
 xMax = -inf;
 switch lower(mapType)
-    case {'blockage', 'coverage'}
+    case {'blockage', 'coverage', 'pathlosswithveg'}
         xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
     case 'blockagedist'
         xMin = inf;
@@ -195,7 +197,7 @@ curYLimToSet = curAxisTight(3:4) ...
 curYLimToSet(1) = max(curYLimToSet(1), 0);
 
 switch lower(mapType)
-    case {'blockage', 'coverage'}
+    case {'blockage', 'coverage', 'pathlosswithveg'}
         xlabel('Maximum Allowed Path Loss (dB)');
         curLoc = 'NorthWest';
         axis([xMin xMax curYLimToSet]);
