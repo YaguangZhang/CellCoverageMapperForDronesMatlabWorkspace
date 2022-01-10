@@ -14,8 +14,14 @@ curFileName = mfilename;
 
 prepareSimulationEnv;
 
-pathToSaveSimManDiary = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'PostProcessingResults', 'simManDiary.txt');
+pathToPostProcessingResultsFolder ...
+    = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'PostProcessingResults');
+if ~exist(pathToPostProcessingResultsFolder, 'dir')
+    mkdir(pathToPostProcessingResultsFolder);
+end
+pathToSaveSimManDiary = fullfile( ...
+    pathToPostProcessingResultsFolder, 'simManDiary.txt');
 diary(pathToSaveSimManDiary);
 
 % Shortcuts for predefined simulation groups.
