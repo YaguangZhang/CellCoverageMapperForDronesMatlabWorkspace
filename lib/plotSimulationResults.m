@@ -74,12 +74,12 @@ end
 for idxWorker = 1:numOfWorkers
     curEffeCellIds = matEffeCellIdRxHIdForAllWorders{idxWorker}(:, 1);
     curRxHIds = matEffeCellIdRxHIdForAllWorders{idxWorker}(:, 2);
-    
+
     [curWorkerNumFigSets, ~] ...
         = size(matEffeCellIdRxHIdForAllWorders{idxWorker});
     curWorkerNumFigSetsToReportProgress = ceil(curWorkerNumFigSets ...
         .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT);
-    
+
     for idxFigSet = 1:curWorkerNumFigSets
         % Report progress when necessary.
         if mod(idxFigSet-1, curWorkerNumFigSetsToReportProgress)==0
@@ -90,20 +90,20 @@ for idxWorker = 1:numOfWorkers
                 num2str((idxFigSet-1)/curWorkerNumFigSets*100, ...
                 '%.2f'), '%) ...']);
         end
-        
+
         idxEffeCell = curEffeCellIds(idxFigSet);
         idxH = curRxHIds(idxFigSet);
-        
+
         % Fetch simulation results for the current cellular tower at the
         % current inspected RX height.
         locType = 'GPS';
         curFlagGenFigsSilently = true;
-        
+
         % Blockage map.
         [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
             = fetchPathlossResultsFromSimState(simState, ...
             idxEffeCell, idxH, 'Blockage', simConfigs, locType);
-        
+
         % Use plot3k for the blockage maps to avoid fitting data for spots
         % with NaN path loss values.
         pathToSaveBlockFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
@@ -115,16 +115,16 @@ for idxWorker = 1:numOfWorkers
                 = plotPathLossMap(matRxLonLatWithPathloss, ...
                 cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
                 false, 'plot3k');
-            
+
             saveas(hCurPLMap,  pathToSaveBlockFig);
             close(hCurPLMap);
         end
-        
+
         % Blockage distance map.
         [matRxLonLatWithDist, rxAntH, ~, ~] ...
             = fetchPathlossResultsFromSimState(simState, ...
             idxEffeCell, idxH, 'BlockageDist', simConfigs, locType);
-        
+
         pathToSaveBlockDistFig = fullfile( ...
             dirToSaveMapsForSingleCellTowers, ...
             ['CellTowerPathLoss_Type_', 'BlockageDist', ...
@@ -134,11 +134,11 @@ for idxWorker = 1:numOfWorkers
             [ hCurDistMap ] = plotPathLossMap(matRxLonLatWithDist, ...
                 cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
                 false, 'griddatasurf');
-            
+
             saveas(hCurDistMap,  pathToSaveBlockDistFig);
             close(hCurDistMap);
         end
-        
+
         % Coverage map.
         [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
             = fetchPathlossResultsFromSimState(simState, ...
@@ -161,7 +161,7 @@ for idxWorker = 1:numOfWorkers
                     cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
                     false, 'plot3k');
             end
-            
+
             saveas(hCurPLMap,  pathToSaveCovFig);
             close(hCurPLMap);
         end
@@ -188,7 +188,7 @@ for idxWorker = 1:numOfWorkers
                     cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
                     false, 'plot3k');
             end
-            
+
             saveas(hCurPLMap,  pathToSaveCovFig);
             close(hCurPLMap);
         end
@@ -260,7 +260,7 @@ end
 maxBlockDistInM = max(vertcat(simState.blockageDistMaps{:}));
 for idxH = 1:numOfRxHeightToInspect
     rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
-    
+
     %------ 1 ------
     % For blockage path loss maps.
     %---------------
@@ -275,12 +275,12 @@ for idxH = 1:numOfRxHeightToInspect
         hLeg = findobj(hCurPLMap, 'Type', 'Legend');
         set(hLeg, 'Location', 'best');
     end
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['PathLossMap_Blockage_RxHeight_', num2str(rxAntH), '.png']);
     export_fig(hCurPLMap, pathToSaveFig, '-m1');
     close(hCurPLMap);
-    
+
     %------ 2 ------
     % For blockage status maps.
     %---------------
@@ -301,7 +301,7 @@ for idxH = 1:numOfRxHeightToInspect
     % Further tighten the figure.
     xlabel(''); ylabel('');
     tightfig(hCurBlMap);
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['BlockageStatusMap_RxHeight_', ...
         strrep(num2str(rxAntH), '.', '_')]);
@@ -309,7 +309,7 @@ for idxH = 1:numOfRxHeightToInspect
     saveas(hCurBlMap, [pathToSaveFig, '.png']);
     saveas(hCurBlMap, [pathToSaveFig, '.fig']);
     close(hCurBlMap);
-    
+
     %------ 3 ------
     % For blockage distance maps.
     %---------------
@@ -317,18 +317,18 @@ for idxH = 1:numOfRxHeightToInspect
         [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
         effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
         curFlagZoomIn, 'griddatasurf', customFigSize);
-    
+
     if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
         hLeg = findobj(gcf, 'Type', 'Legend');
         set(hLeg, 'Location', 'best');
     end
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['BlockageDist_RxHeight_', num2str(rxAntH)]);
     saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurDistMap, [pathToSaveFig, '.png']);
     saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-    
+
     %------ 3_extra ------
     % The version with colorbar adjusted to be the same one.
     %---------------------
@@ -338,27 +338,27 @@ for idxH = 1:numOfRxHeightToInspect
     saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurDistMap, [pathToSaveFig, '.png']);
     saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-    
+
     %------ 3_extra_extra ------
     % The version with colorbar adjusted to be the same one but hidden.
     %---------------------------
     hCb = findobj(gcf, 'Type', 'Colorbar');
     set(hCb, 'Visible', 'off');
     tightfig(hCurDistMap);
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['BlockageDist_SameColorBarHidden_RxHeight_', num2str(rxAntH)]);
     saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurDistMap, [pathToSaveFig, '.png']);
     saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-    
+
     close(hCurDistMap);
-    
+
     %------ 4 ------
     % For coverage path loss maps.
     %---------------
     curFlagZoomIn = true;
-    
+
     [ hCurPLMap ] ...
         = plotPathLossMap( ...
         [mapGridLonLats, simState.coverageMaps{idxH}], ...
@@ -373,28 +373,28 @@ for idxH = 1:numOfRxHeightToInspect
         case 'shrinkedin'
             set(hLeg, 'Location', 'best');
     end
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['PathLossMap_Coverage_RxHeight_', ...
         strrep(num2str(rxAntH), '.', '_')]);
     saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurPLMap, [pathToSaveFig, '.png']);
     saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-    
+
     %------ 4_extra ------
     % The version with colorbar hidden.
     %---------------------
     hCb = findobj(gcf, 'Type', 'Colorbar');
     set(hCb, 'Visible', 'off');
     tightfig(hCurPLMap);
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['PathLossMap_Coverage_ColorBarHidden_RxHeight_', ...
         strrep(num2str(rxAntH), '.', '_')]);
     saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurPLMap, [pathToSaveFig, '.png']);
     saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-    
+
     close(hCurPLMap);
 
     %------ 5 ------
@@ -431,14 +431,57 @@ for idxH = 1:numOfRxHeightToInspect
     hCb = findobj(gcf, 'Type', 'Colorbar');
     set(hCb, 'Visible', 'off');
     tightfig(hCurPLMap);
-    
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['PathLossMap_WithVeg_ColorBarHidden_RxHeight_', ...
         strrep(num2str(rxAntH), '.', '_')]);
     saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurPLMap, [pathToSaveFig, '.png']);
     saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-    
+
+    %------ 6 ------
+    % For path loss from propogation loss through vegetation only.
+    %---------------
+    curFlagZoomIn = true;
+
+    [ hCurPLMap ] ...
+        = plotPathLossMap( ...
+        [mapGridLonLats, ...
+        simState.pathLossWithVegMaps{idxH} ...
+        - simState.coverageMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
+    hLeg = findobj(gcf, 'Type', 'Legend');
+    switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+        case 'extendedtipp'
+            set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
+        case 'tipp'
+            set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
+        case 'shrinkedin'
+            set(hLeg, 'Location', 'best');
+    end
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['PathLossMap_ByVeg_RxHeight_', ...
+        strrep(num2str(rxAntH), '.', '_')]);
+    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurPLMap, [pathToSaveFig, '.png']);
+    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+    %------ 6_extra ------
+    % The version with colorbar hidden.
+    %---------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'off');
+    tightfig(hCurPLMap);
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['PathLossMap_ByVeg_ColorBarHidden_RxHeight_', ...
+        strrep(num2str(rxAntH), '.', '_')]);
+    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurPLMap, [pathToSaveFig, '.png']);
+    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
     close(hCurPLMap);
 end
 

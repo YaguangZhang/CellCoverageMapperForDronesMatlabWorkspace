@@ -779,14 +779,13 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         curBlockageDistInM = curResult(6);
         curBlockageByTerrainDistInM = curResult(7);
 
-
-
         % Estimate the vegetable depth.
         curBlockageByVegDistInM = ...
             curBlockageDistInM - curBlockageByTerrainDistInM;
         % Estimate the overall path loss considering the vegetation. Note
         % that estimateExcessPL will set negative inputs to zero.
-        curPathLossWithVeg = estimateExcessPL(curBlockageByVegDistInM);
+        curPathLossWithVeg = ...
+            curCoveragePL + estimateExcessPL(curBlockageByVegDistInM);
 
         simState.blockageMapsForEachCell{idxEffeCellAnt} ...
             {curIdxDroneHeightInM}(curIdxDroneLoc) = curBlockagePL;
