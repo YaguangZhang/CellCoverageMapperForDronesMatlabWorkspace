@@ -1,4 +1,5 @@
-function [blockagePL, coveragePL, blockageDistInM] ...
+function [blockagePL, coveragePL, ...
+    blockageDistInM, blockageByTerrainDistInM] ...
     = computeBlockageAndCoveragePLs( ...
     lidarProfile, terrainProfile, ...
     startXYH, endXYH, ...
@@ -27,7 +28,7 @@ function [blockagePL, coveragePL, blockageDistInM] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
-% Treat the higher location as the TX location. 
+% Treat the higher location as the TX location.
 %   Note: altitude = elevation + height.
 startAlt = terrainProfile(1) + startXYH(3);
 endPtAlt = terrainProfile(end) + endXYH(3);
@@ -54,8 +55,16 @@ end
 txXYAlt = [txXYH(1:2), terrainProfile(1)+txXYH(3)];
 rxXYAlt = [rxXYH(1:2), terrainProfile(end)+rxXYH(3)];
 
-[blockagePL, blockageDistInM] ...
-    = computeBlockagePLAndDist(txXYAlt, rxXYAlt, lidarProfile, simConfigs);
+% Evaluate the LoS blockage using the LiDAR data.
+[blockagePL, blockageDistInM] = computeBlockagePLAndDist( ...
+    txXYAlt, rxXYAlt, lidarProfile, simConfigs);
+
+if nargout>3
+    % Re-evaluate the LoS blockage using the ground elevation for
+    % comparison.
+    [~, blockageByTerrainDistInM] = computeBlockagePLAndDist( ...
+        txXYAlt, rxXYAlt, terrainProfile, simConfigs);
+end
 
 %% Coverage
 

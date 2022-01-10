@@ -58,6 +58,9 @@ switch lower(mapType)
     case('blockagedist')
         values = simState.blockageDistMapsForEachCell ...
             {idxEffeCell}{idxRxHeight}';
+    case('blockagebyterraindist')
+        values = simState.blockageByTerrainDistMapsForEachCell ...
+            {idxEffeCell}{idxRxHeight}';
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
