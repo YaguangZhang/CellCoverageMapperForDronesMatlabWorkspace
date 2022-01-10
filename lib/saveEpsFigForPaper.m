@@ -30,11 +30,10 @@ end
 if exist(dirToSave, 'dir')~=7
     mkdir(dirToSave);
 end
-if ~strcmpi(fileExt, '.eps')
+if (~isempty(fileExt)) && (~strcmpi(fileExt, '.eps'))
     warning( ...
         'The file extention specified is not .eps and will be ignored.')
 end
-
 epsFullPathToSave = fullfile(dirToSave, [figName, '.eps']);
 % Also save a .png copy for easy preview.
 pngFullPathToSave = fullfile(dirToSave, [figName, '.png']);
