@@ -455,6 +455,11 @@ if strcmp(PRESET, 'WHIN_WEATHER_STATIONS')
     genExtraPlotsForWhinWeatherStations;
 end
 
+% Export the raw data for the path loss with veg map for ACRE LoRaWAN.
+if startsWith(PRESET, 'ACRE_LORA_')
+    exportMaps();
+end
+
 diary off;
 
 % EOF
