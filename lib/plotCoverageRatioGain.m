@@ -64,6 +64,8 @@ switch lower(mapType)
         maps = simState.blockageDistMaps;
     case 'pathlosswithveg'
         maps = simState.pathLossWithVegMaps;
+    case 'pathlossbyveg'
+        maps = simState.pathLossWithVegMaps - simState.coverageMaps;
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
@@ -82,16 +84,16 @@ for idxMap = 1:numMaps
     curM = maps{idxMap};
     assert(length(curM(:))==cdfMeta.totalNumOfPixelsOnMap, ...
         'All maps should have the same number of pixels!');
-    
+
     switch lower(mapType)
         case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
-        case {'coverage', 'pathlosswithveg'}
+        case {'coverage', 'pathlossbyveg', 'pathlosswithveg'}
             boolsCovPs = (~isnan(curM)) ...
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
     end
     numsOfCovPixels(idxMap) = sum(boolsCovPs);
-    
+
     curMNanToInf = curM; curMNanToInf(~boolsCovPs) = inf;
     [cdfVs{idxMap}, cdfXs{idxMap}] = ecdf(curMNanToInf(:));
 end
@@ -109,7 +111,7 @@ covRatios = cell(numMaps, 1);
 % Find the axis range.
 xMax = -inf;
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
         xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
     case 'blockagedist'
         xMin = inf;
@@ -127,7 +129,7 @@ for idxMap = 1:numMaps
         infinitePathLossInDb];
     ys = [cdfVs{idxMap}(1:maxPtIdxToShow); ...
         cdfVs{idxMap}(maxPtIdxToShow)];
-    
+
     % Find the last point with y less than 5% and keep a record of the
     % corresponding x. We will use the minimus x for the axis xMin.
     xMax = max(cdfXs{idxMap}(maxPtIdxToShow), xMax);
@@ -135,18 +137,18 @@ for idxMap = 1:numMaps
     if ~isempty(curXMinIdx)
         xMin = min(xMin, xs(curXMinIdx));
     end
-    
+
     % Get the coverage ratios.
     boolsValidData = isfinite(cdfXs{idxMap}) & isfinite(cdfVs{idxMap});
     validCdfXs = cdfXs{idxMap}(boolsValidData);
     validCdfVs = cdfVs{idxMap}(boolsValidData);
     [~, indicesUniqueXs] = unique(validCdfXs);
-    
+
     % Make sure the jump at zero, if present, is considered.
     if (validCdfXs(1)==0) && (validCdfXs(2)==0)
         indicesUniqueXs(1) = 2;
     end
-    
+
     if length(indicesUniqueXs)==1 && length(validCdfVs)==2
         % The all 1 case.
         covRatios{idxMap} = ...
@@ -181,11 +183,11 @@ extendedGridVs = [gridValues; infinitePathLossInDb];
 for idxMap = 1:numMaps
     curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
     curCdfVs = covRatios{idxMap}-refCdfVs;
-    
+
     curExtendedCdfVs = [curCdfVs; ...
         curCdfVs(find(isfinite(curCdfVs), 1, 'last'))];
     curBoolsValidPts = isfinite(curExtendedCdfVs);
-    
+
     hsCdf(idxMap) = plot( ...
         extendedGridVs(curBoolsValidPts), ...
         curExtendedCdfVs(curBoolsValidPts).*100, ...
@@ -197,7 +199,7 @@ curYLimToSet = curAxisTight(3:4) ...
 curYLimToSet(1) = max(curYLimToSet(1), 0);
 
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
         xlabel('Maximum Allowed Path Loss (dB)');
         curLoc = 'NorthWest';
         axis([xMin xMax curYLimToSet]);

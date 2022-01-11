@@ -75,6 +75,8 @@ switch lower(mapType)
         maps = simState.blockageDistMaps;
     case 'pathlosswithveg'
         maps = simState.pathLossWithVegMaps;
+    case 'pathlossbyveg'
+        maps = simState.pathLossWithVegMaps - simState.coverageMaps;
     otherwise
         error(['Unsupported mapType ', mapType, '!']);
 end
@@ -97,7 +99,7 @@ for idxMap = 1:numMaps
     switch lower(mapType)
         case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
-        case {'coverage', 'pathlosswithveg'}
+        case {'coverage', 'pathlossbyveg', 'pathlosswithveg'}
             boolsCovPs = (~isnan(curM)) ...
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
     end
@@ -115,7 +117,7 @@ cdfMeta.coverageRatio ...
 % Compute the ranges and points to show in the CDF plots.
 xMax = -inf;
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
         xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
     case 'blockagedist'
         xMin = inf;
@@ -198,7 +200,7 @@ end
 grid on; grid minor; box on;
 
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
         xlabel('Path Loss (dB)');
         curLoc = 'NorthWest';
     case 'blockagedist'

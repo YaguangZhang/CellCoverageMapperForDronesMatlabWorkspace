@@ -613,6 +613,33 @@ if curFlagGenFigsSilently
     close(curCovRatioGainFig);
 end
 
+% This is not very helpful.
+if false
+    % For excess path loss maps by vegetation.
+    mapType = 'PathLossByVeg';
+
+    [curEmpCdfFig, simState.coverageMapsCovRatioMeta] ...
+        = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+        mapType, ~curFlagGenFigsSilently);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType]);
+    saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+    saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
+    % Coverage ratio gain.
+    [ curCovRatioGainFig ] ...
+        = plotCoverageRatioGain(simState, simConfigs, ...
+        mapType, ~curFlagGenFigsSilently);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, 'CovRatGain']);
+    saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+    saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+
+    if curFlagGenFigsSilently
+        close(curEmpCdfFig);
+        close(curCovRatioGainFig);
+    end
+end
+
 % For coverage path loss maps with vegetation.
 mapType = 'PathLossWithVeg';
 
