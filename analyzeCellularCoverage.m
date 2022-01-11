@@ -457,7 +457,7 @@ end
 
 % Export the raw data for the path loss with veg map for ACRE LoRaWAN.
 if startsWith(PRESET, 'ACRE_LORA_')
-    exportMaps();
+    exportMaps(pathToSaveResults, simConfigs, simState);
 end
 
 diary off;
