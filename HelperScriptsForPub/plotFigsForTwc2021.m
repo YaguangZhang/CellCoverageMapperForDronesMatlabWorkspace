@@ -40,8 +40,10 @@ colorIneffectiveTowers = 'r';
 markerIneffectiveTowers = 'x';
 lineWidthIneffectiveTowers = 1.5;
 
-defaultFigPos = get(0,'defaultfigureposition');
-customFigSize = defaultFigPos(3:4);
+% The figure size was gotten by:
+%   defaultFigPos = get(0,'defaultfigureposition');
+%    customFigSize = defaultFigPos(3:4);
+customFigSize = [560, 420];
 
 % Path to save the plots.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
@@ -59,7 +61,11 @@ if exist(dirToDiaryFile, 'file')
 end
 diary(dirToDiaryFile);
 
-%% Cell Towers to Consider on Roadmaps
+%% Cell Towers to Consider on Roadmaps + User Location Grid
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating simulation overview plots ...'])
 
 % We will use the 1900 MHz results.
 for freqInMhz = 1900
@@ -74,7 +80,8 @@ for freqInMhz = 1900
         load(fullfile(pathToReadResults, 'simConfigs.mat'));
         load(fullfile(pathToReadResults, 'simState.mat'));
 
-        % Simulation overview plot in GPS (lon, lat).
+        %% Simulation Area Overview
+        % A plot for cell towers to consider in GPS (lon, lat).
         [effeCellAntsLats, effeCellAntsLons] ...
             = simConfigs.utm2deg_speZone( ...
             simState.CellAntsXyhEffective(:,1), ...
@@ -104,11 +111,8 @@ for freqInMhz = 1900
             = simConfigs.utm2deg_speZone(inEffeCellAntsXYH(:,1), ...
             inEffeCellAntsXYH(:,2));
 
-        if simConfigs.RESIZE_FIG_FOR_PUBLICATION
-            curCustomFigSize = customFigSize.*0.8;
-        else
-            curCustomFigSize = customFigSize;
-        end
+        % Resize the figure for this type of plots.
+        curCustomFigSize = customFigSize.*0.9;
 
         hFigCellOverview = figure('Position', [0,0,curCustomFigSize]);
         hold on; set(gca, 'fontWeight', 'bold');
@@ -143,7 +147,7 @@ for freqInMhz = 1900
         view(2); plot_google_map;
         % grid on; grid minor;
         xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
-        box on;
+        box on; xtickangle(0); xticks('manual');
         % Manually adjust the figure for publication.
         switch simConfigs.CURRENT_SIMULATION_TAG
             case 'Tipp'
@@ -152,10 +156,10 @@ for freqInMhz = 1900
                     [hAreaOfInterest, hExtendedArea, ...
                     hEffeCells, hIneffeCells], ...
                     'Area of interest', 'Extended area', ...
-                    'Cell towers to consider', ...
-                    'Ineffective cell towers', ...
+                    'Cell tower to consider', ...
+                    'Ineffective cell tower', ...
                     'defaultLegendAutoUpdate','off');
-                set(hLeg, 'Position', [0.1302, 0.7615, 0.4249, 0.1655]);
+                set(hLeg, 'Position', [0.1375, 0.7417, 0.4718, 0.1839]);
             case 'ShrinkedWHIN'
                 h = makescale(3.7, 'se', 'units', 'si');
             case 'ShrinkedIN'
@@ -163,7 +167,54 @@ for freqInMhz = 1900
         end
         curDirToSave = fullfile(pathToSaveResults, ...
             ['Overview_CellularTowersToConsider_RoadMap-', preset]);
-        saveEpsFigForPaper(hFigCellOverview, curDirToSave);
+        saveEpsFigForPaper(hFigCellOverview, curDirToSave, false);
+
+        %% User Location Grid
+
+        % Resize the figure for this type of plots.
+        curCustomFigSize = customFigSize.*0.9;
+
+        hFigAreaOfInterest = figure('Position', [0,0,curCustomFigSize]);
+        hCurAxis = gca;
+        hold on; set(hCurAxis, 'fontWeight', 'bold');
+        hAreaOfInterest = plot( ...
+            polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
+            'FaceColor', areaOfInterestColor);
+        hGridPts = plot(simState.mapGridXYPts(:,1), ...
+            simState.mapGridXYPts(:,2), '.', 'MarkerSize', 2.5, ...
+            'Color', darkBlue);
+        adjustFigSizeByContent(hFigAreaOfInterest, [], 'height', 0.9);
+        axis equal; view(2); %grid on; grid minor;
+        hLeg = legend([hAreaOfInterest, hGridPts], ...
+            'Area of interest', 'User location');
+        xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
+        % Adjust legend and the exponent label for y axis.
+        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+            case 'tipp'
+                set(hLeg, 'Position', [0.4789, 0.8062, 0.4258, 0.0966]);
+            case 'extendedtipp'
+                set(hLeg, 'Location', 'northwest');
+                transparentizeCurLegends;
+
+                annotation(hFigAreaOfInterest, 'textbox',...
+                    [0.1609 0.8369 0.1785 0.0945],...
+                    'String', ['\times10^', ...
+                    num2str(hCurAxis.YAxis.Exponent)],...
+                    'FontWeight', hCurAxis.YAxis.FontWeight,...
+                    'FontSize', hCurAxis.YAxis.FontSize,...
+                    'EdgeColor', 'none');
+                yticks(yticks);
+                yticklabels(yticklabels);
+
+                set(hLeg,'visible','off');
+            case 'shrinkedin'
+                set(hLeg, 'Location', 'SouthEast');
+
+                set(hLeg,'visible','off');
+        end
+        curDirToSave = fullfile(pathToSaveResults, ...
+            ['Overview_UserLocGrid-', preset]);
+        saveEpsFigForPaper(hFigAreaOfInterest, curDirToSave);
     end
 end
 
