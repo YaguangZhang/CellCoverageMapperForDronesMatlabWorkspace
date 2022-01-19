@@ -259,7 +259,7 @@ hCellTowerOnRoadMap = figure('Visible', true, ...
     'Unit', 'pixel', 'Position', [0,0,1600,1200].*0.8);
 hold on; xticks([]); xticklabels({}); yticks([]); yticklabels({});
 hPolyIn = plot(boundOfInterestLons, boundOfInterestLats, ...
-    '-', 'LineWidth', 5, 'Color', 'k'); % ones(1,3).*0.3
+    '-.', 'LineWidth', 5, 'Color', 'k'); % ones(1,3).*0.3
 newAxis = extendAxisByFactor(axis, 0.1);
 axis(newAxis);
 tightfig;
