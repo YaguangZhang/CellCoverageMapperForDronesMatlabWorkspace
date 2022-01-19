@@ -189,10 +189,10 @@ for freqInMhz = 1900
             'Area of interest', 'User location');
         xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
         % Adjust legend and the exponent label for y axis.
-        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
-            case 'tipp'
+        switch simConfigs.CURRENT_SIMULATION_TAG
+            case 'Tipp'
                 set(hLeg, 'Position', [0.4789, 0.8062, 0.4258, 0.0966]);
-            case 'extendedtipp'
+            case 'ShrinkedWHIN'
                 set(hLeg, 'Location', 'northwest');
                 transparentizeCurLegends;
 
@@ -207,7 +207,7 @@ for freqInMhz = 1900
                 yticklabels(yticklabels);
 
                 set(hLeg,'visible','off');
-            case 'shrinkedin'
+            case 'ShrinkedIN'
                 set(hLeg, 'Location', 'SouthEast');
 
                 set(hLeg,'visible','off');
