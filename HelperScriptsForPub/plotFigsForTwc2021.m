@@ -92,6 +92,9 @@ numOfPresets = length(PRESETS);
 freqInMhz = 1900;
 for idxPreset = 1:numOfPresets
     preset = PRESETS{idxPreset};
+    disp(['        [', datestr(now, datetimeFormat), ...
+        '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+        '/', num2str(numOfPresets), ') ...'])
 
     pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
         'PostProcessingResults', ['Simulation_', preset, ...
@@ -245,6 +248,99 @@ for idxPreset = 1:numOfPresets
         ['Overview_UserLocGrid-', preset]);
     saveEpsFigForPaper(hFigAreaOfInterest, curDirToSave);
 end
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
+%% Simulation Parameters as an Overview
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Extracting key simulation parameters as an overview ...'])
+
+% We will use the 1900 MHz results.
+numOfPresets = length(PRESETS);
+freqInMhz = 1900;
+
+% The key parameters we will extract include (please refer to the TWC paper
+% for more details):
+%   Area of interest (km^2), simulation area (km^2), N_{Tower}, length of
+%   the long side (km), N_{Samp}, delta_d (km), N_{User}, simulation time
+%   (day).
+% Simulation time needs to be estimated manually from the diary files.
+[AreaOfIntInKm2, SimAreaInKm2, NTower, ...
+    LengthOfLongerSideInKm, NSamp, DeltaDInKm, NUser] ...
+    = deal(nan(numOfPresets, 1));
+for idxPreset = 1:numOfPresets
+    preset = PRESETS{idxPreset};
+    disp(['        [', datestr(now, datetimeFormat), ...
+        '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+        '/', num2str(numOfPresets), ') ...'])
+
+    pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+        'PostProcessingResults', ['Simulation_', preset, ...
+        '_Carrier_', num2str(freqInMhz), ...
+        'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+
+    load(fullfile(pathToReadResults, 'simConfigs.mat'));
+    load(fullfile(pathToReadResults, 'simState.mat'));
+
+    % For the extended area.
+    utmXYBoundaryOfExtendedArea = extendUtmXYBoundOfInt( ...
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST, ...
+        simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
+
+    % For the grid resolution.
+    mapMinX = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
+    mapMaxX = max(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1));
+    mapMinY = min(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+    mapMaxY = max(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+    mapWidthInM = mapMaxX-mapMinX;
+    mapHeightInM = mapMaxY-mapMinY;
+    curLengthOfLongerSideInKm = max([mapWidthInM, mapHeightInM])/1000;
+    gridResolutionInKm = curLengthOfLongerSideInKm ...
+        ./simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE;
+
+    % Store the parameters.
+    AreaOfIntInKm2(idxPreset) ...
+        = polyarea(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2)) / (1000^2);
+    SimAreaInKm2(idxPreset) ...
+        = polyarea(utmXYBoundaryOfExtendedArea(:,1), ...
+        utmXYBoundaryOfExtendedArea(:,2)) / (1000^2);
+    NTower(idxPreset) ...
+        = size(simState.CellAntsEffectiveIds, 1);
+    LengthOfLongerSideInKm(idxPreset) ...
+        = curLengthOfLongerSideInKm;
+    NSamp(idxPreset) ...
+        = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE;
+    DeltaDInKm(idxPreset) ...
+        = gridResolutionInKm;
+    NUser(idxPreset) ...
+        = size(simState.mapGridXYPts, 1);
+end
+
+% Export the raw results to a .csv file.
+curPathToSaveCsv = fullfile(pathToSaveResults, ...
+    'keySimParameters_Raw.csv');
+writetable(table(AreaOfIntInKm2, SimAreaInKm2, NTower, ...
+    LengthOfLongerSideInKm, NSamp, DeltaDInKm, NUser), ...
+    curPathToSaveCsv)
+
+% Export the rounded parameters to another .csv file.
+nthDigitToRoundTo = 1;
+AreaOfIntInKm2 = round(AreaOfIntInKm2, nthDigitToRoundTo);
+SimAreaInKm2 = round(SimAreaInKm2, nthDigitToRoundTo);
+LengthOfLongerSideInKm = round(LengthOfLongerSideInKm, nthDigitToRoundTo);
+
+curPathToSaveCsv = fullfile(pathToSaveResults, ...
+    'keySimParameters.csv');
+writetable(table(AreaOfIntInKm2, SimAreaInKm2, NTower, ...
+    LengthOfLongerSideInKm, NSamp, DeltaDInKm, NUser), ...
+    curPathToSaveCsv)
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
 
 %% Cleanup
 
