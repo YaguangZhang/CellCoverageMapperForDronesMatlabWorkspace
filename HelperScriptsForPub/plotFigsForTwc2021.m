@@ -354,14 +354,24 @@ numOfPresets = length(PRESETS);
 
 % A matrix for the results. Each row corresponds to the time values for all
 % presets with one carrier frequency.
-SimTimeInDay = nan(numOfFreqs, numOfPresets);
+%   - SimTimeInDay
+%     This is ased on the tic/toc results recorded during the simulation,
+%     which appear to be a way-under-estimate, possibly because some of the
+%     workers may die during the simulation.
+%   - SimTimeInDayBasedOnDiary
+%     This is based on the diary log, which is still an under-estimate but
+%     should be more accurate.
+[SimTimeInDay, SimTimeInDayBasedOnDiary] ...
+    = deal(nan(numOfFreqs, numOfPresets));
 for idxFreq = 1:numOfFreqs
     freqInMhz = CARRIER_FREQUENCIES_IN_MHZ{idxFreq};
     for idxPreset = 1:numOfPresets
         preset = PRESETS{idxPreset};
         disp(['        [', datestr(now, datetimeFormat), ...
             '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
-            '/', num2str(numOfPresets), ') ...'])
+            '/', num2str(numOfPresets), ') at ', ...
+            num2str(freqInMhz), ' MHz (carrier #', num2str(idxFreq), ...
+            '/', num2str(numOfFreqs), ') ...'])
 
         pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'PostProcessingResults', ['Simulation_', preset, ...
@@ -374,6 +384,8 @@ for idxFreq = 1:numOfFreqs
             'CovAnalysisCache_*.mat' );
         cacheFile = dir(pathToReadCache);
 
+        pathToSimDiary = fullfile(pathToReadResults, 'diary.txt' );
+
         % The full path to the cache file seems to cause trouble in the
         % loading process. This is a workaround.
         pathToCacheFileCopy = fullfile(cacheFile.folder, 'deleteme.mat');
@@ -382,20 +394,37 @@ for idxFreq = 1:numOfFreqs
         load(pathToCacheFileCopy);
         delete(pathToCacheFileCopy);
 
+        % Number of workers based on the cache file.
         numOfWorkers = length(locIndicesForAllWorkersForAllCellsEff{1});
-
-        % Time used for all heights and pixels.
+        % Time used for all heights and pixels, according to the simState
+        % and cache files.
         timeUsedForAllMapSets = [simState.TimeUsedInSForEachPixel{:}];
         SimTimeInS = [timeUsedForAllMapSets{:}]';
         SimTimeInDay(idxFreq, idxPreset) ...
             = sum(SimTimeInS)/60/60/24/numOfWorkers;
+
+        % Time used for all presets at each carrier, according to the diary
+        % log.
+        numOfEffeTowers = size(simState.CellAntsEffectiveIds, 1);
+        SimTimeInDayBasedOnDiary(idxFreq, idxPreset) ...
+            = extractSimTimeInDayFromDiary( ...
+            pathToSimDiary, numOfEffeTowers);
     end
 end
 
-curPathToSaveCsv = fullfile(pathToSaveResults, ...
-    'SimTimeInDays.csv');
-writetable(array2table(round(SimTimeInDay, 1), ...
-    'VariableNames', PRESETS), curPathToSaveCsv);
+exportSimTimeToCsv(SimTimeInDay, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'SimTimeInDays.csv'), 1);
+exportSimTimeToCsv(SimTimeInDay, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'SimTimeInDays_Raw.csv'));
+
+exportSimTimeToCsv(SimTimeInDayBasedOnDiary, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'SimTimeInDaysBasedOnDiary.csv'), 1);
+exportSimTimeToCsv(SimTimeInDayBasedOnDiary, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'SimTimeInDaysBasedOnDiary_Raw.csv'));
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
