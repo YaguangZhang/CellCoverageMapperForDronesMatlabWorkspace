@@ -342,6 +342,64 @@ writetable(table(AreaOfIntInKm2, SimAreaInKm2, NTower, ...
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
+%% Recorded Simulation Time
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Estimating simulation time ...'])
+
+% We will go through all carrier frequencies and presets.
+numOfFreqs = length(CARRIER_FREQUENCIES_IN_MHZ);
+numOfPresets = length(PRESETS);
+
+% A matrix for the results. Each row corresponds to the time values for all
+% presets with one carrier frequency.
+SimTimeInDay = nan(numOfFreqs, numOfPresets);
+for idxFreq = 1:numOfFreqs
+    freqInMhz = CARRIER_FREQUENCIES_IN_MHZ{idxFreq};
+    for idxPreset = 1:numOfPresets
+        preset = PRESETS{idxPreset};
+        disp(['        [', datestr(now, datetimeFormat), ...
+            '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+            '/', num2str(numOfPresets), ') ...'])
+
+        pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'PostProcessingResults', ['Simulation_', preset, ...
+            '_Carrier_', num2str(freqInMhz), ...
+            'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+
+        load(fullfile(pathToReadResults, 'simState.mat'));
+
+        pathToReadCache = fullfile(pathToReadResults, ...
+            'CovAnalysisCache_*.mat' );
+        cacheFile = dir(pathToReadCache);
+
+        % The full path to the cache file seems to cause trouble in the
+        % loading process. This is a workaround.
+        pathToCacheFileCopy = fullfile(cacheFile.folder, 'deleteme.mat');
+        copyfile(fullfile(cacheFile.folder, cacheFile.name), ...
+            pathToCacheFileCopy);
+        load(pathToCacheFileCopy);
+        delete(pathToCacheFileCopy);
+
+        numOfWorkers = length(locIndicesForAllWorkersForAllCellsEff{1});
+
+        % Time used for all heights and pixels.
+        timeUsedForAllMapSets = [simState.TimeUsedInSForEachPixel{:}];
+        SimTimeInS = [timeUsedForAllMapSets{:}]';
+        SimTimeInDay(idxFreq, idxPreset) ...
+            = sum(SimTimeInS)/60/60/24/numOfWorkers;
+    end
+end
+
+curPathToSaveCsv = fullfile(pathToSaveResults, ...
+    'SimTimeInDays.csv');
+writetable(array2table(round(SimTimeInDay, 1), ...
+    'VariableNames', PRESETS), curPathToSaveCsv);
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
 %% Cleanup
 
 diary off;
