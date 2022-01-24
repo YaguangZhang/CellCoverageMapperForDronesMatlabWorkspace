@@ -19,7 +19,6 @@ buildStartPatten = @(idx) [timePattern, ' Effective cellular tower #', ...
 buildEndPatten = @(idx) [timePattern, ' Finished cellular tower #', ...
     num2str(idx), '\/', num2str(numOfEffeTowers)];
 
-simTimeInDTotal = nan;
 simTimesInDForEffeTs = nan(numOfEffeTowers, 1);
 try
     preTowerIdx = 0;
