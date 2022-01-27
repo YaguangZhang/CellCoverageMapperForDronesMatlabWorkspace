@@ -361,7 +361,7 @@ numOfPresets = length(PRESETS);
 %   - SimTimeInDayBasedOnDiary
 %     This is based on the diary log, which is still an under-estimate but
 %     should be more accurate.
-[SimTimeInDay, SimTimeInDayBasedOnDiary] ...
+[SimTimeInDay, SimTimeInDayBasedOnDiary, numOfWorkers] ...
     = deal(nan(numOfFreqs, numOfPresets));
 simMachineNames = cell(numOfFreqs, numOfPresets);
 for idxFreq = 1:numOfFreqs
@@ -396,13 +396,14 @@ for idxFreq = 1:numOfFreqs
         delete(pathToCacheFileCopy);
 
         % Number of workers based on the cache file.
-        numOfWorkers = length(locIndicesForAllWorkersForAllCellsEff{1});
+        numOfWorkers(idxFreq, idxPreset) ...
+            = length(locIndicesForAllWorkersForAllCellsEff{1});
         % Time used for all heights and pixels, according to the simState
         % and cache files.
         timeUsedForAllMapSets = [simState.TimeUsedInSForEachPixel{:}];
         SimTimeInS = [timeUsedForAllMapSets{:}]';
         SimTimeInDay(idxFreq, idxPreset) ...
-            = sum(SimTimeInS)/60/60/24/numOfWorkers;
+            = sum(SimTimeInS)/60/60/24/numOfWorkers(idxFreq, idxPreset);
 
         % Time used for all presets at each carrier, according to the diary
         % log.
@@ -417,6 +418,7 @@ for idxFreq = 1:numOfFreqs
     end
 end
 
+% Sim time in days and in hours based on simState.
 exportSimTimeToCsv(SimTimeInDay, ...
     PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
     fullfile(pathToSaveResults, 'SimTimeInDays.csv'), 1);
@@ -431,6 +433,7 @@ exportSimTimeToCsv(SimTimeInDay*24, ...
     PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
     fullfile(pathToSaveResults, 'SimTimeInH_Raw.csv'));
 
+% Sim time in days and in hours based on diary logs.
 exportSimTimeToCsv(SimTimeInDayBasedOnDiary, ...
     PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
     fullfile(pathToSaveResults, 'SimTimeInDaysBasedOnDiary.csv'), 1);
@@ -445,8 +448,11 @@ exportSimTimeToCsv(SimTimeInDayBasedOnDiary*24, ...
     PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
     fullfile(pathToSaveResults, 'SimTimeInHBasedOnDiary_Raw.csv'));
 
+% Hostnames and worker numbers.
 writecell(simMachineNames, ...
     fullfile(pathToSaveResults, 'SimTimeHostname.csv'));
+writematrix(numOfWorkers, ...
+    fullfile(pathToSaveResults, 'SimTimeWorkerNums.csv'));
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
