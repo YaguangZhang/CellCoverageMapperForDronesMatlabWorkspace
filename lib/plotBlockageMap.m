@@ -149,9 +149,9 @@ latMaxBoI = max(latsBoI);
     linspace(latMinBoI, latMaxBoI, sufNumPtsPerSide));
 zsNew = griddata(lons,lats,zs,lonsNew,latsNew,'Nearest');
 
-% Ignore points out of the area of interest by seting the z values for them
-% to NaN.
-[in,on] = inpolygon(lonsNew(:), latsNew(:), lonsBoI, latsBoI);
+% Ignore points out of the area of interest by setting the z values for
+% them to NaN.
+[in,on] = InPolygon(lonsNew(:), latsNew(:), lonsBoI, latsBoI);
 boolsPtsToIgnore = ~(in|on);
 if any(boolsPtsToIgnore)
     zsNew(boolsPtsToIgnore) = nan;

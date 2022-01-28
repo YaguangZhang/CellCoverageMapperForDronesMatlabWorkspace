@@ -197,6 +197,9 @@ for idxPreset = 1:numOfPresets
             hLeg = legend(hPolyIn, 'Indiana Boundary');
             set(hLeg, 'Position', [0.1969, 0.8792, 0.5934, 0.0476]);
     end
+    % Tighten the figure.
+    %   tightfig(hFigCellOverview);
+
     curDirToSave = fullfile(pathToSaveResults, ...
         ['Overview_CellularTowersToConsider_RoadMap-', preset]);
     saveEpsFigForPaper(hFigCellOverview, curDirToSave, false);
@@ -213,7 +216,7 @@ for idxPreset = 1:numOfPresets
         polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
         'FaceColor', areaOfInterestColor);
     hGridPts = plot(simState.mapGridXYPts(:,1), ...
-        simState.mapGridXYPts(:,2), '.', 'MarkerSize', 2.5, ...
+        simState.mapGridXYPts(:,2), '.', 'MarkerSize', 3, ...
         'Color', darkBlue);
     adjustFigSizeByContent(hFigAreaOfInterest, [], 'height', 0.9);
     axis equal; view(2); %grid on; grid minor;
@@ -223,7 +226,7 @@ for idxPreset = 1:numOfPresets
     % Adjust legend and the exponent label for y axis.
     switch simConfigs.CURRENT_SIMULATION_TAG
         case 'Tipp'
-            set(hLeg, 'Position', [0.4789, 0.8062, 0.4258, 0.0966]);
+            set(hLeg, 'Position', [0.4789, 0.8062, 0.4258, 0.0965]);
         case 'ShrinkedWHIN'
             set(hLeg, 'Location', 'northwest');
             transparentizeCurLegends;
@@ -244,11 +247,14 @@ for idxPreset = 1:numOfPresets
 
             set(hLeg,'visible','off');
     end
+    % Tighten the figure.
+    tightfig(hFigAreaOfInterest);
     curDirToSave = fullfile(pathToSaveResults, ...
         ['Overview_UserLocGrid-', preset]);
     saveEpsFigForPaper(hFigAreaOfInterest, curDirToSave);
 end
 
+close all;
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
@@ -454,6 +460,108 @@ writecell(simMachineNames, ...
 writematrix(numOfWorkers, ...
     fullfile(pathToSaveResults, 'SimTimeWorkerNums.csv'));
 
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
+%% Blockage Status Example Figs (Tipp + WHIN)
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating example blockage status maps ...'])
+
+curFlagGenFigsSilently = false;
+curFlagZoomIn = true;
+
+% We will use the 1900 MHz results.
+curPresets = PRESETS(1:2);
+numOfPresets = length(curPresets);
+freqInMhz = 1900;
+hightsToInspect = [1.5, 10, 100];
+legendsShown = false;
+for idxPreset = 1:numOfPresets
+    preset = PRESETS{idxPreset};
+    disp(['        [', datestr(now, datetimeFormat), ...
+        '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+        '/', num2str(numOfPresets), ') ...'])
+
+    pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+        'PostProcessingResults', ['Simulation_', preset, ...
+        '_Carrier_', num2str(freqInMhz), ...
+        'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+
+    load(fullfile(pathToReadResults, 'simConfigs.mat'));
+    load(fullfile(pathToReadResults, 'simState.mat'));
+
+    [effeCellAntLats, effeCellAntLons] ...
+        = simConfigs.utm2deg_speZone( ...
+        simState.CellAntsXyhEffective(:, 1), ...
+        simState.CellAntsXyhEffective(:, 2));
+    effeCellAntLonLats = [effeCellAntLons, effeCellAntLats];
+
+    mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
+
+    % Smaller maps for publication.
+    if ~isfield(simState,'flagResizeFigForPublication')
+        % By default, we do not need to resize figures.
+        evalin('base', 'flagResizeFigForPublication = false;');
+    else
+        evalin('base', ...
+            ['flagResizeFigForPublication=', ...
+            'simState.RESIZE_FIG_FOR_PUBLICATION']);
+    end
+    % This works for Tipp and TippExtended.
+    flagResizeFigForPublication ...
+        = evalin('base', 'flagResizeFigForPublication');
+    if flagResizeFigForPublication
+        % [500, 500].*0.6 was used for the ICC 2020 paper.
+        customFigSize = [500, 500].*0.75;
+    else
+        defaultFigPos = get(0, 'defaultfigureposition');
+        customFigSize = defaultFigPos(3:4);
+    end
+
+    for idxH = [1, 2, 11]
+        assert(ismember( ...
+            simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH), ...
+            hightsToInspect), ...
+            'idxH is wrong according to hightsToInspect!');
+        rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
+
+        [ hCurBlMap ] ...
+            = plotBlockageMap( ...
+            [mapGridLonLats, simState.blockageMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, customFigSize);
+        hLeg = findobj(hCurBlMap, 'Type', 'Legend');
+        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+            case 'tipp'
+                set(hLeg, 'Position', [0.6119, 0.1094, 0.2922, 0.1262]);
+            case 'shrinkedwhin'
+                set(hLeg, 'Position', [0.4809, 0.1104, 0.4258, 0.1119]);
+        end
+        % Tighten the figure.
+        xlabel(''); ylabel('');
+        tightfig(hCurBlMap);
+
+        % transparentizeCurLegends;
+
+        % Hide the legend except for the first figure.
+        if legendsShown
+            legend off;
+        else
+            legendsShown = true;
+        end
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageStatusMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurBlMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurBlMap, [pathToSaveFig, '.png']);
+        saveas(hCurBlMap, [pathToSaveFig, '.fig']);
+    end
+end
+
+close all;
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 

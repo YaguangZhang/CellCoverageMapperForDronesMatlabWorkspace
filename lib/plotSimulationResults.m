@@ -271,7 +271,7 @@ for idxH = 1:numOfRxHeightToInspect
         [mapGridLonLats, simState.blockageMaps{idxH}], ...
         effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
         curFlagZoomIn, 'plot3k', customFigSize);
-    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')BlockageStatusMap_RxHeight_
         hLeg = findobj(hCurPLMap, 'Type', 'Legend');
         set(hLeg, 'Location', 'best');
     end
