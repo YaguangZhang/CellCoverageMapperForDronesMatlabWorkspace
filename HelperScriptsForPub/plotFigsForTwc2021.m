@@ -40,11 +40,6 @@ colorIneffectiveTowers = 'r';
 markerIneffectiveTowers = 'x';
 lineWidthIneffectiveTowers = 1.5;
 
-% The figure size was gotten by:
-%   defaultFigPos = get(0,'defaultfigureposition');
-%    customFigSize = defaultFigPos(3:4);
-customFigSize = [560, 420];
-
 % Path to save the plots.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'PostProcessingResults', 'FigsForTwc2021');
@@ -86,6 +81,11 @@ UTM_ZONE = inBoundary.boundary.UTM_ZONE;
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Generating simulation overview plots ...'])
+
+% The figure size was gotten by:
+%   defaultFigPos = get(0,'defaultfigureposition');
+%    customFigSize = defaultFigPos(3:4);
+curFigSize = [560, 420];
 
 % We will use the 1900 MHz results.
 numOfPresets = length(PRESETS);
@@ -136,7 +136,7 @@ for idxPreset = 1:numOfPresets
         inEffeCellAntsXYH(:,2));
 
     % Resize the figure for this type of plots.
-    curCustomFigSize = customFigSize.*0.9;
+    curCustomFigSize = curFigSize.*0.9;
 
     hFigCellOverview = figure('Position', [0,0,curCustomFigSize]);
     hold on; set(gca, 'fontWeight', 'bold');
@@ -207,7 +207,7 @@ for idxPreset = 1:numOfPresets
     %% User Location Grid
 
     % Resize the figure for this type of plots.
-    curCustomFigSize = customFigSize.*0.9;
+    curCustomFigSize = curFigSize.*0.9;
 
     hFigAreaOfInterest = figure('Position', [0,0,curCustomFigSize]);
     hCurAxis = gca;
@@ -226,7 +226,7 @@ for idxPreset = 1:numOfPresets
     % Adjust legend and the exponent label for y axis.
     switch simConfigs.CURRENT_SIMULATION_TAG
         case 'Tipp'
-            set(hLeg, 'Position', [0.4789, 0.8062, 0.4258, 0.0965]);
+            set(hLeg, 'Position', [0.4789, 0.8060, 0.4258, 0.0965]);
         case 'ShrinkedWHIN'
             set(hLeg, 'Location', 'northwest');
             transparentizeCurLegends;
@@ -471,6 +471,9 @@ disp(['    [', datestr(now, datetimeFormat), ...
 
 curFlagGenFigsSilently = false;
 curFlagZoomIn = true;
+% Smaller maps for publication.
+%   - [500, 500].*0.6 was used for the ICC 2020 paper.
+curFigSize = [500, 500].*0.6;
 
 % We will use the 1900 MHz results.
 curPresets = PRESETS(1:2);
@@ -500,26 +503,6 @@ for idxPreset = 1:numOfPresets
 
     mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
 
-    % Smaller maps for publication.
-    if ~isfield(simState,'flagResizeFigForPublication')
-        % By default, we do not need to resize figures.
-        evalin('base', 'flagResizeFigForPublication = false;');
-    else
-        evalin('base', ...
-            ['flagResizeFigForPublication=', ...
-            'simState.RESIZE_FIG_FOR_PUBLICATION']);
-    end
-    % This works for Tipp and TippExtended.
-    flagResizeFigForPublication ...
-        = evalin('base', 'flagResizeFigForPublication');
-    if flagResizeFigForPublication
-        % [500, 500].*0.6 was used for the ICC 2020 paper.
-        customFigSize = [500, 500].*0.75;
-    else
-        defaultFigPos = get(0, 'defaultfigureposition');
-        customFigSize = defaultFigPos(3:4);
-    end
-
     for idxH = [1, 2, 11]
         assert(ismember( ...
             simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH), ...
@@ -531,13 +514,13 @@ for idxPreset = 1:numOfPresets
             = plotBlockageMap( ...
             [mapGridLonLats, simState.blockageMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, customFigSize);
+            curFlagZoomIn, curFigSize);
         hLeg = findobj(hCurBlMap, 'Type', 'Legend');
         switch lower(simConfigs.CURRENT_SIMULATION_TAG)
             case 'tipp'
-                set(hLeg, 'Position', [0.6119, 0.1094, 0.2922, 0.1262]);
+                set(hLeg, 'Position', [0.5203, 0.1100, 0.3838, 0.1567]);
             case 'shrinkedwhin'
-                set(hLeg, 'Position', [0.4809, 0.1104, 0.4258, 0.1119]);
+                set(hLeg, 'Position', [0.3261, 0.1111, 0.5792, 0.1567]);
         end
         % Tighten the figure.
         xlabel(''); ylabel('');
