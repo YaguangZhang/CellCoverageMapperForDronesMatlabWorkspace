@@ -85,7 +85,7 @@ disp(['    [', datestr(now, datetimeFormat), ...
 % The figure size was gotten by:
 %   defaultFigPos = get(0,'defaultfigureposition');
 %    customFigSize = defaultFigPos(3:4);
-curFigSize = [560, 420];
+curCustomFigSize = [560, 420]*0.9;
 
 % We will use the 1900 MHz results.
 numOfPresets = length(PRESETS);
@@ -101,6 +101,7 @@ for idxPreset = 1:numOfPresets
         '_Carrier_', num2str(freqInMhz), ...
         'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
 
+    clearvars simConfigs simState;
     load(fullfile(pathToReadResults, 'simConfigs.mat'));
     load(fullfile(pathToReadResults, 'simState.mat'));
 
@@ -134,9 +135,6 @@ for idxPreset = 1:numOfPresets
     [inEffeCellAntsLats, inEffeCellAntsLons] ...
         = simConfigs.utm2deg_speZone(inEffeCellAntsXYH(:,1), ...
         inEffeCellAntsXYH(:,2));
-
-    % Resize the figure for this type of plots.
-    curCustomFigSize = curFigSize.*0.9;
 
     hFigCellOverview = figure('Position', [0,0,curCustomFigSize]);
     hold on; set(gca, 'fontWeight', 'bold');
@@ -197,17 +195,12 @@ for idxPreset = 1:numOfPresets
             hLeg = legend(hPolyIn, 'Indiana Boundary');
             set(hLeg, 'Position', [0.1969, 0.8792, 0.5934, 0.0476]);
     end
-    % Tighten the figure.
-    %   tightfig(hFigCellOverview);
 
     curDirToSave = fullfile(pathToSaveResults, ...
         ['Overview_CellularTowersToConsider_RoadMap-', preset]);
     saveEpsFigForPaper(hFigCellOverview, curDirToSave, false);
 
     %% User Location Grid
-
-    % Resize the figure for this type of plots.
-    curCustomFigSize = curFigSize.*0.9;
 
     hFigAreaOfInterest = figure('Position', [0,0,curCustomFigSize]);
     hCurAxis = gca;
@@ -218,20 +211,25 @@ for idxPreset = 1:numOfPresets
     hGridPts = plot(simState.mapGridXYPts(:,1), ...
         simState.mapGridXYPts(:,2), '.', 'MarkerSize', 3, ...
         'Color', darkBlue);
+    % axis equal;
     adjustFigSizeByContent(hFigAreaOfInterest, [], 'height', 0.9);
     axis equal; view(2); %grid on; grid minor;
     hLeg = legend([hAreaOfInterest, hGridPts], ...
         'Area of interest', 'User location');
     xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
+    % Tighten the figure twice.
+    %   tightfig(hFigAreaOfInterest); tightfig(hFigAreaOfInterest);
     % Adjust legend and the exponent label for y axis.
     switch simConfigs.CURRENT_SIMULATION_TAG
         case 'Tipp'
-            set(hLeg, 'Position', [0.4789, 0.8060, 0.4258, 0.0965]);
+            set(hLeg, 'Position', ... [4.9648, 8.0972, 3.5719, 0.9128]);
+                [0.5125, 0.8057, 0.3922, 0.0966]);
         case 'ShrinkedWHIN'
             set(hLeg, 'Location', 'northwest');
             transparentizeCurLegends;
 
-            % annotation(hFigAreaOfInterest, 'textbox',...
+            % Relocate the x10^N label for y axis.
+            %  annotation(hFigAreaOfInterest, 'textbox',...
             %     [0.1609 0.8369 0.1785 0.0945],...
             %      'String', ['\times10^', ...
             %     num2str(hCurAxis.YAxis.Exponent)],...
@@ -288,6 +286,7 @@ for idxPreset = 1:numOfPresets
         '_Carrier_', num2str(freqInMhz), ...
         'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
 
+    clearvars simConfigs simState;
     load(fullfile(pathToReadResults, 'simConfigs.mat'));
     load(fullfile(pathToReadResults, 'simState.mat'));
 
@@ -367,7 +366,8 @@ numOfPresets = length(PRESETS);
 %   - SimTimeInDayBasedOnDiary
 %     This is based on the diary log, which is still an under-estimate but
 %     should be more accurate.
-[SimTimeInDay, SimTimeInDayBasedOnDiary, numOfWorkers] ...
+[SimTimeInDay, SimTimeInDayBasedOnDiary, numOfWorkers, ...
+    minPathlossInDb, maxPathlossInDb, minBlockDistInM, maxBlockDistInM] ...
     = deal(nan(numOfFreqs, numOfPresets));
 simMachineNames = cell(numOfFreqs, numOfPresets);
 for idxFreq = 1:numOfFreqs
@@ -384,14 +384,13 @@ for idxFreq = 1:numOfFreqs
             'PostProcessingResults', ['Simulation_', preset, ...
             '_Carrier_', num2str(freqInMhz), ...
             'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+        pathToSimDiary = fullfile(pathToReadResults, 'diary.txt' );
 
-        load(fullfile(pathToReadResults, 'simState.mat'));
-
+        % Note that the cache file contails simState.
+        clearvars simConfigs simState;
         pathToReadCache = fullfile(pathToReadResults, ...
             'CovAnalysisCache_*.mat' );
         cacheFile = dir(pathToReadCache);
-
-        pathToSimDiary = fullfile(pathToReadResults, 'diary.txt' );
 
         % The full path to the cache file seems to cause trouble in the
         % loading process. This is a workaround.
@@ -404,6 +403,15 @@ for idxFreq = 1:numOfFreqs
         % Number of workers based on the cache file.
         numOfWorkers(idxFreq, idxPreset) ...
             = length(locIndicesForAllWorkersForAllCellsEff{1});
+
+        % Host name of the machine on which the simulation was carried out.
+        simMachineNames{idxFreq, idxPreset} ...
+            = parseCacheFilename(cacheFile.name);
+
+        % The final version of simState.
+        clearvars simConfigs simState;
+        load(fullfile(pathToReadResults, 'simState.mat'));
+
         % Time used for all heights and pixels, according to the simState
         % and cache files.
         timeUsedForAllMapSets = [simState.TimeUsedInSForEachPixel{:}];
@@ -418,9 +426,15 @@ for idxFreq = 1:numOfFreqs
             = extractSimTimeInDayFromDiary( ...
             pathToSimDiary, numOfEffeTowers);
 
-        % Host name of the machine on which the simulation was carried out.
-        simMachineNames{idxFreq, idxPreset} ...
-            = parseCacheFilename(cacheFile.name);
+        % Other parameters of interest.
+        minPathlossInDb(idxFreq, idxPreset) ...
+            = min(vertcat(simState.coverageMaps{:}));
+        maxPathlossInDb(idxFreq, idxPreset) ...
+            = max(vertcat(simState.coverageMaps{:}));
+        minBlockDistInM(idxFreq, idxPreset) ...
+            = min(vertcat(simState.blockageDistMaps{:}));
+        maxBlockDistInM(idxFreq, idxPreset) ...
+            = max(vertcat(simState.blockageDistMaps{:}));
     end
 end
 
@@ -454,6 +468,20 @@ exportSimTimeToCsv(SimTimeInDayBasedOnDiary*24, ...
     PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
     fullfile(pathToSaveResults, 'SimTimeInHBasedOnDiary_Raw.csv'));
 
+% Parameter ranges.
+exportSimTimeToCsv(minPathlossInDb, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'minPathlossInDb.csv'), 1);
+exportSimTimeToCsv(maxPathlossInDb, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'maxPathlossInDb.csv'), 1);
+exportSimTimeToCsv(minBlockDistInM, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'minBlockDistInM.csv'), 1);
+exportSimTimeToCsv(maxBlockDistInM, ...
+    PRESETS, CARRIER_FREQUENCIES_IN_MHZ, ...
+    fullfile(pathToSaveResults, 'maxBlockDistInM.csv'), 1);
+
 % Hostnames and worker numbers.
 writecell(simMachineNames, ...
     fullfile(pathToSaveResults, 'SimTimeHostname.csv'));
@@ -463,11 +491,11 @@ writematrix(numOfWorkers, ...
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
-%% Blockage Status Example Figs (Tipp + WHIN)
+%% Blockage Example Figs (Status and Distance for Tipp + WHIN)
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
-    '] Generating example blockage status maps ...'])
+    '] Generating example blockage status and distance maps ...'])
 
 curFlagGenFigsSilently = false;
 curFlagZoomIn = true;
@@ -480,7 +508,12 @@ curPresets = PRESETS(1:2);
 numOfPresets = length(curPresets);
 freqInMhz = 1900;
 hightsToInspect = [1.5, 10, 100];
-legendsShown = false;
+staLegendsShown = false;
+% One for legend, the other for color bar.
+distLegendsShown = [false, false];
+
+% This should be big enough for all the simulations.
+maxBlockDistInM = 1000;
 for idxPreset = 1:numOfPresets
     preset = PRESETS{idxPreset};
     disp(['        [', datestr(now, datetimeFormat), ...
@@ -492,6 +525,7 @@ for idxPreset = 1:numOfPresets
         '_Carrier_', num2str(freqInMhz), ...
         'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
 
+    clearvars simConfigs simState;
     load(fullfile(pathToReadResults, 'simConfigs.mat'));
     load(fullfile(pathToReadResults, 'simState.mat'));
 
@@ -510,37 +544,139 @@ for idxPreset = 1:numOfPresets
             'idxH is wrong according to hightsToInspect!');
         rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
 
-        [ hCurBlMap ] ...
+        %---------------
+        % For blockage status maps.
+        %---------------
+        [ hCurBlStaMap ] ...
             = plotBlockageMap( ...
             [mapGridLonLats, simState.blockageMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, curFigSize);
-        hLeg = findobj(hCurBlMap, 'Type', 'Legend');
-        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
-            case 'tipp'
-                set(hLeg, 'Position', [0.5203, 0.1100, 0.3838, 0.1567]);
-            case 'shrinkedwhin'
-                set(hLeg, 'Position', [0.3261, 0.1111, 0.5792, 0.1567]);
-        end
+            curFlagZoomIn, curFigSize, [1 1 0; 1 0 0]);
+        hLeg = findobj(hCurBlStaMap, 'Type', 'Legend');
         % Tighten the figure.
         xlabel(''); ylabel('');
-        tightfig(hCurBlMap);
-
-        % transparentizeCurLegends;
+        tightfig(hCurBlStaMap);
 
         % Hide the legend except for the first figure.
-        if legendsShown
+        if staLegendsShown
             legend off;
         else
-            legendsShown = true;
+            set(hLeg, 'Position', [3.1070, 5.3797, 2.8840, 1.2435]);
+            staLegendsShown = true;
         end
 
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageStatusMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
-        saveas(hCurBlMap, [pathToSaveFig, '.eps'], 'epsc');
-        saveas(hCurBlMap, [pathToSaveFig, '.png']);
-        saveas(hCurBlMap, [pathToSaveFig, '.fig']);
+        saveas(hCurBlStaMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurBlStaMap, [pathToSaveFig, '.png']);
+        saveas(hCurBlStaMap, [pathToSaveFig, '.fig']);
+
+        %---------------
+        % For blockage distance maps.
+        %---------------
+        [ hCurDistMap, ~, hCb ] = plotPathLossMap( ...
+            [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, 'griddatasurf', curFigSize);
+
+        % Tighten the figure.
+        xlabel(''); ylabel('');
+        tightfig(hCurDistMap);
+
+        % Hide the legend except for the first figure of ShrinkedWhin.
+        if (~distLegendsShown(1))&&(strcmpi( ...
+                simConfigs.CURRENT_SIMULATION_TAG, 'tipp'))
+            hLeg = findobj(hCurDistMap, 'Type', 'Legend');
+            set(hLeg, 'Position', [0.1294, 6.1342, 2.8840, 0.4762]);
+            distLegendsShown(1) = true;
+        else
+            legend off;
+        end
+
+        % Move the colorbar title a little to the left so that the unit can
+        % be seen.
+        title(hCb, 'Blockage Distance (m)            ');
+
+        % Hide the color bar except for the first figure of WHIN.
+        %  if (~distLegendsShown(2)) ...
+        %         && (strcmpi( ... simConfigs.CURRENT_SIMULATION_TAG,
+        %         'shrinkedwhin'))
+        %     set(hCb, 'Visible', 'off');
+        %      distLegendsShown(2) = true;
+        %  end
+
+        % With different color bar for each plot.
+        pause(1);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageDistMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        % The same color bar is shared in different figures.
+        caxis([0, maxBlockDistInM]); pause(1);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageDistMap_SameCB_', simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        % The same color bar is shared in different figures but hidden.
+        colorbar off;
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageDistMap_SameCBHidden_', ...
+            simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        % Make a copy of the figure;
+        a1 = gca;
+        hCurDistMapCopy = figure('Position', get(hCurDistMap, 'Position'));
+        a2 = copyobj(a1,hCurDistMapCopy);
+
+        % The same color bar is shared in different figures but hidden;
+        % figure is tighten, too.
+        figure(hCurDistMap);
+        tightfig(hCurDistMap);
+        % There is a bug with tightfig; an unintended empty area shows up
+        % at the top. This is a workaround for that. Note that the figure
+        % resizing will take some time. The pause command will make sure
+        % things take effect as expected.
+        pause(1); 
+        set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
+        curAxesPos = get(gca, 'Position');
+        set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]); 
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageDistMap_SameCBHiddenTighten_', ...
+            simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        % The same color bar is shared in different figures but hidden;
+        % figure is tighten only vertically.
+        curFigPos = get(hCurDistMap, 'Position');
+        oldFigPos = get(hCurDistMapCopy, 'Position');        
+
+        figure(hCurDistMapCopy);
+        set(gca, 'Unit', 'pixel');
+        oldAxesPos = get(gca, 'Position');
+        set(hCurDistMapCopy, 'Position', [oldFigPos(1:3), curFigPos(4)])
+        set(gca, 'Position', oldAxesPos);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageDistMap_SameCBHiddenTightenVert_', ...
+            simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurDistMapCopy, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMapCopy, [pathToSaveFig, '.png']);
+        saveas(hCurDistMapCopy, [pathToSaveFig, '.fig']);
     end
 end
 

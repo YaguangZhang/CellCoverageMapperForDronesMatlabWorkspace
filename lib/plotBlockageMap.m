@@ -1,6 +1,6 @@
 function [hCurBlockageMap, hCurHandleTxs] ...
     = plotBlockageMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
-    simConfigs, flagVisible, flagZoomIn, customFigSize)
+    simConfigs, flagVisible, flagZoomIn, customFigSize, colorMapToUse)
 %PLOTBLOCKAGEMAP Plot the blockage map.
 %
 % Generate a figure on Google map to show the blockage areas. We will use
@@ -49,9 +49,11 @@ markerTowers = 'x';
 markerSizeTowers = 6;
 lineWidthTowers = 1;
 forceDeltaZ = 1;
-% We will use the first color for clearance and the last color for
-% blockage.
-COLORMAP_TO_USE = 'jet';
+if ~exist('colorMapToUse', 'var')
+    % We will use the first color for clearance and the last color for
+    % blockage.
+    COLORMAP_TO_USE = 'jet';
+end
 % The location of the legend.
 LEGEND_LOC = 'NorthEast';
 

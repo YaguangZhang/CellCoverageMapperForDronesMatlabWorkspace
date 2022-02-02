@@ -1,6 +1,7 @@
-function [hCurPLMap, hCurHandleTxs] ...
+function [hCurPLMap, hCurHandleTxs, hCb] ...
     = plotPathLossMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
-    simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs, customFigSize)
+    simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs, ...
+    customFigSize, colorMap)
 %PLOTPATHLOSSMAP Plot the path loss map.
 %
 % Generate a figure on Google map to show the path loss map.
@@ -17,7 +18,7 @@ function [hCurPLMap, hCurHandleTxs] ...
 %         Color mapping limits for plot3k. A two element vector specifying
 %         the values that map to the first and last colors. This is useful
 %         for generating a series of plots with identical coloring. The
-%         colormap but not the colorbar) is flipped upside down if
+%         colormap (but not the colorbar) is flipped upside down if
 %         'ColorRange' is given as [max min] instead of [min max].
 %       - UTM_X_Y_BOUNDARY_OF_INTEREST
 %         The UTM (x, y) polygon boundary vertices representing the area of
@@ -56,10 +57,14 @@ function [hCurPLMap, hCurHandleTxs] ...
 %     The handle to the resultant figure.
 %   - hCurHandleTxs
 %     The handle to the cellular tower.
+%   - hCb
+%     The handle to the color bar.
 %
 % Yaguang Zhang, Purdue, 10/02/2019
 
-colorMap = 'jet';
+if ~exist('colorMap', 'var')
+    colorMap = 'jet';
+end
 legendBackgroundColor = ones(1,3).*0.8;
 % Note:
 %   - The FSPL is 51.99 dB for 1.9 GHz carrier with 5 m Tx-to-Rx distance.
@@ -183,12 +188,12 @@ if any(boolsPathLossesToShow)
                 'ColorRange', colorRange);
         case 'griddatasurf'
             set(gca, 'fontWeight', 'bold');
-            
+
             % Create meshgrid for surf.
             upSampFactor = 10;
             sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
                 .*upSampFactor;
-            
+
             hRxs = gridDataSurf(matRxLonLatWithPathLoss, ...
                 sufNumPtsPerSide, ...
                 optsGridDataSurf{:});
@@ -198,7 +203,7 @@ if any(boolsPathLossesToShow)
             title(hCb, cLabelToSetDist);
         case 'surf'
             set(gca, 'fontWeight', 'bold');
-            
+
             % Create meshgrid for surf.
             upSampFactor = 10;
             sufNumPtsPerSide = simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
@@ -208,7 +213,7 @@ if any(boolsPathLossesToShow)
             zs = matRxLonLatWithPathLoss(:, 3);
             % Set points not to show to NaN.
             zs(~boolsPathLossesToShow) = nan;
-            
+
             % Find the ranges for the boundary of interet (BoI) to build a
             % new grid for showing the results.
             [latsBoI, lonsBoI] = simConfigs.utm2deg_speZone( ...
@@ -218,22 +223,22 @@ if any(boolsPathLossesToShow)
             lonMaxBoI = max(lonsBoI);
             latMinBoI = min(latsBoI);
             latMaxBoI = max(latsBoI);
-            
+
             [lonsNew, latsNew] = meshgrid( ...
                 linspace(lonMinBoI, lonMaxBoI, sufNumPtsPerSide), ...
                 linspace(latMinBoI, latMaxBoI, sufNumPtsPerSide));
             zsNew = griddata(lons,lats,zs,lonsNew,latsNew);
-            
+
             % Replace the resulting NaN grid data points with nearest
             % neighbor's value in the original dataset.
             ziNearest = griddata(lons,lats,zs,lonsNew,latsNew,'Nearest');
             boolsZsNewIsNan = isnan(zsNew);
             zsNew(boolsZsNewIsNan) = ziNearest(boolsZsNewIsNan);
-            
+
             % For positions with NaN values in ziNearest, zsNew should also
             % have NaN.
             zsNew(isnan(ziNearest)) = nan;
-            
+
             % Ignore points out of the area of interest by seting the z
             % values for them to NaN.
             [in,on] = inpolygon(lonsNew(:), latsNew(:), lonsBoI, latsBoI);
@@ -241,7 +246,7 @@ if any(boolsPathLossesToShow)
             if any(boolsPtsToIgnore)
                 zsNew(boolsPtsToIgnore) = nan;
             end
-            
+
             hRxs = surf( lonsNew,latsNew,zsNew, ...
                 optsSurf{:});
             caxis(colorRange); xlabel(xLabelToSet); ylabel(yLabelToSet);
@@ -250,7 +255,7 @@ if any(boolsPathLossesToShow)
             [c,h] = contour(lonsNew,latsNew,zsNew);
             clabel(c,h);
     end
-    
+
     % Put an empty title to avoid tightfig cutting out the clabel.
     title(' ');
 end
