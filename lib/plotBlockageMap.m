@@ -1,6 +1,7 @@
 function [hCurBlockageMap, hCurHandleTxs] ...
     = plotBlockageMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
-    simConfigs, flagVisible, flagZoomIn, customFigSize, colorMapToUse)
+    simConfigs, flagVisible, flagZoomIn, customFigSize, ...
+    flagRiseTxToTop, colorMapToUse)
 %PLOTBLOCKAGEMAP Plot the blockage map.
 %
 % Generate a figure on Google map to show the blockage areas. We will use
@@ -41,7 +42,9 @@ function [hCurBlockageMap, hCurHandleTxs] ...
 % Yaguang Zhang, Purdue, 10/02/2019
 
 legendBackgroundColor = ones(1,3).*0.8;
-flagRiseTxToTop = false;
+if ~exist('flagRiseTxToTop', 'var')
+    flagRiseTxToTop = false;
+end
 
 % For plotting.
 colorTowers = 'w';
@@ -52,7 +55,7 @@ forceDeltaZ = 1;
 if ~exist('colorMapToUse', 'var')
     % We will use the first color for clearance and the last color for
     % blockage.
-    COLORMAP_TO_USE = 'jet';
+    colorMapToUse = 'jet';
 end
 % The location of the legend.
 LEGEND_LOC = 'NorthEast';
@@ -164,7 +167,7 @@ end
 % plot).
 hRxs = surf(lonsNew,latsNew,zsNew+forceDeltaZ, ...
     'FaceAlpha',0.5, 'EdgeColor', 'none');
-curColormap = colormap(COLORMAP_TO_USE);
+curColormap = colormap(colorMapToUse);
 hClear = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(1, :));
 hBlocked = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(end, :));
 caxis(colorRange);
