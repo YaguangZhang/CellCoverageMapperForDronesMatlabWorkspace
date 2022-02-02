@@ -1,7 +1,7 @@
 function [hCurPLMap, hCurHandleTxs, hCb] ...
     = plotPathLossMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
     simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs, ...
-    customFigSize, colorMap)
+    customFigSize, colorMap, flagRiseTxToTop)
 %PLOTPATHLOSSMAP Plot the path loss map.
 %
 % Generate a figure on Google map to show the path loss map.
@@ -101,10 +101,12 @@ if ~exist('flagCmdToPlotPLs', 'var')
     flagCmdToPlotPLs = 'surf';
 end
 
-if strcmpi(flagCmdToPlotPLs, 'gridDataSurf')
-    flagRiseTxToTop = true;
-else
-    flagRiseTxToTop = false;
+if ~exist('flagRiseTxToTop', 'var')
+    if strcmpi(flagCmdToPlotPLs, 'gridDataSurf')
+        flagRiseTxToTop = true;
+    else
+        flagRiseTxToTop = false;
+    end
 end
 
 if ~exist('customFigSize', 'var')
@@ -160,7 +162,8 @@ end
 
 % TX.
 if flagRiseTxToTop
-    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1).*(colorRange(2)+1);
+    zsToPlotTx = ones(length(cellAntLonLats(:,1)), 1) ...
+        .*(colorRange(2)+10^5);
 else
     zsToPlotTx = zeros(length(cellAntLonLats(:,1)), 1);
 end

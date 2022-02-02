@@ -551,7 +551,7 @@ for idxPreset = 1:numOfPresets
             = plotBlockageMap( ...
             [mapGridLonLats, simState.blockageMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, curFigSize, true, [1 1 0; 1 0 0]);
+            curFlagZoomIn, curFigSize, [1 1 0; 1 0 0], true);
         hLeg = findobj(hCurBlStaMap, 'Type', 'Legend');
         % Tighten the figure.
         xlabel(''); ylabel('');
@@ -575,10 +575,12 @@ for idxPreset = 1:numOfPresets
         %---------------
         % For blockage distance maps.
         %---------------
+        % Orange - red - black.
+        customHot = hot(256); customHot = customHot(168:-1:1, :);
         [ hCurDistMap, ~, hCb ] = plotPathLossMap( ...
             [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, 'griddatasurf', curFigSize);
+            curFlagZoomIn, 'griddatasurf', curFigSize, customHot, true);
 
         % Tighten the figure.
         xlabel(''); ylabel('');
@@ -647,10 +649,10 @@ for idxPreset = 1:numOfPresets
         % at the top. This is a workaround for that. Note that the figure
         % resizing will take some time. The pause command will make sure
         % things take effect as expected.
-        pause(1); 
+        pause(1);
         set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
         curAxesPos = get(gca, 'Position');
-        set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]); 
+        set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCBHiddenTighten_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -662,7 +664,7 @@ for idxPreset = 1:numOfPresets
         % The same color bar is shared in different figures but hidden;
         % figure is tighten only vertically.
         curFigPos = get(hCurDistMap, 'Position');
-        oldFigPos = get(hCurDistMapCopy, 'Position');        
+        oldFigPos = get(hCurDistMapCopy, 'Position');
 
         figure(hCurDistMapCopy);
         set(gca, 'Unit', 'pixel');
