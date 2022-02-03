@@ -501,21 +501,22 @@ curFlagGenFigsSilently = false;
 curFlagZoomIn = true;
 % Smaller maps for publication.
 %   - [500, 500].*0.6 was used for the ICC 2020 paper.
-curFigSize = [500, 500].*0.6;
+curBlockStaFigSize = [500, 500].*0.6;
+curBlockDistFigSize = [600, 500].*0.6;
 
 % We will use the 1900 MHz results.
 curPresets = PRESETS(1:2);
 numOfPresets = length(curPresets);
 freqInMhz = 1900;
-hightsToInspect = [1.5, 10, 100];
+hightsToInspect = [1.5, 10, 50, 100];
 staLegendsShown = false;
-% One for legend, the other for color bar.
+% For distance scales on maps for Tipp and WHIN.
 distLegendsShown = [false, false];
 
 % This should be big enough for all the simulations.
 maxBlockDistInM = 1000;
 for idxPreset = 1:numOfPresets
-    preset = PRESETS{idxPreset};
+    preset = curPresets{idxPreset};
     disp(['        [', datestr(now, datetimeFormat), ...
         '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
         '/', num2str(numOfPresets), ') ...'])
@@ -537,7 +538,7 @@ for idxPreset = 1:numOfPresets
 
     mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
 
-    for idxH = [1, 2, 11]
+    for idxH = [1, 2, 6, 11]
         assert(ismember( ...
             simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH), ...
             hightsToInspect), ...
@@ -551,18 +552,19 @@ for idxPreset = 1:numOfPresets
             = plotBlockageMap( ...
             [mapGridLonLats, simState.blockageMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, curFigSize, [1 1 0; 1 0 0], true);
+            curFlagZoomIn, curBlockStaFigSize, [1 1 0; 1 0 0], true);
         hLeg = findobj(hCurBlStaMap, 'Type', 'Legend');
         % Tighten the figure.
         xlabel(''); ylabel('');
         tightfig(hCurBlStaMap);
 
-        % Hide the legend except for the first figure.
-        if staLegendsShown
-            legend off;
-        else
+        % Hide the legend except for the first Tipp figure.
+        if (~staLegendsShown) && (strcmpi( ...
+                simConfigs.CURRENT_SIMULATION_TAG, 'tipp'))
             set(hLeg, 'Position', [3.1070, 5.3797, 2.8840, 1.2435]);
             staLegendsShown = true;
+        else
+            legend off;
         end
 
         pathToSaveFig = fullfile(pathToSaveResults, ...
@@ -580,21 +582,61 @@ for idxPreset = 1:numOfPresets
         [ hCurDistMap, ~, hCb ] = plotPathLossMap( ...
             [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, 'griddatasurf', curFigSize, customHot, true);
+            curFlagZoomIn, 'griddatasurf', curBlockDistFigSize, ...
+            customHot, true);
 
         % Tighten the figure.
         xlabel(''); ylabel('');
         tightfig(hCurDistMap);
 
-        % Hide the legend except for the first figure of ShrinkedWhin.
+        % Hide the legend except for the first figure of Tipp.
         if (~distLegendsShown(1))&&(strcmpi( ...
                 simConfigs.CURRENT_SIMULATION_TAG, 'tipp'))
             hLeg = findobj(hCurDistMap, 'Type', 'Legend');
-            set(hLeg, 'Position', [0.1294, 6.1342, 2.8840, 0.4762]);
+            set(hLeg, 'Position', [2.8301, 6.1344, 2.8840, 0.4762], ...
+                'AutoUpdate', 'off');
+
             distLegendsShown(1) = true;
         else
             legend off;
         end
+
+        % Always show the distance scale.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            h = makescale(3.5, 'se', 'units', 'si');
+            % The scale will be blocked by the plot if not adjusted along
+            % the z axis.
+            largeZValue = 10^6;
+            h(1).ZData = ones(4,1).*largeZValue;
+            h(2).ZData = ones(2,1).*largeZValue;
+            h(3).Position(3) = largeZValue;
+            h(3).FontSize = 8;
+        end
+
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
+            % Show distance scale for the first figure of WHIN. if
+            % (~distLegendsShown(2))&&(strcmpi( ...
+            %         simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin'))
+            h = makescale(2.9, 'se', 'units', 'si');
+            % The scale will be blocked by the plot if not adjusted along
+            % the z axis.
+            largeZValue = 10^6;
+            h(1).ZData = ones(4,1).*largeZValue;
+            h(2).ZData = ones(2,1).*largeZValue;
+            h(3).Position(3) = largeZValue;
+            h(3).FontSize = 8;
+
+            distLegendsShown(2) = true;
+        end
+
+        % Mannual figure adjustments.
+        %  if strcmpi( ...
+        %         simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
+        %     pause(1);
+        %      set(hCurDistMap, 'Position', [0, 0, 240, 275]);
+        %     set(gca, 'Position', [0.0601, 0.0208, 0.6478, 0.8964]);
+        %      set(hCb, 'Position', [4.8502, 0.1500, 0.3360, 6.4823]);
+        %  end
 
         % Move the colorbar title a little to the left so that the unit can
         % be seen.
@@ -618,7 +660,9 @@ for idxPreset = 1:numOfPresets
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
 
         % The same color bar is shared in different figures.
-        caxis([0, maxBlockDistInM]); pause(1);
+        caxis([0, maxBlockDistInM]);
+
+        pause(1);
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCB_', simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
@@ -628,6 +672,8 @@ for idxPreset = 1:numOfPresets
 
         % The same color bar is shared in different figures but hidden.
         colorbar off;
+
+        pause(1);
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCBHidden_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -640,19 +686,24 @@ for idxPreset = 1:numOfPresets
         a1 = gca;
         hCurDistMapCopy = figure('Position', get(hCurDistMap, 'Position'));
         a2 = copyobj(a1,hCurDistMapCopy);
+        colormap(customHot);
 
         % The same color bar is shared in different figures but hidden;
         % figure is tighten, too.
         figure(hCurDistMap);
-        tightfig(hCurDistMap);
+        title('');
         % There is a bug with tightfig; an unintended empty area shows up
         % at the top. This is a workaround for that. Note that the figure
         % resizing will take some time. The pause command will make sure
         % things take effect as expected.
         pause(1);
+        tightfig(hCurDistMap);
+        pause(1);
         set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
         curAxesPos = get(gca, 'Position');
         set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
+
+        h(3).FontSize = 8; pause(1);
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCBHiddenTighten_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -672,6 +723,7 @@ for idxPreset = 1:numOfPresets
         set(hCurDistMapCopy, 'Position', [oldFigPos(1:3), curFigPos(4)])
         set(gca, 'Position', oldAxesPos);
 
+        pause(1);
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCBHiddenTightenVert_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...

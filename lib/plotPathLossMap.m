@@ -76,7 +76,7 @@ minPathLossInDbExpected = 65;
 % For plotting.
 colorTowers = 'w';
 markerTowers = 'x';
-markerSizeTowers = 4;
+markerSizeTowers = 6;
 lineWidthTowers = 1;
 
 optsSurf = {'EdgeColor', 'none', 'FaceAlpha', 0.5};
