@@ -76,6 +76,10 @@ UTM_ZONE = inBoundary.boundary.UTM_ZONE;
 [inBoundaryLats, inBoundaryLons] ...
     = utm2deg_speZone(inBoundaryXYs(:,1), inBoundaryXYs(:,2));
 
+% Orange - red - black.
+customHot = hot(256); customHot = customHot(168:-1:1, :);
+% Yellow - red - black.
+customHotLong = hot(256); customHotLong = customHotLong(192:-1:1, :);
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
 disp(' ')
@@ -491,7 +495,7 @@ writematrix(numOfWorkers, ...
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
-%% Blockage Example Figs (Status and Distance for Tipp + WHIN)
+%% Example Blockage Figs (Status and Distance for Tipp + WHIN)
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
@@ -509,6 +513,7 @@ curPresets = PRESETS(1:2);
 numOfPresets = length(curPresets);
 freqInMhz = 1900;
 hightsToInspect = [1.5, 10, 50, 100];
+indicesH = [1, 2, 6, 11];
 staLegendsShown = false;
 % For distance scales on maps for Tipp and WHIN.
 distLegendsShown = [false, false];
@@ -538,12 +543,10 @@ for idxPreset = 1:numOfPresets
 
     mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
 
-    for idxH = [1, 2, 6, 11]
-        assert(ismember( ...
-            simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH), ...
-            hightsToInspect), ...
-            'idxH is wrong according to hightsToInspect!');
+    for idxH = indicesH
         rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
+        assert(ismember(rxAntH, hightsToInspect), ...
+            'idxH is wrong according to hightsToInspect!');
 
         %---------------
         % For blockage status maps.
@@ -577,8 +580,6 @@ for idxPreset = 1:numOfPresets
         %---------------
         % For blockage distance maps.
         %---------------
-        % Orange - red - black.
-        customHot = hot(256); customHot = customHot(168:-1:1, :);
         [ hCurDistMap, ~, hCb ] = plotPathLossMap( ...
             [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
@@ -735,6 +736,119 @@ for idxPreset = 1:numOfPresets
 end
 
 close all;
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
+%% Example Path Loss Figs (Different F_C for Tipp + WHIN)
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating example path loss maps ...'])
+
+curFlagGenFigsSilently = false;
+curFlagZoomIn = true;
+defaultCmdToPlotPLMaps = 'surf';
+% Smaller maps for publication.
+%   - [500, 500].*0.6 was used for the ICC 2020 paper.
+curPLFigSize = [500, 500].*0.6;
+
+% We will use the h_R = 1.5m results.
+curPresets = PRESETS(1:2);
+numOfPresets = length(curPresets);
+freqsToInspectInMhz = [1900, 4700, 7000, 28000];
+numOfFs = length(freqsToInspectInMhz);
+hightToInspect = 1.5;
+idxH = 1;
+
+% For better coloring effects.
+customCAxis = [100, 150];
+for idxF = 1:numOfFs
+    fcInMHz = freqsToInspectInMhz(idxF);
+    assert(ismember(fcInMHz, freqsToInspectInMhz), ...
+        'idxF is wrong according to freqsToInspectInMhz!');
+
+    disp(['        [', datestr(now, datetimeFormat), ...
+        '] Frequency #', num2str(idxF), ...
+        '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
+
+    for idxPreset = 1:numOfPresets
+        preset = curPresets{idxPreset};
+        disp(['            [', datestr(now, datetimeFormat), ...
+            '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+            '/', num2str(numOfPresets), ') ...'])
+
+        pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'PostProcessingResults', ['Simulation_', preset, ...
+            '_Carrier_', num2str(fcInMHz), ...
+            'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+
+        clearvars simConfigs simState;
+        try
+            load(fullfile(pathToReadResults, 'simConfigs.mat'));
+        catch
+            load(fullfile(pathToReadResults, 'simConfigs_Raw.mat'));
+        end
+        load(fullfile(pathToReadResults, 'simState.mat'));
+
+        [effeCellAntLats, effeCellAntLons] ...
+            = simConfigs.utm2deg_speZone( ...
+            simState.CellAntsXyhEffective(:, 1), ...
+            simState.CellAntsXyhEffective(:, 2));
+        effeCellAntLonLats = [effeCellAntLons, effeCellAntLats];
+
+        mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
+
+        rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
+        assert(rxAntH==hightToInspect, ...
+            'idxH is wrong according to hightToInspect!');
+
+        %---------------
+        % For path loss maps.
+        %---------------
+        [ hCurPLMap ] = plotPathLossMap( ...
+            [mapGridLonLats, simState.coverageMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, defaultCmdToPlotPLMaps, curPLFigSize, ...
+            customHotLong, true);
+
+        caxis(customCAxis);
+        xlabel(''); ylabel('');
+        tightfig(hCurPLMap);
+
+        % Hide the legend except for the first Tipp figure.
+        if (idxF==1) && strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+            set(hLeg, 'Position', [2.8254, 6.1119, 2.8840, 0.4762]);
+        else
+            legend off;
+        end
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        % The version with colorbar hidden. 
+        colorbar off;
+        title('');
+        tightfig(hCurPLMap);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_CBHidden_', ...
+            simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        close(hCurPLMap);
+    end
+end
+
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 

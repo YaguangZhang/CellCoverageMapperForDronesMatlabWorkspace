@@ -1,7 +1,7 @@
 function [hCurPLMap, hCurHandleTxs, hCb] ...
     = plotPathLossMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
     simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs, ...
-    customFigSize, colorMap, flagRiseTxToTop)
+    customFigSize, colorMap, flagRiseTxToTop, clabelColor)
 %PLOTPATHLOSSMAP Plot the path loss map.
 %
 % Generate a figure on Google map to show the path loss map.
@@ -64,6 +64,9 @@ function [hCurPLMap, hCurHandleTxs, hCb] ...
 
 if ~exist('colorMap', 'var')
     colorMap = 'jet';
+end
+if ~exist('clabelColor', 'var')
+    clabelColor = 'k';
 end
 legendBackgroundColor = ones(1,3).*0.8;
 % Note:
@@ -256,7 +259,7 @@ if any(boolsPathLossesToShow)
             hCb = colorbar; % ylabel(hCb, cLabelToSet);
             title(hCb, cLabelToSet);
             [c,h] = contour(lonsNew,latsNew,zsNew);
-            clabel(c,h);
+            clabel(c, h, 'Color', clabelColor);
     end
 
     % Put an empty title to avoid tightfig cutting out the clabel.
