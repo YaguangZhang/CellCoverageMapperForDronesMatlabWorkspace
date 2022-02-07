@@ -80,6 +80,14 @@ UTM_ZONE = inBoundary.boundary.UTM_ZONE;
 customHot = hot(256); customHot = customHot(168:-1:1, :);
 % Yellow - red - black.
 customHotLong = hot(256); customHotLong = customHotLong(192:-1:1, :);
+
+% For scale legend adjustment.
+largeZValue = 10^7;
+tippScalePos = [-86.7638, 40.235, largeZValue];
+tippScaleFontS = 9;
+whinScalePos = [-86.3523, 39.8482, largeZValue];
+whinScaleFontS = 8;
+
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
 disp(' ')
@@ -607,11 +615,12 @@ for idxPreset = 1:numOfPresets
             h = makescale(3.5, 'se', 'units', 'si');
             % The scale will be blocked by the plot if not adjusted along
             % the z axis.
-            largeZValue = 10^6;
+            tippScalePos = [-86.7638, 40.235, largeZValue];
+            tippScaleFontS = 9;
             h(1).ZData = ones(4,1).*largeZValue;
             h(2).ZData = ones(2,1).*largeZValue;
-            h(3).Position(3) = largeZValue;
-            h(3).FontSize = 8;
+            set(h(3), 'Position', tippScalePos);
+            h(3).FontSize = tippScaleFontS;
         end
 
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
@@ -621,10 +630,9 @@ for idxPreset = 1:numOfPresets
             h = makescale(2.9, 'se', 'units', 'si');
             % The scale will be blocked by the plot if not adjusted along
             % the z axis.
-            largeZValue = 10^6;
             h(1).ZData = ones(4,1).*largeZValue;
             h(2).ZData = ones(2,1).*largeZValue;
-            h(3).Position(3) = largeZValue;
+            set(h(3), 'Position', [-86.3523, 39.8482, largeZValue]);
             h(3).FontSize = 8;
 
             distLegendsShown(2) = true;
@@ -656,6 +664,7 @@ for idxPreset = 1:numOfPresets
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMap, [pathToSaveFig, '.png']);
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
@@ -667,6 +676,7 @@ for idxPreset = 1:numOfPresets
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCB_', simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMap, [pathToSaveFig, '.png']);
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
@@ -679,6 +689,7 @@ for idxPreset = 1:numOfPresets
             ['BlockageDistMap_SameCBHidden_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMap, [pathToSaveFig, '.png']);
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
@@ -704,11 +715,18 @@ for idxPreset = 1:numOfPresets
         curAxesPos = get(gca, 'Position');
         set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
 
-        h(3).FontSize = 8; pause(1);
+        pause(1);
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['BlockageDistMap_SameCBHiddenTighten_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        % We may need to re-adjust the scale.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            set(h(3), 'Position', tippScalePos);
+            h(3).FontSize = 9;
+        end
+        pause(1);
+        export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMap, [pathToSaveFig, '.png']);
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
@@ -729,6 +747,12 @@ for idxPreset = 1:numOfPresets
             ['BlockageDistMap_SameCBHiddenTightenVert_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
+        % We may need to re-adjust the scale.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            set(h(3), 'Position', tippScalePos);
+            h(3).FontSize = tippScaleFontS;
+        end
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMapCopy, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMapCopy, [pathToSaveFig, '.png']);
         saveas(hCurDistMapCopy, [pathToSaveFig, '.fig']);
@@ -818,29 +842,64 @@ for idxF = 1:numOfFs
         % Hide the legend except for the first Tipp figure.
         if (idxF==1) && strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
             hLeg = findobj(hCurPLMap, 'Type', 'Legend');
-            set(hLeg, 'Position', [2.8254, 6.1119, 2.8840, 0.4762]);
+            set(hLeg, 'Position', [2.8254, 6.1119, 2.8840, 0.4762], ...
+                'AutoUpdate', 'off');
         else
             legend off;
+        end
+
+        % Always show the distance scale.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            h = makescale(3.5, 'se', 'units', 'si');
+            % The scale will be blocked by the plot if not adjusted along
+            % the z axis.
+            h(1).ZData = ones(4,1).*largeZValue;
+            h(2).ZData = ones(2,1).*largeZValue;
+            set(h(3), 'Position', tippScalePos);
+            h(3).FontSize = tippScaleFontS;
+        end
+
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
+            % Show distance scale for the first figure of WHIN. if
+            % (~distLegendsShown(2))&&(strcmpi( ...
+            %         simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin'))
+            h = makescale(2.9, 'se', 'units', 'si');
+            % The scale will be blocked by the plot if not adjusted along
+            % the z axis.
+            h(1).ZData = ones(4,1).*largeZValue;
+            h(2).ZData = ones(2,1).*(largeZValue+1);
+            set(h(3), 'Position', whinScalePos);
+            h(3).FontSize = whinScaleFontS;
+
+            distLegendsShown(2) = true;
         end
 
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['PathLossMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
             '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
             strrep(num2str(rxAntH), '.', '_')]);
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurPLMap, [pathToSaveFig, '.png']);
         saveas(hCurPLMap, [pathToSaveFig, '.fig']);
 
-        % The version with colorbar hidden. 
+        % The version with colorbar hidden.
         colorbar off;
         title('');
         tightfig(hCurPLMap);
+
+        % We may need to re-adjust the scale.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            set(h(3), 'Position', tippScalePos);
+            h(3).FontSize = tippScaleFontS;
+        end
 
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['PathLossMap_CBHidden_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
             strrep(num2str(rxAntH), '.', '_')]);
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurPLMap, [pathToSaveFig, '.png']);
         saveas(hCurPLMap, [pathToSaveFig, '.fig']);
