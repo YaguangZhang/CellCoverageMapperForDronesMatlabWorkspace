@@ -85,8 +85,8 @@ customHotLong = hot(256); customHotLong = customHotLong(192:-1:1, :);
 largeZValue = 10^7;
 tippScalePos = [-86.7638, 40.235, largeZValue];
 tippScaleFontS = 9;
-whinScalePos = [-86.3523, 39.8482, largeZValue];
-whinScaleFontS = 8;
+whinScalePos = [-86.3523, 39.85, largeZValue];
+whinScaleFontS = 9;
 
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
@@ -615,8 +615,6 @@ for idxPreset = 1:numOfPresets
             h = makescale(3.5, 'se', 'units', 'si');
             % The scale will be blocked by the plot if not adjusted along
             % the z axis.
-            tippScalePos = [-86.7638, 40.235, largeZValue];
-            tippScaleFontS = 9;
             h(1).ZData = ones(4,1).*largeZValue;
             h(2).ZData = ones(2,1).*largeZValue;
             set(h(3), 'Position', tippScalePos);
@@ -632,8 +630,8 @@ for idxPreset = 1:numOfPresets
             % the z axis.
             h(1).ZData = ones(4,1).*largeZValue;
             h(2).ZData = ones(2,1).*largeZValue;
-            set(h(3), 'Position', [-86.3523, 39.8482, largeZValue]);
-            h(3).FontSize = 8;
+            set(h(3), 'Position', whinScalePos);
+            h(3).FontSize = whinScaleFontS;
 
             distLegendsShown(2) = true;
         end
@@ -723,8 +721,9 @@ for idxPreset = 1:numOfPresets
         % We may need to re-adjust the scale.
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
             set(h(3), 'Position', tippScalePos);
-            h(3).FontSize = 9;
+            h(3).FontSize = tippScaleFontS;
         end
+        set(hCurDistMap, 'PaperPositionMode', 'auto');
         pause(1);
         export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
@@ -870,8 +869,6 @@ for idxF = 1:numOfFs
             h(2).ZData = ones(2,1).*(largeZValue+1);
             set(h(3), 'Position', whinScalePos);
             h(3).FontSize = whinScaleFontS;
-
-            distLegendsShown(2) = true;
         end
 
         pathToSaveFig = fullfile(pathToSaveResults, ...
@@ -885,26 +882,71 @@ for idxF = 1:numOfFs
 
         % The version with colorbar hidden.
         colorbar off;
-        title('');
-        tightfig(hCurPLMap);
 
+        % Make a copy of the figure;
+        a1 = gca;
+        hCurPLMapCopy = figure('Position', get(hCurPLMap, 'Position'));
+        a2 = copyobj(a1,hCurPLMapCopy);
+        colormap(customHot);
+
+        % The same color bar is shared in different figures but hidden;
+        % figure is tighten, too.
+        figure(hCurPLMap);
+        title('');
+        % There is a bug with tightfig; an unintended empty area shows up
+        % at the top. This is a workaround for that. Note that the figure
+        % resizing will take some time. The pause command will make sure
+        % things take effect as expected.
+        pause(1);
+        tightfig(hCurPLMap);
+        pause(1);
+        set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
+        curAxesPos = get(gca, 'Position');
+        set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
         % We may need to re-adjust the scale.
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
             set(h(3), 'Position', tippScalePos);
             h(3).FontSize = tippScaleFontS;
         end
+        pause(1);
 
         pathToSaveFig = fullfile(pathToSaveResults, ...
             ['PathLossMap_CBHidden_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
             strrep(num2str(rxAntH), '.', '_')]);
+
+        % To avoid resizing figure before saving.
+        set(hCurPLMap, 'PaperPositionMode', 'auto');
         % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurPLMap, [pathToSaveFig, '.png']);
-        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);        
+        
+        % The same color bar is shared in different figures but hidden;
+        % figure is tighten only vertically.
+        curFigPos = get(hCurPLMap, 'Position');
+        oldFigPos = get(hCurPLMapCopy, 'Position');
+
+        figure(hCurPLMapCopy);
+        set(gca, 'Unit', 'pixel');
+        oldAxesPos = get(gca, 'Position');
+        set(hCurPLMapCopy, 'Position', [oldFigPos(1:3), curFigPos(4)])
+        set(gca, 'Position', oldAxesPos);
+        pause(1);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_CBHidden_TightenVert_', ...
+            simConfigs.CURRENT_SIMULATION_TAG, ...
+            '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
+        saveas(hCurPLMapCopy, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMapCopy, [pathToSaveFig, '.png']);
+        saveas(hCurPLMapCopy, [pathToSaveFig, '.fig']);  
 
         close(hCurPLMap);
+        close(hCurPLMapCopy);
     end
 end
 
