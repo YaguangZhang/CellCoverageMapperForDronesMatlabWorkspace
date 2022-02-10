@@ -921,8 +921,8 @@ for idxF = 1:numOfFs
         % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurPLMap, [pathToSaveFig, '.png']);
-        saveas(hCurPLMap, [pathToSaveFig, '.fig']);        
-        
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
         % The same color bar is shared in different figures but hidden;
         % figure is tighten only vertically.
         curFigPos = get(hCurPLMap, 'Position');
@@ -943,7 +943,7 @@ for idxF = 1:numOfFs
         % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurPLMapCopy, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurPLMapCopy, [pathToSaveFig, '.png']);
-        saveas(hCurPLMapCopy, [pathToSaveFig, '.fig']);  
+        saveas(hCurPLMapCopy, [pathToSaveFig, '.fig']);
 
         close(hCurPLMap);
         close(hCurPLMapCopy);
@@ -953,8 +953,86 @@ end
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
+%% Coverage Ratio over Inspected Height (for Tipp, WHIN, and IN at 1900MHz)
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating coverage ratio over relay height plot ...'])
+
+curPresets = PRESETS(1:3);
+numOfPresets = length(curPresets);
+freqsToInspectInMhz = 1900;
+numOfFs = length(freqsToInspectInMhz);
+curFlagGenFigsSilently = true;
+lineStyles = {'-o', '--^', ':s'};
+
+hCovRatOverHFig= figure('Position', [0, 0, 500, 180]);
+hold on; set(gca, 'fontWeight', 'bold');
+xlabel('Relay Height (m)'); ylabel('LoS Coverage Ratio');
+grid on; grid minor;
+
+idxF = 1;
+fcInMHz = freqsToInspectInMhz(idxF);
+assert(ismember(fcInMHz, freqsToInspectInMhz), ...
+    'idxF is wrong according to freqsToInspectInMhz!');
+
+disp(['        [', datestr(now, datetimeFormat), ...
+    '] Frequency #', num2str(idxF), ...
+    '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
+
+% For debugging, cache the intermediate results.
+[hLegs, covRatios] = deal(cell(numOfPresets, 1));
+for idxPreset = 1:numOfPresets
+    preset = curPresets{idxPreset};
+    disp(['            [', datestr(now, datetimeFormat), ...
+        '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+        '/', num2str(numOfPresets), ') ...'])
+
+    pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+        'PostProcessingResults', ['Simulation_', preset, ...
+        '_Carrier_', num2str(fcInMHz), ...
+        'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+
+    clearvars simConfigs simState;
+    try
+        load(fullfile(pathToReadResults, 'simConfigs.mat'));
+    catch
+        load(fullfile(pathToReadResults, 'simConfigs_Raw.mat'));
+    end
+    load(fullfile(pathToReadResults, 'simState.mat'));
+
+    [curCovRatioVsHFig, covRatios{idxPreset}] ...
+        = plotCovRatioVsInspectedHeight(simState.blockageMaps, ...
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ...
+        ~curFlagGenFigsSilently);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['CoverageRatioVsDroneHeight_Blockage_', ...
+        simConfigs.CURRENT_SIMULATION_TAG, ...
+        '_Fc_', num2str(fcInMHz), 'MHz']);
+    figure(curCovRatioVsHFig);
+    saveEpsFigForPaper(curCovRatioVsHFig,  pathToSaveFig);
+    close(curCovRatioVsHFig);
+
+    figure(hCovRatOverHFig);
+    hLegs{idxPreset} = plot( ...
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ...
+        covRatios{idxPreset}, lineStyles{idxPreset}, ...
+        'MarkerSize', 6, 'LineWidth', 1);
+end
+
+xlim([0, 50]);
+legend([hLegs{:}], 'Tippecanoe', 'WHIN', 'IN', 'Location', 'se');
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'CoverageRatioVsDroneHeight_Blockage');
+saveEpsFigForPaper(hCovRatOverHFig,  pathToSaveFig);
+close(hCovRatOverHFig);
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
 %% Cleanup
 
+close all;
 diary off;
 
 % EOF
