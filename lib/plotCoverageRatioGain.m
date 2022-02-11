@@ -1,5 +1,6 @@
 function [hFigCovRatGain] = plotCoverageRatioGain( ...
-    simState, simConfigs, mapType, flagVisible)
+    simState, simConfigs, mapType, flagVisible, ...
+    flagManualXlim, flagShowFSPL)
 %PLOTCOVERAGERATIOGAIN Plot the coverage ratio gain according to the the
 %empirical CDF for the path loss map.
 %
@@ -20,6 +21,15 @@ function [hFigCovRatGain] = plotCoverageRatioGain( ...
 %   - flagVisible
 %     An optional boolean for whether to show the resultant figure or not.
 %     Default to true.
+%   - flagManualXlim
+%     An optional boolean for whether to show the resultant figure or not.
+%     Default to false. If true, the xlim will be set to
+%     simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB.
+%   - flagShowFSPL
+%     An optional boolean for whether to show the ideal FSPL line as
+%     reference. Default to false. If true, the best scenario FSPL can be
+%     evaluated in 2D/3D based on simState.mapGridXYPts and
+%     simState.CellAntsXyhEffective.
 %
 % Outputs:
 %   - hFigCovRatGain
@@ -55,6 +65,14 @@ if ~exist('flagVisible', 'var')
     flagVisible = true;
 end
 
+if ~exist('flagManualXlim', 'var')
+    flagManualXlim = false;
+end
+
+if ~exist('flagShowFSPL', 'var')
+    flagShowFSPL = false;
+end
+
 switch lower(mapType)
     case 'blockage'
         maps = simState.blockageMaps;
@@ -79,6 +97,13 @@ cdfMeta.rxHeightsInM = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
 numMaps = length(maps);
 numsOfCovPixels = deal(nan(numMaps, 1));
 [cdfXs, cdfVs] = deal(cell(numMaps, 1));
+
+if flagShowFSPL
+    [~, dists] = dsearchn(simState.CellAntsXyhEffective(:,1:2), ...
+        simState.mapGridXYPts);
+    maps = [maps, fspl(dists, simConfigs.CARRIER_WAVELENGTH_IN_M)];
+    numMaps = numMaps+1;
+end
 
 for idxMap = 1:numMaps
     curM = maps{idxMap};
@@ -170,6 +195,11 @@ for idxMap = 1:numMaps
     end
 end
 
+if flagManualXlim
+    xMin = min(xMin, simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(1));
+    xMax = max(xMax, simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
+end
+
 % We will plot the reference track and delete it later to get a consistant
 % legend with the empirical CDF plots.
 refCdfVs = covRatios{1};
@@ -188,6 +218,12 @@ for idxMap = 1:numMaps
         curCdfVs(find(isfinite(curCdfVs), 1, 'last'))];
     curBoolsValidPts = isfinite(curExtendedCdfVs);
 
+    if flagShowFSPL && (idxMap==numMaps)
+        curMarker = 'k-';
+    else
+        curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
+    end
+
     hsCdf(idxMap) = plot( ...
         extendedGridVs(curBoolsValidPts), ...
         curExtendedCdfVs(curBoolsValidPts).*100, ...
@@ -202,7 +238,14 @@ switch lower(mapType)
     case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
         xlabel('Maximum Allowed Path Loss (dB)');
         curLoc = 'NorthWest';
-        axis([xMin xMax curYLimToSet]);
+
+        if flagManualXlim
+            xlimToSet = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB;
+        else
+            xlimToSet = [xMin xMax];
+        end
+        axis([xlimToSet curYLimToSet]);
+
     case 'blockagedist'
         xlabel('Maximum Allowed Blockage Distance (m)');
         set(gca, 'XScale', 'log');
@@ -212,10 +255,18 @@ end
 grid on; grid minor; box on;
 
 ylabel('Coverage Ratio Gain (%)');
-hLeg = legend(hsCdf, ...
-    arrayfun(@(n) ['UAV at ', num2str(n), ' m'], cdfMeta.rxHeightsInM, ...
-    'UniformOutput', false), ...
-    'Location', curLoc);
+if flagShowFSPL
+    hLeg = legend(hsCdf, ...
+        [arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
+        cdfMeta.rxHeightsInM, 'UniformOutput', false); ...
+        'Best-case FSPL'], ...
+        'Location', curLoc);
+else
+    hLeg = legend(hsCdf, ...
+        arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
+        cdfMeta.rxHeightsInM, 'UniformOutput', false), ...
+        'Location', curLoc);
+end
 delete(hsCdf(1));
 set(hLeg, 'AutoUpdate', 'off');
 line(xlim, [0 0], 'Color', 'k');

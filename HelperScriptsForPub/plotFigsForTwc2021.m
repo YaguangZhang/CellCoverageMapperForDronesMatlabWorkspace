@@ -953,7 +953,12 @@ end
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
-%% Coverage Ratio over Inspected Height (for Tipp, WHIN, and IN at 1900MHz)
+%% Coverage Ratio Plots (for Tipp, WHIN, and IN at 1900MHz)
+% 1. Coverage ratio over inspected heights.
+%  2. Coverage ratio over max allowed path loss.
+% 3. Coverage ratio gain over max allowed path loss.
+%  4. Coverage ratio over max allowed block dist.
+% 5. Coverage ratio gain over max allowed block dist.
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
@@ -963,8 +968,26 @@ curPresets = PRESETS(1:3);
 numOfPresets = length(curPresets);
 freqsToInspectInMhz = 1900;
 numOfFs = length(freqsToInspectInMhz);
-curFlagGenFigsSilently = true;
+curFlagGenFigsSilently = false;
 lineStyles = {'-o', '--^', ':s'};
+flagResizeFigForPublication = true;
+
+% For coverage ratio plots.
+%
+%  heightsInM = [1.5, 10, 20, 30, 40, 50, 80, 125];
+% heightsIndices = [1, 2, 3, 4, 5, 6, 9, 14];
+%
+%  heightsInM = [1.5, 10, 30, 50, 70, 100, 125];
+% heightsIndices = [1, 2, 4, 6, 8, 11, 14];
+%
+%  heightsInM = [1.5, 10:10:120, 125];
+% heightsIndices = 1:14;
+heightsInM = [1.5, 10, 20:20:120, 125];
+heightsIndices = [1:2 3:2:13, 14];
+visiblePathLossRange = [100, 140];
+visibleBlockDistRange = [1, 1000];
+curManualXLim = true;
+curShowFSPL = true;
 
 hCovRatOverHFig= figure('Position', [0, 0, 500, 180]);
 hold on; set(gca, 'fontWeight', 'bold');
@@ -981,7 +1004,9 @@ disp(['        [', datestr(now, datetimeFormat), ...
     '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
 
 % For debugging, cache the intermediate results.
-[hLegs, covRatios] = deal(cell(numOfPresets, 1));
+[hLegs, covRatios, ...
+    coverageMapsCovRatioMetas, blockageDistMapsCovRatioMetas] ...
+    = deal(cell(numOfPresets, 1));
 for idxPreset = 1:numOfPresets
     preset = curPresets{idxPreset};
     disp(['            [', datestr(now, datetimeFormat), ...
@@ -1001,6 +1026,13 @@ for idxPreset = 1:numOfPresets
     end
     load(fullfile(pathToReadResults, 'simState.mat'));
 
+    assert( all( ...
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(heightsIndices) ...
+        == heightsInM'), 'heightsIndices does not match with heightsInM!');
+
+    %---------------
+    % Coverage ratio over inspected heights.
+    %---------------
     [curCovRatioVsHFig, covRatios{idxPreset}] ...
         = plotCovRatioVsInspectedHeight(simState.blockageMaps, ...
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ...
@@ -1018,8 +1050,108 @@ for idxPreset = 1:numOfPresets
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ...
         covRatios{idxPreset}, lineStyles{idxPreset}, ...
         'MarkerSize', 6, 'LineWidth', 1);
+
+    %---------------
+    % Coverage ratio over max allowed path loss.
+    %---------------
+    % For coverage maps.
+    mapType = 'Coverage';
+
+    clearvars tempSimState tempSimConfigs;
+    tempSimState.coverageMaps = simState.coverageMaps(heightsIndices);
+    tempSimState.blockageDistMaps ...
+        = simState.blockageDistMaps(heightsIndices);
+    tempSimState.mapGridXYPts = simState.mapGridXYPts;
+    tempSimState.CellAntsXyhEffective = simState.CellAntsXyhEffective;
+    tempSimConfigs.CARRIER_WAVELENGTH_IN_M ...
+        = simConfigs.CARRIER_WAVELENGTH_IN_M;
+    tempSimConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+        = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(heightsIndices);
+    tempSimConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = visiblePathLossRange;
+
+    [curEmpCdfFig, coverageMapsCovRatioMetas{idxPreset}] ...
+        = plotEmpiricalCdfForCoverage(tempSimState, tempSimConfigs, ...
+        mapType, ~curFlagGenFigsSilently, curManualXLim, curShowFSPL);
+    if idxPreset==1
+        hLeg = findobj(curEmpCdfFig, 'Type', 'Legend');
+        set(hLeg, 'Position', [0.1293, 0.3636, 0.2840, 0.5617]);
+        transparentizeCurLegends;
+    else
+        legend off;
+    end
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, ...
+        simConfigs.CURRENT_SIMULATION_TAG, ...
+        '_Fc_', num2str(fcInMHz), 'MHz']);
+    saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+    close(curEmpCdfFig);
+
+    %---------------
+    % Coverage ratio gain over max allowed path loss.
+    %---------------
+    [ curCovRatioGainFig ] ...
+        = plotCoverageRatioGain(tempSimState, tempSimConfigs, ...
+        mapType, ~curFlagGenFigsSilently, curManualXLim, curShowFSPL);
+    if idxPreset==1
+        hLeg = findobj(curCovRatioGainFig, 'Type', 'Legend');
+        set(hLeg, 'Position', [0.1293, 0.4211, 0.2840, 0.5067]);
+        transparentizeCurLegends;
+    else
+        legend off;
+    end
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, 'CovRatGain_', ...
+        simConfigs.CURRENT_SIMULATION_TAG, ...
+        '_Fc_', num2str(fcInMHz), 'MHz']);
+    saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+    close(curCovRatioGainFig);
+
+    %---------------
+    % Coverage ratio over max allowed block dist.
+    %---------------
+    mapType = 'BlockageDist';
+
+    [curEmpCdfFig, blockageDistMapsCovRatioMetas] ...
+        = plotEmpiricalCdfForCoverage(tempSimState, tempSimConfigs, ...
+        mapType, ~curFlagGenFigsSilently);
+    xlim(visibleBlockDistRange);
+    if idxPreset==1
+        hLeg = findobj(curEmpCdfFig, 'Type', 'Legend');
+        set(hLeg, 'Position', [0.6213, 0.1544, 0.2840, 0.5067]);
+        transparentizeCurLegends;
+    else
+        legend off;
+    end
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, ...
+        simConfigs.CURRENT_SIMULATION_TAG, ...
+        '_Fc_', num2str(fcInMHz), 'MHz']);
+    saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+    close(curEmpCdfFig);
+
+    %---------------
+    % Coverage ratio gain over max allowed block dist.
+    %---------------
+    [ curDistCovRatioGainFig ] ...
+        = plotCoverageRatioGain(tempSimState, tempSimConfigs, ...
+        mapType, ~curFlagGenFigsSilently);
+    xlim(visibleBlockDistRange);
+    if idxPreset==1
+        hLeg = findobj(curDistCovRatioGainFig, 'Type', 'Legend');
+        set(hLeg, 'Position', [0.6213, 0.4211, 0.2840, 0.5067]);
+        transparentizeCurLegends;
+    else
+        legend off;
+    end
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, 'CovRatGain_', ...
+        simConfigs.CURRENT_SIMULATION_TAG, ...
+        '_Fc_', num2str(fcInMHz), 'MHz']);
+    saveEpsFigForPaper(curDistCovRatioGainFig, pathToSaveFig);
+    close(curDistCovRatioGainFig);
 end
 
+figure(hCovRatOverHFig);
 xlim([0, 50]);
 legend([hLegs{:}], 'Tippecanoe', 'WHIN', 'IN', 'Location', 'se');
 pathToSaveFig = fullfile(pathToSaveResults, ...

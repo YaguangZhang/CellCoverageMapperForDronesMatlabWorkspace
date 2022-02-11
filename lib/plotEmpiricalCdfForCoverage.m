@@ -1,5 +1,6 @@
 function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
-    simState, simConfigs, mapType, flagVisible)
+    simState, simConfigs, mapType, flagVisible, ...
+    flagManualXlim, flagShowFSPL)
 %PLOTEMPIRICALCDFFORCOVERAGE Plot the empirical CDFs of the aggregated path
 %loss maps of all RX heights.
 %
@@ -20,6 +21,15 @@ function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
 %   - flagVisible
 %     An optional boolean for whether to show the resultant figure or not.
 %     Default to true.
+%   - flagManualXlim
+%     An optional boolean for whether to show the resultant figure or not.
+%     Default to false. If true, the xlim will be set to
+%     simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB.
+%   - flagShowFSPL
+%     An optional boolean for whether to show the ideal FSPL line as
+%     reference. Default to false. If true, the best scenario FSPL can be
+%     evaluated in 2D/3D based on simState.mapGridXYPts and
+%     simState.CellAntsXyhEffective.
 %
 % Outputs:
 %   - hFigCdf
@@ -66,6 +76,18 @@ if ~exist('flagVisible', 'var')
     flagVisible = true;
 end
 
+if ~exist('flagManualXlim', 'var')
+    flagManualXlim = false;
+end
+
+if ~exist('flagShowFSPL', 'var')
+    flagShowFSPL = false;
+end
+% 2D: Distances between the Tx and the Rx will be evaluated only based on
+%     (x, y).
+% 3D: ... based on (x, y, altitude=elevation+height).
+fsplType = '2D';
+
 switch lower(mapType)
     case 'blockage'
         maps = simState.blockageMaps;
@@ -90,6 +112,20 @@ cdfMeta.rxHeightsInM = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
 numMaps = length(maps);
 numsOfCovPixels = deal(nan(numMaps, 1));
 [cdfXs, cdfVs] = deal(cell(numMaps, 1));
+
+if flagShowFSPL
+    switch lower(fsplType)
+        case '2d'
+            [~, dists] = dsearchn(simState.CellAntsXyhEffective(:,1:2), ...
+                simState.mapGridXYPts);
+        case '3d'
+            % TODO.
+        otherwise
+            error(['Unsupported FSPL evaluation type ', fsplType, '!']);
+    end
+    maps = [maps, fspl(dists, simConfigs.CARRIER_WAVELENGTH_IN_M)];
+    numMaps = numMaps+1;
+end
 
 for idxMap = 1:numMaps
     curM = maps{idxMap};
@@ -142,6 +178,10 @@ for idxMap = 1:numMaps
     end
 end
 
+if flagManualXlim
+    xMin = min(xMin, simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(1));
+    xMax = max(xMax, simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
+end
 % For plotting.
 markers = {'-', '-.', '--', ':'};
 lineWidth = 1;
@@ -187,15 +227,26 @@ for idxMap = 1:numMaps
         end
     end
 
-    curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
+    if flagShowFSPL && (idxMap==numMaps)
+        curMarker = 'k-';
+    else
+        curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
+    end
     hsCdf(idxMap) = plot(curXs, curYs, ...
         curMarker, 'LineWidth', lineWidth); %#ok<AGROW>
 end
-axis tight; curAxis = axis; axisToSet = [xMin xMax curAxis(3:4)];
+
+axis tight;
+if flagManualXlim
+    xlimToSet = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB;
+else
+    xlimToSet = [xMin xMax];
+end
+
 try
-    axis(axisToSet);
+    xlim(xlimToSet);
 catch
-    warning(['Unable to set axis to ', mat2str(axisToSet), '!'])
+    warning(['Unable to set xlim to ', num2str(xlimToSet), '!'])
 end
 grid on; grid minor; box on;
 
@@ -210,9 +261,17 @@ switch lower(mapType)
 end
 
 ylabel('Empirical CDF');
-legend(hsCdf, ...
-    arrayfun(@(n) ['UAV at ', num2str(n), ' m'], cdfMeta.rxHeightsInM, ...
-    'UniformOutput', false), ...
-    'Location', curLoc);
+if flagShowFSPL
+    legend(hsCdf, ...
+        [arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
+        cdfMeta.rxHeightsInM, 'UniformOutput', false); ...
+        'Best-case FSPL'], ...
+        'Location', curLoc);
+else
+    legend(hsCdf, ...
+        arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
+        cdfMeta.rxHeightsInM, 'UniformOutput', false), ...
+        'Location', curLoc);
+end
 end
 % EOF
