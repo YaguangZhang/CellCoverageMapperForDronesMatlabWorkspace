@@ -11,8 +11,6 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
-#include <stdint.h>
-
 typedef struct
 {
     double d_bp__km;
@@ -46,6 +44,6 @@ typedef struct
 #define PI 3.14159265358979323846
 
 // public
-double ExtendedHata(double pfl[], double f__mhz, double h_b__meter, double h_m__meter, int8_t enviro_code, double reliability);
+void ExtendedHata(double pfl[], double f__mhz, double h_b__meter, double h_m__meter, int environment, double reliability, double *plb);
 void ExtendedHata_DBG(double pfl[], double f__mhz, double h_b__meter, double h_m__meter, int environment, double reliability, double *plb, InterValues *interValues);
 
