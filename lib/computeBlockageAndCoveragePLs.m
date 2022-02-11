@@ -71,7 +71,8 @@ end
 % Generate the elevation profile needed by the extended Hata model
 % according to our terrain information.
 %   - elev
-%     An array containing elevation profile between Tx & Rx, where:
+%     An array containing elevation profile between Tx & Rx (including Tx &
+%     Rx, i.e., with them as end points), where:
 %       - elev(1) = numPoints - 1
 %         (for both Matlab eHata lib and C++ eHata lib; note, numPoints is
 %         the number of points between Tx & Rx)
@@ -81,13 +82,7 @@ end
 %         (in meters)
 %       - elev(numPoints+2) = Rx elevation
 %         (in meters)
-numTerrianPoints = length(terrainProfile);
-
-elev = nan(numTerrianPoints+2, 1);
-elev(1) = numTerrianPoints-1;
-distTxToRx = norm(txXYH(1:2)-rxXYH(1:2));
-elev(2) = distTxToRx/(numTerrianPoints-1);
-elev(3:end) = terrainProfile;
+elev = generateProfileForEHata(txXYH, rxXYH, terrainProfile);
 
 coveragePL ...
     = computeCoveragePL(txXYH, rxXYH, elev, simConfigs, lidarProfile);

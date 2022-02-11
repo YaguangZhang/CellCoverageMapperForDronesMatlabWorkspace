@@ -20,7 +20,8 @@ function coveragePL = computeCoveragePL(txXYH, rxXYH, ...
 %     and the RX, respectively.
 %   - elePro
 %     The terrain pofile defined by the eHata model. It is essentially an
-%     array containing elevation profile between Tx & Rx, where:
+%     array containing elevation profile between Tx & Rx (including Tx &
+%     Rx, i.e., with them as end points), where:
 %       - elev(1) = numPoints - 1
 %         (for both Matlab eHata lib and C++ eHata lib; note, numPoints is
 %         the number of points between Tx & Rx)
