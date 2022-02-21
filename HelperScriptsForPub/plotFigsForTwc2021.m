@@ -198,13 +198,13 @@ for idxPreset = 1:numOfPresets
             h = makescale(3.7, 'se', 'units', 'si');
             hPolyWhin = plot(whinBoundaryLons, whinBoundaryLats, ...
                 ':', 'LineWidth', 2.3, 'Color', 'k');
-            hLeg = legend(hPolyWhin, 'WHIN Boundary');
+            hLeg = legend(hPolyWhin, 'WHIN boundary');
             set(hLeg, 'Position', [0.1686, 0.8792, 0.4669, 0.0476]);
         case 'ShrinkedIN'
             h = makescale(3.15, 'se', 'units', 'si');
             hPolyIn = plot(inBoundaryLons, inBoundaryLats, ...
                 '-.', 'LineWidth', 2.3, 'Color', 'k');
-            hLeg = legend(hPolyIn, 'Indiana Boundary');
+            hLeg = legend(hPolyIn, 'Indiana boundary');
             set(hLeg, 'Position', [0.1969, 0.8792, 0.5934, 0.0476]);
     end
 
@@ -1173,6 +1173,15 @@ close(hCovRatOverHFig);
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
+
+%% Blockage and Path Loss Maps for Indiana
+% We will focus on the 1900 MHz case with selected relay heights.
+
+%% Tower Density for Each County
+
+%% Also Plots for Future Paper
+% We need two selected areas. One for urban environment and the other for
+% rual environment.
 
 %% Cleanup
 
