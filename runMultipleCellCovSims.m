@@ -31,7 +31,7 @@ diary(pathToSaveSimManDiary);
 %     The WHIN LoRaWAN + WHIN weather stations.
 %   - 'acreLoRaWan'
 %     The ACRE LoRaWAN.
-SIM_GROUP_PRESET = 'acreLoRaWan';
+SIM_GROUP_PRESET = 'cellularCov';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -48,7 +48,7 @@ switch SIM_GROUP_PRESET
         %   - mmWave 28000 MHz (28 GHz)
         %     For cellular 5G millimeter wave
         CARRIER_FREQUENCIES_IN_MHZ ...
-            = {1900, 3700, 4700, 7000, 13000, 28000};
+            = {1900}; % {1900, 3700, 4700, 7000, 13000, 28000};
     case 'whinLoRaWan'
         PRESETS = {'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'};
         CARRIER_FREQUENCIES_IN_MHZ = {915};

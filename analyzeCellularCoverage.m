@@ -214,21 +214,21 @@ simConfigs.MIN_NUM_OF_TERRAIN_SAMPLES_PER_PROFILE = 10;
 %   - Rx heights for the simulator to inspect. Note that according to FAA,
 %   the maximum allowable altitude is 400 feet (~122m) above the ground.
 %   Typical values:
-%       - [1.5; (10:10:120)'; 125] for cellular and millimeter wave
-%         inspection
+%       - [1.5; 3; 5; 7.5; (10:10:120)'; 125] for cellular and millimeter
+%         wave inspection
 %        - 1.5 for 3500 MHz (3.5 GHz) areostat application
 %       - 0.1 for 915 MHz areostat application
 switch PRESET
     case {'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
             = [1.5; 2.5];
-    case {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
-            'ACRE_LORA_HALF_MILE_R'}
-        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
-            = [1.5; 3; (10:10:120)'; 125];
+        % case {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
+        %         'ACRE_LORA_HALF_MILE_R'}
+        %     simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+        %         = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
     otherwise
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
-            = [1.5; (10:10:120)'; 125];
+            = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
 end
 
 %   - The function to calculate, according to the TX and RX heights, the
