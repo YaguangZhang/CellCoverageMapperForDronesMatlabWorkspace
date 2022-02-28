@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 #ifdef _WIN32
 // Export the DLL functions as "C" and not C++
 // #define DLLEXPORT extern "C" __declspec(dllexport)
