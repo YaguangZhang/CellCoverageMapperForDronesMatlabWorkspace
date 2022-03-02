@@ -18,7 +18,7 @@ if ~isempty(curCluster)
         assert(~checkMemStatus, 'Unable to check memory usage!');
         availMemInGiB = str2double(availMemInGiBStr);
 
-        minAvailMemInGiBRequired = 10; % We want at least 10 GiB arailable.
+        minAvailMemInGiBRequired = 32; % We want at least 32 GiB arailable.
         if availMemInGiB < minAvailMemInGiBRequired
             disp(' ');
             disp(['Warning: Alailable memory (', num2str(availMemInGiB), ...
