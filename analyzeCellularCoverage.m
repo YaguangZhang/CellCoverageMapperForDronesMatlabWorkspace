@@ -460,6 +460,9 @@ if startsWith(PRESET, 'ACRE_LORA_')
     exportMaps(pathToSaveResults, simConfigs, simState);
 end
 
+% Close the parallel pool if necessary.
+delete(gcp('nocreate'));
+
 diary off;
 
 % EOF
