@@ -571,6 +571,9 @@ end
 mapGridXYPts = simState.mapGridXYPts;
 for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
 
+    % Check the memory usage and restart the parallel pool if necessary.
+    guardMemAvailOnLinux;
+
     disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
         '] Effective cellular tower #', ...
         num2str(idxEffeCellAnt), '/', num2str(numOfEffeCellAnts), ' ...']);
