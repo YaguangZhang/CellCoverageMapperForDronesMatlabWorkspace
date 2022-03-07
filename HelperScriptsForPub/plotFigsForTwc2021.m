@@ -24,7 +24,8 @@ PRESETS = {'Tipp', 'ShrinkedWHIN', 'ShrinkedIN'};
 %     For broadband wireless backhaul.
 %   - mmWave 28000 MHz (28 GHz)
 %     For cellular 5G millimeter wave
-CARRIER_FREQUENCIES_IN_MHZ = {1900, 3700, 4700, 7000, 13000, 28000};
+% CARRIER_FREQUENCIES_IN_MHZ = {1900, 3700, 4700, 7000, 13000, 28000};
+CARRIER_FREQUENCIES_IN_MHZ = {1900};
 
 % The LiDAR data set used in the simualtions.
 LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
@@ -410,7 +411,7 @@ for idxFreq = 1:numOfFreqs
             'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
         pathToSimDiary = fullfile(pathToReadResults, 'diary.txt' );
 
-        % Note that the cache file contails simState.
+        % Note that the cache file contains simState.
         clearvars simConfigs simState;
         pathToReadCache = fullfile(pathToReadResults, ...
             'CovAnalysisCache_*.mat' );
@@ -515,7 +516,7 @@ writematrix(numOfWorkers, ...
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
-%% Example Blockage Figs (Status and Distance for Tipp + WHIN)
+%% Example Blockage Figs (Status and Distance for Tipp + WHIN + IN)
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
@@ -529,7 +530,7 @@ curBlockStaFigSize = [500, 500].*0.6;
 curBlockDistFigSize = [600, 500].*0.6;
 
 % We will use the 1900 MHz results.
-curPresets = PRESETS(1:2);
+curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqInMhz = 1900;
 hightsToInspect = [1.5, 10, 50, 100];
@@ -774,7 +775,7 @@ close all;
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
-%% Example Path Loss Figs (Different F_C for Tipp + WHIN)
+%% Example Path Loss Figs (Different F_C for Tipp + WHIN + IN)
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
@@ -788,7 +789,7 @@ defaultCmdToPlotPLMaps = 'surf';
 curPLFigSize = [500, 500].*0.6;
 
 % We will use the h_R = 1.5m results.
-curPresets = PRESETS(1:2);
+curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqsToInspectInMhz = [1900, 4700, 7000, 28000];
 numOfFs = length(freqsToInspectInMhz);
@@ -799,166 +800,169 @@ idxH = 1;
 customCAxis = [100, 150];
 for idxF = 1:numOfFs
     fcInMHz = freqsToInspectInMhz(idxF);
-    assert(ismember(fcInMHz, freqsToInspectInMhz), ...
-        'idxF is wrong according to freqsToInspectInMhz!');
+    if ismember(fcInMHz, CARRIER_FREQUENCIES_IN_MHZ)
+        assert(ismember(fcInMHz, freqsToInspectInMhz), ...
+            'idxF is wrong according to freqsToInspectInMhz!');
 
-    disp(['        [', datestr(now, datetimeFormat), ...
-        '] Frequency #', num2str(idxF), ...
-        '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
+        disp(['        [', datestr(now, datetimeFormat), ...
+            '] Frequency #', num2str(idxF), ...
+            '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
 
-    for idxPreset = 1:numOfPresets
-        preset = curPresets{idxPreset};
-        disp(['            [', datestr(now, datetimeFormat), ...
-            '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
-            '/', num2str(numOfPresets), ') ...'])
+        for idxPreset = 1:numOfPresets
+            preset = curPresets{idxPreset};
+            disp(['            [', datestr(now, datetimeFormat), ...
+                '] Processing ', preset, ' (preset #', num2str(idxPreset), ...
+                '/', num2str(numOfPresets), ') ...'])
 
-        pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-            'PostProcessingResults', ['Simulation_', preset, ...
-            '_Carrier_', num2str(fcInMHz), ...
-            'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+            pathToReadResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+                'PostProcessingResults', ['Simulation_', preset, ...
+                '_Carrier_', num2str(fcInMHz), ...
+                'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
 
-        clearvars simConfigs simState;
-        try
-            load(fullfile(pathToReadResults, 'simConfigs.mat'));
-        catch
-            load(fullfile(pathToReadResults, 'simConfigs_Raw.mat'));
+            clearvars simConfigs simState;
+            try
+                load(fullfile(pathToReadResults, 'simConfigs.mat'));
+            catch
+                load(fullfile(pathToReadResults, 'simConfigs_Raw.mat'));
+            end
+            load(fullfile(pathToReadResults, 'simState.mat'));
+
+            [effeCellAntLats, effeCellAntLons] ...
+                = simConfigs.utm2deg_speZone( ...
+                simState.CellAntsXyhEffective(:, 1), ...
+                simState.CellAntsXyhEffective(:, 2));
+            effeCellAntLonLats = [effeCellAntLons, effeCellAntLats];
+
+            mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
+
+            rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
+            assert(rxAntH==hightToInspect, ...
+                'idxH is wrong according to hightToInspect!');
+
+            %---------------
+            % For path loss maps.
+            %---------------
+            [ hCurPLMap ] = plotPathLossMap( ...
+                [mapGridLonLats, simState.coverageMaps{idxH}], ...
+                effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+                curFlagZoomIn, defaultCmdToPlotPLMaps, curPLFigSize, ...
+                customHotLong, true);
+
+            caxis(customCAxis);
+            xlabel(''); ylabel('');
+            tightfig(hCurPLMap);
+
+            % Hide the legend except for the first Tipp figure.
+            if (idxF==1) && strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+                hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+                set(hLeg, 'Position', [2.8254, 6.1119, 2.8840, 0.4762], ...
+                    'AutoUpdate', 'off');
+            else
+                legend off;
+            end
+
+            % Always show the distance scale.
+            if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+                h = makescale(3.5, 'se', 'units', 'si');
+                % The scale will be blocked by the plot if not adjusted
+                % along the z axis.
+                h(1).ZData = ones(4,1).*largeZValue;
+                h(2).ZData = ones(2,1).*largeZValue;
+                set(h(3), 'Position', tippScalePos);
+                h(3).FontSize = tippScaleFontS;
+            end
+
+            if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
+                % Show distance scale for the first figure of WHIN. if
+                % (~distLegendsShown(2))&&(strcmpi( ...
+                %         simConfigs.CURRENT_SIMULATION_TAG,
+                %         'shrinkedwhin'))
+                h = makescale(2.9, 'se', 'units', 'si');
+                % The scale will be blocked by the plot if not adjusted
+                % along the z axis.
+                h(1).ZData = ones(4,1).*largeZValue;
+                h(2).ZData = ones(2,1).*(largeZValue+1);
+                set(h(3), 'Position', whinScalePos);
+                h(3).FontSize = whinScaleFontS;
+            end
+
+            pathToSaveFig = fullfile(pathToSaveResults, ...
+                ['PathLossMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
+                '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
+                strrep(num2str(rxAntH), '.', '_')]);
+            % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
+            saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+            saveas(hCurPLMap, [pathToSaveFig, '.png']);
+            saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+            % The version with colorbar hidden.
+            colorbar off;
+
+            % Make a copy of the figure;
+            a1 = gca;
+            hCurPLMapCopy = figure('Position', get(hCurPLMap, 'Position'));
+            a2 = copyobj(a1,hCurPLMapCopy);
+            colormap(customHot);
+
+            % The same color bar is shared in different figures but hidden;
+            % figure is tighten, too.
+            figure(hCurPLMap);
+            title('');
+            % There is a bug with tightfig; an unintended empty area shows
+            % up at the top. This is a workaround for that. Note that the
+            % figure resizing will take some time. The pause command will
+            % make sure things take effect as expected.
+            pause(1);
+            tightfig(hCurPLMap);
+            pause(1);
+            set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
+            curAxesPos = get(gca, 'Position');
+            set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
+            % We may need to re-adjust the scale.
+            if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+                set(h(3), 'Position', tippScalePos);
+                h(3).FontSize = tippScaleFontS;
+            end
+            pause(1);
+
+            pathToSaveFig = fullfile(pathToSaveResults, ...
+                ['PathLossMap_CBHidden_', ...
+                simConfigs.CURRENT_SIMULATION_TAG, ...
+                '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
+                strrep(num2str(rxAntH), '.', '_')]);
+
+            % To avoid resizing figure before saving.
+            set(hCurPLMap, 'PaperPositionMode', 'auto');
+            % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
+            saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+            saveas(hCurPLMap, [pathToSaveFig, '.png']);
+            saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+            % The same color bar is shared in different figures but hidden;
+            % figure is tighten only vertically.
+            curFigPos = get(hCurPLMap, 'Position');
+            oldFigPos = get(hCurPLMapCopy, 'Position');
+
+            figure(hCurPLMapCopy);
+            set(gca, 'Unit', 'pixel');
+            oldAxesPos = get(gca, 'Position');
+            set(hCurPLMapCopy, 'Position', [oldFigPos(1:3), curFigPos(4)])
+            set(gca, 'Position', oldAxesPos);
+            pause(1);
+
+            pathToSaveFig = fullfile(pathToSaveResults, ...
+                ['PathLossMap_CBHidden_TightenVert_', ...
+                simConfigs.CURRENT_SIMULATION_TAG, ...
+                '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
+                strrep(num2str(rxAntH), '.', '_')]);
+            % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
+            saveas(hCurPLMapCopy, [pathToSaveFig, '.eps'], 'epsc');
+            saveas(hCurPLMapCopy, [pathToSaveFig, '.png']);
+            saveas(hCurPLMapCopy, [pathToSaveFig, '.fig']);
+
+            close(hCurPLMap);
+            close(hCurPLMapCopy);
         end
-        load(fullfile(pathToReadResults, 'simState.mat'));
-
-        [effeCellAntLats, effeCellAntLons] ...
-            = simConfigs.utm2deg_speZone( ...
-            simState.CellAntsXyhEffective(:, 1), ...
-            simState.CellAntsXyhEffective(:, 2));
-        effeCellAntLonLats = [effeCellAntLons, effeCellAntLats];
-
-        mapGridLonLats = simState.mapGridLatLonPts(:, [2,1]);
-
-        rxAntH = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH);
-        assert(rxAntH==hightToInspect, ...
-            'idxH is wrong according to hightToInspect!');
-
-        %---------------
-        % For path loss maps.
-        %---------------
-        [ hCurPLMap ] = plotPathLossMap( ...
-            [mapGridLonLats, simState.coverageMaps{idxH}], ...
-            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, defaultCmdToPlotPLMaps, curPLFigSize, ...
-            customHotLong, true);
-
-        caxis(customCAxis);
-        xlabel(''); ylabel('');
-        tightfig(hCurPLMap);
-
-        % Hide the legend except for the first Tipp figure.
-        if (idxF==1) && strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
-            hLeg = findobj(hCurPLMap, 'Type', 'Legend');
-            set(hLeg, 'Position', [2.8254, 6.1119, 2.8840, 0.4762], ...
-                'AutoUpdate', 'off');
-        else
-            legend off;
-        end
-
-        % Always show the distance scale.
-        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
-            h = makescale(3.5, 'se', 'units', 'si');
-            % The scale will be blocked by the plot if not adjusted along
-            % the z axis.
-            h(1).ZData = ones(4,1).*largeZValue;
-            h(2).ZData = ones(2,1).*largeZValue;
-            set(h(3), 'Position', tippScalePos);
-            h(3).FontSize = tippScaleFontS;
-        end
-
-        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
-            % Show distance scale for the first figure of WHIN. if
-            % (~distLegendsShown(2))&&(strcmpi( ...
-            %         simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin'))
-            h = makescale(2.9, 'se', 'units', 'si');
-            % The scale will be blocked by the plot if not adjusted along
-            % the z axis.
-            h(1).ZData = ones(4,1).*largeZValue;
-            h(2).ZData = ones(2,1).*(largeZValue+1);
-            set(h(3), 'Position', whinScalePos);
-            h(3).FontSize = whinScaleFontS;
-        end
-
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            ['PathLossMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
-            '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
-            strrep(num2str(rxAntH), '.', '_')]);
-        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
-        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
-        saveas(hCurPLMap, [pathToSaveFig, '.png']);
-        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-
-        % The version with colorbar hidden.
-        colorbar off;
-
-        % Make a copy of the figure;
-        a1 = gca;
-        hCurPLMapCopy = figure('Position', get(hCurPLMap, 'Position'));
-        a2 = copyobj(a1,hCurPLMapCopy);
-        colormap(customHot);
-
-        % The same color bar is shared in different figures but hidden;
-        % figure is tighten, too.
-        figure(hCurPLMap);
-        title('');
-        % There is a bug with tightfig; an unintended empty area shows up
-        % at the top. This is a workaround for that. Note that the figure
-        % resizing will take some time. The pause command will make sure
-        % things take effect as expected.
-        pause(1);
-        tightfig(hCurPLMap);
-        pause(1);
-        set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
-        curAxesPos = get(gca, 'Position');
-        set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
-        % We may need to re-adjust the scale.
-        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
-            set(h(3), 'Position', tippScalePos);
-            h(3).FontSize = tippScaleFontS;
-        end
-        pause(1);
-
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            ['PathLossMap_CBHidden_', ...
-            simConfigs.CURRENT_SIMULATION_TAG, ...
-            '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
-            strrep(num2str(rxAntH), '.', '_')]);
-
-        % To avoid resizing figure before saving.
-        set(hCurPLMap, 'PaperPositionMode', 'auto');
-        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
-        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
-        saveas(hCurPLMap, [pathToSaveFig, '.png']);
-        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-
-        % The same color bar is shared in different figures but hidden;
-        % figure is tighten only vertically.
-        curFigPos = get(hCurPLMap, 'Position');
-        oldFigPos = get(hCurPLMapCopy, 'Position');
-
-        figure(hCurPLMapCopy);
-        set(gca, 'Unit', 'pixel');
-        oldAxesPos = get(gca, 'Position');
-        set(hCurPLMapCopy, 'Position', [oldFigPos(1:3), curFigPos(4)])
-        set(gca, 'Position', oldAxesPos);
-        pause(1);
-
-        pathToSaveFig = fullfile(pathToSaveResults, ...
-            ['PathLossMap_CBHidden_TightenVert_', ...
-            simConfigs.CURRENT_SIMULATION_TAG, ...
-            '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
-            strrep(num2str(rxAntH), '.', '_')]);
-        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
-        saveas(hCurPLMapCopy, [pathToSaveFig, '.eps'], 'epsc');
-        saveas(hCurPLMapCopy, [pathToSaveFig, '.png']);
-        saveas(hCurPLMapCopy, [pathToSaveFig, '.fig']);
-
-        close(hCurPLMap);
-        close(hCurPLMapCopy);
     end
 end
 
@@ -986,16 +990,26 @@ flagResizeFigForPublication = true;
 
 % For coverage ratio plots.
 %
-%  heightsInM = [1.5, 10, 20, 30, 40, 50, 80, 125];
-% heightsIndices = [1, 2, 3, 4, 5, 6, 9, 14];
+% Before adding new heights below 10 m:
+%      heightsInM = [1.5, 10, 20, 30, 40, 50, 80, 125];
+%     heightsIndices = [1, 2, 3, 4, 5, 6, 9, 14];
 %
-%  heightsInM = [1.5, 10, 30, 50, 70, 100, 125];
-% heightsIndices = [1, 2, 4, 6, 8, 11, 14];
+%      heightsInM = [1.5, 10, 30, 50, 70, 100, 125];
+%     heightsIndices = [1, 2, 4, 6, 8, 11, 14];
 %
-%  heightsInM = [1.5, 10:10:120, 125];
-% heightsIndices = 1:14;
-heightsInM = [1.5, 10, 20:20:120, 125];
-heightsIndices = [1:2 3:2:13, 14];
+%      heightsInM = [1.5, 10:10:120, 125];
+%     heightsIndices = 1:14;
+%
+%      heightsInM = [1.5, 10, 20:20:120, 125];
+%     heightsIndices = [1:2 3:2:13, 14];
+%
+% After:
+%       simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+%           = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
+%
+heightsInM = [1.5, 3, 5, 7.5, 10, 20:20:120, 125];
+heightsIndices = [1:5, 6:2:16, 17];
+
 visiblePathLossRange = [100, 140];
 visibleBlockDistRange = [1, 1000];
 curManualXLim = true;
