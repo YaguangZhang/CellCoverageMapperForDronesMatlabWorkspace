@@ -1,7 +1,7 @@
 function [hCurBlockageMap, hCurHandleTxs] ...
     = plotBlockageMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
     simConfigs, flagVisible, flagZoomIn, customFigSize, ...
-    colorMapToUse, flagRiseTxToTop)
+    colorMapToUse, flagRiseTxToTop, surfFaceAlpha)
 %PLOTBLOCKAGEMAP Plot the blockage map.
 %
 % Generate a figure on Google map to show the blockage areas. We will use
@@ -51,6 +51,10 @@ colorTowers = 'w';
 markerTowers = 'x';
 markerSizeTowers = 6;
 lineWidthTowers = 1;
+
+if ~exist('surfFaceAlpha', 'var')
+    surfFaceAlpha = 0.5;
+end
 
 forceDeltaZ = 1;
 if ~exist('colorMapToUse', 'var')
@@ -167,7 +171,7 @@ end
 % the TX's are shown properly (when TX's are expected to be under the surf
 % plot).
 hRxs = surf(lonsNew,latsNew,zsNew+forceDeltaZ, ...
-    'FaceAlpha',0.5, 'EdgeColor', 'none');
+    'FaceAlpha', surfFaceAlpha, 'EdgeColor', 'none');
 curColormap = colormap(colorMapToUse);
 hClear = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(1, :));
 hBlocked = plot(polyshape(nan(3,2)), 'FaceColor', curColormap(end, :));

@@ -543,7 +543,6 @@ curFlagGenFigsSilently = false;
 curFlagZoomIn = true;
 % Smaller maps for publication.
 %   - [500, 500].*0.6 was used for the ICC 2020 paper.
-curBlockStaFigSize = [500, 500].*0.6;
 curBlockDistFigSize = [600, 500].*0.6;
 
 % We will use the 1900 MHz results.
@@ -552,9 +551,10 @@ numOfPresets = length(curPresets);
 freqInMhz = 1900;
 hightsToInspect = [1.5, 3, 5, 7.5, 10, 50, 100];
 indicesH = [1:5, 9, 14];
-staLegendsShown = false;
-% For distance scales on maps for Tipp and WHIN.
-distLegendsShown = [false, false];
+% For legends on maps for Tipp and IN.
+staLegendsShown = [false, false];
+% For distance scales on maps for Tipp, WHIN, and IN.
+distLegendsShown = [false, false, false];
 
 % This should be big enough for all the simulations.
 maxBlockDistInM = 1000;
@@ -589,21 +589,41 @@ for idxPreset = 1:numOfPresets
         %---------------
         % For blockage status maps.
         %---------------
+        flagRiseTxToTop = true;
+        surfFaceAlpha = 0.5;
+        curBlockStaFigSize = [500, 500].*0.6;
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            flagRiseTxToTop = false;
+            surfFaceAlpha = 0.6;
+            curBlockStaFigSize = [500, 500].*0.75;
+        end
         [ hCurBlStaMap ] ...
             = plotBlockageMap( ...
             [mapGridLonLats, simState.blockageMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-            curFlagZoomIn, curBlockStaFigSize, [1 1 0; 1 0 0], true);
+            curFlagZoomIn, curBlockStaFigSize, [1 1 0; 1 0 0], ...
+            flagRiseTxToTop, surfFaceAlpha);
         hLeg = findobj(hCurBlStaMap, 'Type', 'Legend');
         % Tighten the figure.
         xlabel(''); ylabel('');
         tightfig(hCurBlStaMap);
 
-        % Hide the legend except for the first Tipp figure.
-        if (~staLegendsShown) && (strcmpi( ...
-                simConfigs.CURRENT_SIMULATION_TAG, 'tipp'))
-            set(hLeg, 'Position', [3.1070, 5.3797, 2.8840, 1.2435]);
-            staLegendsShown = true;
+        % Hide the legend except for the first Tipp figure and the first IN
+        % figure.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            if (~staLegendsShown(1))
+                set(hLeg, 'Position', [3.1070, 5.3797, 2.8840, 1.2435]);
+                staLegendsShown(1) = true;
+            else
+                legend off;
+            end
+        elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            if (~staLegendsShown(2))
+                set(hLeg, 'Position', [1.6360, 0.1522, 2.8046, 1.2435]);
+                staLegendsShown(2) = true;
+            else
+                legend off;
+            end
         else
             legend off;
         end
@@ -997,7 +1017,7 @@ disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Generating coverage ratio over relay height plot ...'])
 
-curPresets = PRESETS(1:3);
+curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqsToInspectInMhz = 1900;
 numOfFs = length(freqsToInspectInMhz);
