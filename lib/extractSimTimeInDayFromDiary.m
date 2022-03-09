@@ -1,8 +1,13 @@
-function [ simTimeInDTotal, simTimesInDForEffeTs ] ...
+function [ simTimeInDTotal, simTimesInDForEffeTs, simTimeInDTotalMore ] ...
     = extractSimTimeInDayFromDiary(pathToSimDiary, numOfEffeTowers)
 %EXTRACTSIMTIMEINDAYFROMDIARY Extract the total simulation time (in days)
 %from a simulation diary file. We will find the processing time for each
 %effective tower and sum them up for the total simulation time.
+%
+% Note: simTimeInDTotal only considers the simulation time (start to end
+% for each effective tower); simTimeInDTotalMore considers some
+% intermittent time between simulations, too (start of the first tower to
+% end of the last tower).
 %
 % Yaguang Zhang, Purdue, 01/22/2022
 
@@ -20,6 +25,7 @@ buildEndPatten = @(idx) [timePattern, ' Finished cellular tower #', ...
     num2str(idx), '\/', num2str(numOfEffeTowers)];
 
 simTimesInDForEffeTs = nan(numOfEffeTowers, 1);
+simTimeInDTotalMoreTimestrs = cell(2, 1);
 try
     preTowerIdx = 0;
     % Continue reading the file until all sim times for effective towers
@@ -42,6 +48,9 @@ try
                     && length(matchedStrStaCell{1})==1, ...
                     'More than one match found!');
                 curDateStrStart = matchedStrStaCell{1}{1};
+                if curpreTowerIdx == 1
+                    simTimeInDTotalMoreTimestrs{1} = curDateStrStart;
+                end
             end
 
             matchedStrEndCell = regexp(newline, curEndPattern, 'tokens');
@@ -50,6 +59,9 @@ try
                     && length(matchedStrEndCell{1})==1, ...
                     'More than one match found!');
                 curDateStrEnd = matchedStrEndCell{1}{1};
+                if curpreTowerIdx == numOfEffeTowers
+                    simTimeInDTotalMoreTimestrs{2} = curDateStrStart;
+                end
             end
         end
 
@@ -69,5 +81,7 @@ end
 
 fclose(fid);
 simTimeInDTotal = sum(simTimesInDForEffeTs);
+simTimeInDTotalMore = days(datestrDiff( ...
+    simTimeInDTotalMoreTimestrs{1}, simTimeInDTotalMoreTimestrs{2}));
 end
 % EOF
