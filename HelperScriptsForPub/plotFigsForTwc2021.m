@@ -642,19 +642,23 @@ for idxPreset = 1:numOfPresets
         flagRiseTxToTop = true;
         txMarkerSize = 6;
         curBlockDistFigSize = [500, 500].*0.6;
+        flagScatterForTx = false;
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
-            % flagRiseTxToTop = true;
-            txMarkerSize = 3;
+            % flagRiseTxToTop = true; txMarkerSize = 3;
+            txMarkerAlpha = 0.75;
             curBlockDistFigSize = [500, 500].*0.75;
+            flagScatterForTx = true;
         end
-        [ hCurDistMap, ~, hCb ] = plotPathLossMap( ...
+        [ hCurDistMap, hTxTs, hCb ] = plotPathLossMap( ...
             [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
             curFlagZoomIn, 'griddatasurf', curBlockDistFigSize, ...
-            customHot, flagRiseTxToTop, 'k', txMarkerSize);
+            customHot, flagRiseTxToTop, 'k', ...
+            txMarkerSize, flagScatterForTx);
 
         % Resize the figure for IN plots.
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            alpha(hTxTs, txMarkerAlpha);
             set(hCurDistMap, 'Position', [0, 0, 275, 375]);
             axis([-87.49255328, -85.09043091, 38.11187646, 41.55153020]);
         end
