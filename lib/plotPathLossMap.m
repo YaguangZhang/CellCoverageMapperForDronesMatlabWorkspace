@@ -1,7 +1,7 @@
 function [hCurPLMap, hCurHandleTxs, hCb] ...
     = plotPathLossMap(matRxLonLatWithPathLoss, cellAntLonLats, ...
     simConfigs, flagVisible, flagZoomIn, flagCmdToPlotPLs, ...
-    customFigSize, colorMap, flagRiseTxToTop, clabelColor)
+    customFigSize, colorMap, flagRiseTxToTop, clabelColor, txMarkerSize)
 %PLOTPATHLOSSMAP Plot the path loss map.
 %
 % Generate a figure on Google map to show the path loss map.
@@ -68,6 +68,10 @@ end
 if ~exist('clabelColor', 'var')
     clabelColor = 'k';
 end
+if ~exist('txMarkerSize', 'var')
+    txMarkerSize = 6;
+end
+
 legendBackgroundColor = ones(1,3).*0.8;
 % Note:
 %   - The FSPL is 51.99 dB for 1.9 GHz carrier with 5 m Tx-to-Rx distance.
@@ -79,7 +83,7 @@ minPathLossInDbExpected = 65;
 % For plotting.
 colorTowers = 'w';
 markerTowers = 'x';
-markerSizeTowers = 6;
+markerSizeTowers = txMarkerSize;
 lineWidthTowers = 1;
 
 optsSurf = {'EdgeColor', 'none', 'FaceAlpha', 0.5};

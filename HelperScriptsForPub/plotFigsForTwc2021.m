@@ -88,6 +88,8 @@ tippScalePos = [-86.7638, 40.235, largeZValue];
 tippScaleFontS = 9;
 whinScalePos = [-86.3523, 39.85, largeZValue];
 whinScaleFontS = 9;
+inScalePos = [-85.5442, 38.3774, largeZValue];
+inScaleFontS = 9;
 
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
@@ -541,9 +543,6 @@ disp(['    [', datestr(now, datetimeFormat), ...
 
 curFlagGenFigsSilently = false;
 curFlagZoomIn = true;
-% Smaller maps for publication.
-%   - [500, 500].*0.6 was used for the ICC 2020 paper.
-curBlockDistFigSize = [600, 500].*0.6;
 
 % We will use the 1900 MHz results.
 curPresets = PRESETS;
@@ -591,6 +590,8 @@ for idxPreset = 1:numOfPresets
         %---------------
         flagRiseTxToTop = true;
         surfFaceAlpha = 0.5;
+        % Smaller maps for publication.
+        %   - [500, 500].*0.6 was used for the ICC 2020 paper.
         curBlockStaFigSize = [500, 500].*0.6;
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
             flagRiseTxToTop = false;
@@ -638,24 +639,53 @@ for idxPreset = 1:numOfPresets
         %---------------
         % For blockage distance maps.
         %---------------
+        flagRiseTxToTop = true;
+        txMarkerSize = 6;
+        curBlockDistFigSize = [500, 500].*0.6;
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            % flagRiseTxToTop = true;
+            txMarkerSize = 3;
+            curBlockDistFigSize = [500, 500].*0.75;
+        end
         [ hCurDistMap, ~, hCb ] = plotPathLossMap( ...
             [mapGridLonLats, simState.blockageDistMaps{idxH}], ...
             effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
             curFlagZoomIn, 'griddatasurf', curBlockDistFigSize, ...
-            customHot, true);
+            customHot, flagRiseTxToTop, 'k', txMarkerSize);
+
+        % Resize the figure for IN plots.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            set(hCurDistMap, 'Position', [0, 0, 275, 375]);
+            axis([-87.49255328, -85.09043091, 38.11187646, 41.55153020]);
+        end
 
         % Tighten the figure.
         xlabel(''); ylabel('');
+        pause(1);
         tightfig(hCurDistMap);
 
-        % Hide the legend except for the first figure of Tipp.
-        if (~distLegendsShown(1))&&(strcmpi( ...
-                simConfigs.CURRENT_SIMULATION_TAG, 'tipp'))
-            hLeg = findobj(hCurDistMap, 'Type', 'Legend');
-            set(hLeg, 'Position', [2.8301, 6.1344, 2.8840, 0.4762], ...
-                'AutoUpdate', 'off');
+        % Hide the legend except for the first figure of Tipp and the first
+        % figure of IN.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+            if ~distLegendsShown(1)
+                hLeg = findobj(hCurDistMap, 'Type', 'Legend');
+                set(hLeg, 'Position', [2.8301, 6.1344, 2.8840, 0.4762], ...
+                    'AutoUpdate', 'off');
 
-            distLegendsShown(1) = true;
+                distLegendsShown(1) = true;
+            else
+                legend off;
+            end
+        elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            if ~distLegendsShown(3)
+                hLeg = findobj(hCurDistMap, 'Type', 'Legend');
+                set(hLeg, 'Position', [0.1468, 7.7788, 2.8046, 0.4762], ...
+                    'AutoUpdate', 'off');
+
+                distLegendsShown(3) = true;
+            else
+                legend off;
+            end
         else
             legend off;
         end
@@ -682,6 +712,21 @@ for idxPreset = 1:numOfPresets
             h(2).ZData = ones(2,1).*largeZValue;
             set(h(3), 'Position', whinScalePos);
             h(3).FontSize = whinScaleFontS;
+
+            distLegendsShown(2) = true;
+        end
+
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            % Show distance scale for the first figure of IN. if
+            % (~distLegendsShown(2))&&(strcmpi( ...
+            %         simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin'))
+            h = makescale(3.45, 'se', 'units', 'si');
+            % The scale will be blocked by the plot if not adjusted along
+            % the z axis.
+            h(1).ZData = ones(4,1).*largeZValue;
+            h(2).ZData = ones(2,1).*largeZValue;
+            set(h(3), 'Position', inScalePos);
+            h(3).FontSize = inScaleFontS;
 
             distLegendsShown(2) = true;
         end
