@@ -658,9 +658,11 @@ for idxPreset = 1:numOfPresets
 
         % Resize the figure for IN plots.
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
-            alpha(hTxTs, txMarkerAlpha);
             set(hCurDistMap, 'Position', [0, 0, 275, 375]);
             axis([-87.49255328, -85.09043091, 38.11187646, 41.55153020]);
+
+            % Also transparentize the Tx tower markers.
+            alpha(hTxTs, txMarkerAlpha);
         end
 
         % Tighten the figure.
@@ -870,20 +872,22 @@ disp(['    [', datestr(now, datetimeFormat), ...
 curFlagGenFigsSilently = false;
 curFlagZoomIn = true;
 defaultCmdToPlotPLMaps = 'surf';
-% Smaller maps for publication.
-%   - [500, 500].*0.6 was used for the ICC 2020 paper.
-curPLFigSize = [500, 500].*0.6;
 
 % We will use the h_R = 1.5m results.
 curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqsToInspectInMhz = [1900, 4700, 7000, 28000];
-numOfFs = length(freqsToInspectInMhz);
 hightToInspect = 1.5;
 idxH = 1;
 
 % For better coloring effects.
 customCAxis = [100, 150];
+txMarkerAlpha = 0.75;
+
+% Only inspect frequencies specified by CARRIER_FREQUENCIES_IN_MHZ.
+freqsToInspectInMhz = freqsToInspectInMhz( ...
+    ismember(freqsToInspectInMhz, [CARRIER_FREQUENCIES_IN_MHZ{:}]));
+numOfFs = length(freqsToInspectInMhz);
 for idxF = 1:numOfFs
     fcInMHz = freqsToInspectInMhz(idxF);
     if ismember(fcInMHz, [CARRIER_FREQUENCIES_IN_MHZ{:}])
@@ -928,21 +932,54 @@ for idxF = 1:numOfFs
             %---------------
             % For path loss maps.
             %---------------
-            [ hCurPLMap ] = plotPathLossMap( ...
+            % Smaller maps for publication.
+            %   - [500, 500].*0.6 was used for the ICC 2020 paper.
+            curPLFigSize = [500, 500].*0.6;
+            flagScatterForTx = false;
+            if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, ...
+                    'shrinkedin')
+                curPLFigSize = [500, 500].*0.75;
+                flagScatterForTx = true;
+            end
+            [ hCurPLMap, hTxTs, hCb] = plotPathLossMap( ...
                 [mapGridLonLats, simState.coverageMaps{idxH}], ...
-                effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+                effeCellAntLonLats, simConfigs, ...
+                ~curFlagGenFigsSilently, ...
                 curFlagZoomIn, defaultCmdToPlotPLMaps, curPLFigSize, ...
-                customHotLong, true);
+                customHotLong, true, 'k', 6, flagScatterForTx);
 
+            alpha(hTxTs, txMarkerAlpha);
             caxis(customCAxis);
             xlabel(''); ylabel('');
             tightfig(hCurPLMap);
+            pause(3);
 
-            % Hide the legend except for the first Tipp figure.
-            if (idxF==1) && strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
-                hLeg = findobj(hCurPLMap, 'Type', 'Legend');
-                set(hLeg, 'Position', [2.8254, 6.1119, 2.8840, 0.4762], ...
-                    'AutoUpdate', 'off');
+            if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+                % Resize the figure for IN plots.
+                set(hCurPLMap, 'Position', [0, 0, 225, 335]);
+                pause(1);
+                axis([-87.47910844, -85.12814685, ...
+                    38.11617027, 41.53260018]);
+                set(hCb, 'Position', [4.6011, 0.15, 0.3915, 8.0962]);
+            end
+
+            % Hide the legend except for the first Tipp figure and the
+            % first IN figure.
+            if idxF==1
+                if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
+                    hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+                    set(hLeg, 'Position', ...
+                        [2.8254, 6.1119, 2.8840, 0.4762], ...
+                        'AutoUpdate', 'off');
+                elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, ...
+                        'shrinkedin')
+                    hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+                    set(hLeg, 'Position', ...
+                        [0.1486, 7.7788, 2.8045, 0.4762], ...
+                        'AutoUpdate', 'off');
+                else
+                    legend off;
+                end
             else
                 legend off;
             end
@@ -972,10 +1009,26 @@ for idxF = 1:numOfFs
                 h(3).FontSize = whinScaleFontS;
             end
 
+            if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+                % Show distance scale for the first figure of WHIN. if
+                % (~distLegendsShown(2))&&(strcmpi( ...
+                %         simConfigs.CURRENT_SIMULATION_TAG,
+                %         'shrinkedwhin'))
+                h = makescale(3.35, 'se', 'units', 'si');
+                % The scale will be blocked by the plot if not adjusted
+                % along the z axis.
+                h(1).ZData = ones(4,1).*largeZValue;
+                h(2).ZData = ones(2,1).*(largeZValue+1);
+                set(h(3), 'Position', inScalePos);
+                h(3).FontSize = whinScaleFontS;
+            end
+
             pathToSaveFig = fullfile(pathToSaveResults, ...
                 ['PathLossMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
                 '_Fc_', num2str(fcInMHz), 'MHz_RxHeight_', ...
                 strrep(num2str(rxAntH), '.', '_')]);
+            set(hCurPLMap, 'PaperPositionMode', 'auto');
+            pause(1);
             % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
             saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
             saveas(hCurPLMap, [pathToSaveFig, '.png']);
