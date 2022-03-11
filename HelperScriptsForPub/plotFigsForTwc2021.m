@@ -884,6 +884,9 @@ indicesH = [1:5, 9, 14];
 customCAxis = [100, 150];
 txMarkerAlpha = 0.75;
 
+% For legends on maps for Tipp and IN.
+txLegendsShown = [false, false];
+
 % Only inspect frequencies specified by CARRIER_FREQUENCIES_IN_MHZ.
 freqsToInspectInMhz = freqsToInspectInMhz( ...
     ismember(freqsToInspectInMhz, [CARRIER_FREQUENCIES_IN_MHZ{:}]));
@@ -971,16 +974,28 @@ for idxF = 1:numOfFs
                 % first IN figure.
                 if idxF==1
                     if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
-                        hLeg = findobj(hCurPLMap, 'Type', 'Legend');
-                        set(hLeg, 'Position', ...
-                            [2.8254, 6.1119, 2.8840, 0.4762], ...
-                            'AutoUpdate', 'off');
+                        if ~txLegendsShown(1)
+                            hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+                            set(hLeg, 'Position', ...
+                                [2.8254, 6.1384, 2.8840, 0.4762], ...
+                                'AutoUpdate', 'off');
+
+                            txLegendsShown(1) = true;
+                        else
+                            legend off;
+                        end
                     elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, ...
                             'shrinkedin')
-                        hLeg = findobj(hCurPLMap, 'Type', 'Legend');
-                        set(hLeg, 'Position', ...
-                            [0.1486, 7.7788, 2.8045, 0.4762], ...
-                            'AutoUpdate', 'off');
+                        if ~txLegendsShown(2)
+                            hLeg = findobj(hCurPLMap, 'Type', 'Legend');
+                            set(hLeg, 'Position', ...
+                                [0.1486, 7.7788, 2.8045, 0.4762], ...
+                                'AutoUpdate', 'off');
+
+                            txLegendsShown(2) = true;
+                        else
+                            legend off;
+                        end
                     else
                         legend off;
                     end
