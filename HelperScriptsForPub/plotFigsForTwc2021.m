@@ -1318,6 +1318,11 @@ heightsIndices = [1:5, 9, 14, 17];
 
 visiblePathLossRange = [100, 140];
 
+% FSPL calculated for clear LoS links at 50 m as the best performance
+% limit.
+refBlockageMapIdx = 9;
+refBlockageMapRxHInM = 50;
+
 idxF = 1;
 fcInMHz = freqsToInspectInMhz(idxF);
 assert(ismember(fcInMHz, freqsToInspectInMhz), ...
@@ -1366,12 +1371,22 @@ for idxPreset = 1:numOfPresets
         = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(heightsIndices);
     tempSimConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = visiblePathLossRange;
 
+    % FSPL calculated for clear LoS links at specified height as the best
+    % performance limit.
+    assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M( ...
+        refBlockageMapIdx) ...
+        == refBlockageMapRxHInM, ...
+        ['refBlockageMapIdx does not match with ', ...
+        'refBlockageMapRxHInM!'])
+    curRefFsplVs = simState.blockageMaps{refBlockageMapIdx};
+
     [curEmpCdfFig, coverageMapsCovRatioMetas{idxPreset}] ...
         = plotEmpiricalCdfForCoverage(tempSimState, tempSimConfigs, ...
-        mapType, ~curFlagGenFigsSilently, curManualXLim, curShowFSPL);
+        mapType, ~curFlagGenFigsSilently, curManualXLim, ...
+        curShowFSPL, curRefFsplVs);
     if idxPreset==1
         hLeg = findobj(curEmpCdfFig, 'Type', 'Legend');
-        set(hLeg, 'Position', [0.1293, 0.3636, 0.2840, 0.5617]);
+        set(hLeg, 'Position', [0.1293, 0.3636, 0.2880, 0.5617]);
         transparentizeCurLegends;
     else
         legend off;
@@ -1388,10 +1403,11 @@ for idxPreset = 1:numOfPresets
     %---------------
     [ curCovRatioGainFig ] ...
         = plotCoverageRatioGain(tempSimState, tempSimConfigs, ...
-        mapType, ~curFlagGenFigsSilently, curManualXLim, curShowFSPL);
+        mapType, ~curFlagGenFigsSilently, curManualXLim, ...
+        curShowFSPL, curRefFsplVs);
     if idxPreset==1
         hLeg = findobj(curCovRatioGainFig, 'Type', 'Legend');
-        set(hLeg, 'Position', [0.1293, 0.4211, 0.2840, 0.5067]);
+        set(hLeg, 'Position', [0.1293, 0.4211, 0.2880, 0.5067]);
         transparentizeCurLegends;
     else
         legend off;

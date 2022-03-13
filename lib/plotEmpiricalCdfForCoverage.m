@@ -1,6 +1,6 @@
 function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
     simState, simConfigs, mapType, flagVisible, ...
-    flagManualXlim, flagShowFSPL)
+    flagManualXlim, flagShowFSPL, refFsplVs)
 %PLOTEMPIRICALCDFFORCOVERAGE Plot the empirical CDFs of the aggregated path
 %loss maps of all RX heights.
 %
@@ -27,9 +27,12 @@ function [ hFigCdf, cdfMeta ] = plotEmpiricalCdfForCoverage( ...
 %     simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB.
 %   - flagShowFSPL
 %     An optional boolean for whether to show the ideal FSPL line as
-%     reference. Default to false. If true, the best scenario FSPL can be
-%     evaluated in 2D/3D based on simState.mapGridXYPts and
-%     simState.CellAntsXyhEffective.
+%     reference. Default to false. If true, the best scenario FSPL will by
+%     default be evaluated in 2D (or 3D) based on simState.mapGridXYPts and
+%     simState.CellAntsXyhEffective, unless refFsplVs is present.
+%   - refFsplVs
+%     Optional. If refFsplVs is present and flagShowFSPL is true, this
+%     function will skip the FSPL evaluation and use directly refFsplVs.
 %
 % Outputs:
 %   - hFigCdf
@@ -114,16 +117,19 @@ numsOfCovPixels = deal(nan(numMaps, 1));
 [cdfXs, cdfVs] = deal(cell(numMaps, 1));
 
 if flagShowFSPL
-    switch lower(fsplType)
-        case '2d'
-            [~, dists] = dsearchn(simState.CellAntsXyhEffective(:,1:2), ...
-                simState.mapGridXYPts);
-        case '3d'
-            % TODO.
-        otherwise
-            error(['Unsupported FSPL evaluation type ', fsplType, '!']);
+    if ~exist('refFsplVs', 'var')
+        switch lower(fsplType)
+            case '2d'
+                [~, dists] = dsearchn(simState.CellAntsXyhEffective(:,1:2), ...
+                    simState.mapGridXYPts);
+            case '3d'
+                % TODO.
+            otherwise
+                error(['Unsupported FSPL evaluation type ', fsplType, '!']);
+        end
+        refFsplVs = fspl(dists, simConfigs.CARRIER_WAVELENGTH_IN_M);
     end
-    maps = [maps, fspl(dists, simConfigs.CARRIER_WAVELENGTH_IN_M)];
+    maps = [maps, refFsplVs];
     numMaps = numMaps+1;
 end
 
@@ -265,7 +271,7 @@ if flagShowFSPL
     legend(hsCdf, ...
         [arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
         cdfMeta.rxHeightsInM, 'UniformOutput', false); ...
-        'Best-case FSPL'], ...
+        'Reference FSPL'], ...
         'Location', curLoc);
 else
     legend(hsCdf, ...
