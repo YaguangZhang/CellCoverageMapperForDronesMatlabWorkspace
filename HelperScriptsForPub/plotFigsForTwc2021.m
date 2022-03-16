@@ -86,7 +86,7 @@ customHotLong = hot(256); customHotLong = customHotLong(192:-1:1, :);
 largeZValue = 10^7;
 tippScalePos = [-86.7638, 40.235, largeZValue];
 tippScaleFontS = 9;
-whinScalePos = [-86.3523, 39.85, largeZValue];
+whinScalePos = [-86.3616, 39.945, largeZValue];
 whinScaleFontS = 9;
 inScalePos = [-85.5442, 38.3774, largeZValue];
 inScaleFontS = 9;
@@ -656,8 +656,11 @@ for idxPreset = 1:numOfPresets
             customHot, flagRiseTxToTop, 'k', ...
             txMarkerSize, flagScatterForTx);
 
-        % Resize the figure for IN plots.
-        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        % Resize the figure for WHIN and IN plots.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedwhin')
+            set(hCurDistMap, 'Position', [0, 0, 245, 300]);
+            axis([-87.17148148, -86.13560255, 39.83917848, 41.19774935]);
+        elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
             set(hCurDistMap, 'Position', [0, 0, 275, 375]);
             axis([-87.49255328, -85.09043091, 38.11187646, 41.55153020]);
 
@@ -718,8 +721,6 @@ for idxPreset = 1:numOfPresets
             h(2).ZData = ones(2,1).*largeZValue;
             set(h(3), 'Position', whinScalePos);
             h(3).FontSize = whinScaleFontS;
-
-            distLegendsShown(2) = true;
         end
 
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
@@ -733,8 +734,6 @@ for idxPreset = 1:numOfPresets
             h(2).ZData = ones(2,1).*largeZValue;
             set(h(3), 'Position', inScalePos);
             h(3).FontSize = inScaleFontS;
-
-            distLegendsShown(2) = true;
         end
 
         % Mannual figure adjustments.
@@ -764,6 +763,7 @@ for idxPreset = 1:numOfPresets
             ['BlockageDistMap_', simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
         % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
+        set(hCurDistMap, 'PaperPositionMode', 'auto');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMap, [pathToSaveFig, '.png']);
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
@@ -881,7 +881,7 @@ hightsToInspect = [1.5, 3, 5, 7.5, 10, 50, 100];
 indicesH = [1:5, 9, 14];
 
 % For better coloring effects.
-customCAxis = [100, 150];
+customCAxis = [120, 150];
 txMarkerAlpha = 0.75;
 
 % For legends on maps for Tipp and IN.
@@ -955,13 +955,21 @@ for idxF = 1:numOfFs
                     defaultCmdToPlotPLMaps, curPLFigSize, ...
                     customHotLong, true, 'k', 6, flagScatterForTx);
 
-                alpha(hTxTs, txMarkerAlpha);
                 caxis(customCAxis);
                 xlabel(''); ylabel('');
                 tightfig(hCurPLMap);
                 pause(3);
 
-                if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+                if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, ...
+                        'shrinkedwhin')
+                    set(hCurPLMap, 'Position', [0, 0, 215, 275]);
+                    pause(1);
+                    axis([-87.18098142, -86.12610260, ...
+                        39.83917848, 41.19774935]);
+                    set(hCb, 'Position', [4.2946, 0.1500, 0.3360, 6.51]);
+                elseif strcmpi(simConfigs.CURRENT_SIMULATION_TAG, ...
+                        'shrinkedin')
+                    alpha(hTxTs, txMarkerAlpha);
                     % Resize the figure for IN plots.
                     set(hCurPLMap, 'Position', [0, 0, 225, 335]);
                     pause(1);
@@ -977,7 +985,7 @@ for idxF = 1:numOfFs
                         if ~txLegendsShown(1)
                             hLeg = findobj(hCurPLMap, 'Type', 'Legend');
                             set(hLeg, 'Position', ...
-                                [2.8254, 6.1384, 2.8840, 0.4762], ...
+                                [2.8254, 6.11, 2.8840, 0.4762], ...
                                 'AutoUpdate', 'off');
 
                             txLegendsShown(1) = true;
@@ -1020,7 +1028,7 @@ for idxF = 1:numOfFs
                     % (~distLegendsShown(2))&&(strcmpi( ...
                     %         simConfigs.CURRENT_SIMULATION_TAG,
                     %         'shrinkedwhin'))
-                    h = makescale(2.9, 'se', 'units', 'si');
+                    h = makescale(3, 'se', 'units', 'si');
                     % The scale will be blocked by the plot if not adjusted
                     % along the z axis.
                     h(1).ZData = ones(4,1).*largeZValue;
