@@ -14,7 +14,7 @@ curFileName = mfilename;
 prepareSimulationEnv;
 
 % The absolute path to the folder for saving the results.
-pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+pathToSaveResults = fullfile(pwd, '..', ...
     'PostProcessingResults', 'AcreGeoFeatureInvestigation');
 if ~exist(pathToSaveResults, 'dir')
     mkdir(pathToSaveResults)
@@ -410,7 +410,7 @@ disp(['    [', datestr(now, datetimeFormat), ...
     '] Overview of cell tower locations ...'])
 figure('Position', [0, 0, figureSize], ...
     'PaperPositionMode', 'auto'); hold on;
-hAcre = plot(lonLatAcrePolygons); 
+hAcre = plot(lonLatAcrePolygons);
 xticks([]); yticks([]);
 adjustFigSizeByContent(gcf, axisToSet, ...
     'height', weightForWidth*1.05);
