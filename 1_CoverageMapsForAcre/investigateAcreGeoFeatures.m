@@ -23,13 +23,24 @@ end
 % We will load cached results for faster processing if available.
 dirToCachedResults = fullfile(pathToSaveResults, 'cachedResults.mat');
 if exist(dirToCachedResults, 'file')
+    disp(' ')
+    disp(['[', datestr(now, datetimeFormat), ...
+        '] Loading cached geo info for ACRE ...'])
+
     load(dirToCachedResults);
 else
     %% Load Boundary
+    disp(' ')
+    disp(['[', datestr(now, datetimeFormat), ...
+        '] Extracting geo info for ACRE ...'])
+
     absDirToAcreKmz = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
         'Lidar', 'ACRE', 'AcreExactBoundaryRaw', 'ACRE.kmz');
 
     % Boundary of ACRE.
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Loading outlines of ACRE fields ...'])
     [UTM_X_Y_BOUNDARY_ACRE, UTM_ZONE_ACRE, acreKmzStruct, ...
         utmXYAcrePolygons, lonLatAcrePolygons] ...
         = extractBoundaryFromKmzFile(absDirToAcreKmz);
@@ -46,11 +57,18 @@ else
     %% Create a Grid
 
     % Corresponds to the 5 feet resolution of the LiDAR DSM.
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Creating a grid ...'])
     gridResolutionInM = 1.5;
     gridUtmXYPts = buildSimGrid(UTM_X_Y_BOUNDARY_ACRE, ...
         gridResolutionInM, true);
 
     %% LiDAR Data Info
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Loading Indiana LiDAR meta data ...'])
+
     dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
         'Lidar_2019', 'IN', 'DSM');
 
@@ -86,12 +104,19 @@ else
     end
 
     %% Fetch LiDAR Data
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Interpolating elevation and LiDAR data for the grid pts ...'])
 
     [terrainEles, lidarZs, curEleForNanPts] ...
         = generateProfileSamps( ...
         UTM_X_Y_BOUNDARY_ACRE, utm2deg_speZone, ...
         lidarFileXYCentroids, lidarFileXYCoveragePolyshapes, ...
         lidarMatFileAbsDirs, 'both');
+
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Caching results ...'])
 
     save(dirToCachedResults, ...
         ... ACRE field boudnaries:
@@ -102,6 +127,10 @@ else
         ... Ground elevation and LiDAR z values.
         'terrainEles', 'lidarZs');
 end
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
 
 %% Plots
 
