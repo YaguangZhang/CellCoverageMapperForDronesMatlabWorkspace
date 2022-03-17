@@ -114,6 +114,23 @@ else
         lidarFileXYCentroids, lidarFileXYCoveragePolyshapes, ...
         lidarMatFileAbsDirs, 'both');
 
+    %% Fetch Cell Towers
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Fetching tower locations ...'])
+
+    % Default to the NTIA+HIFLD cell tower locations.
+    ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
+        ABS_PATH_TO_SHARED_FOLDER, ...
+        'CellTowerInfo', 'NtiaLayoutPlusHifldCellTs', ...
+        'NtiaLayoutMergedWithHifldCellTs_Threshold_1000m_LatLonH.csv');
+
+    % Note: we use "height" to indicate the vertical distance from the
+    % ground to the antenna; "elevation" to indicate the ground elevation;
+    % and "altitude" to indicate elevation+height.
+    cellAntsLatLonH = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
+
+    %% Cache the Results
     disp(' ')
     disp(['    [', datestr(now, datetimeFormat), ...
         '] Caching results ...'])
@@ -125,7 +142,9 @@ else
         ... Grid point locs:
         'gridResolutionInM', 'gridUtmXYPts', ...
         ... Ground elevation and LiDAR z values.
-        'terrainEles', 'lidarZs');
+        'terrainEles', 'lidarZs', ...
+        ... Cell tower antenna locations.
+        'cellAntsLatLonH');
 end
 
 if ~exist('deg2utm_speZone', 'var')
@@ -340,6 +359,34 @@ for idxNoG = 1:length(numsOfGroups)
         ['4_GroundEle_Grouped_NumOfGroups_', num2str(numOfGroups), ...
         '.jpg']), '-transparent', '-m3');
 end
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Overview of cell tower locations ...'])
+figure('Position', [0, 0, figureSize], ...
+    'PaperPositionMode', 'auto'); hold on;
+hAcre = plot(lonLatAcrePolygons); 
+xticks([]); yticks([]);
+adjustFigSizeByContent(gcf, axisToSet, ...
+    'height', weightForWidth*1.05);
+plot_google_map('MapType', 'satellite');
+axis manual;
+hTowers = plot(cellAntsLatLonH(:,2), cellAntsLatLonH(:,1), ...
+    'vr', 'LineWidth', 2);
+legend(hTowers, 'Cell Towers');
+export_fig(fullfile(pathToSaveResults, ...
+    '5_Overview_CellTowers.jpg'), '-transparent', '-m3');
+
+[axisToSetZoomedOut, weightForWidthZoomedOut] ...
+    = extendLonLatAxisByFactor( ...
+    [min(gridLatLonPts(:,2)), max(gridLatLonPts(:,2)), ...
+    min(gridLatLonPts(:,1)), max(gridLatLonPts(:,1))], ...
+    extensionFactor*30, simConfigs);
+adjustFigSizeByContent(gcf, axisToSetZoomedOut, ...
+    'height', weightForWidthZoomedOut*1.05);
+plot_google_map('MapType', 'satellite');
+export_fig(fullfile(pathToSaveResults, ...
+    '5_Overview_CellTowers_ZoomedOut.jpg'), '-transparent', '-m3');
 
 disp(' ')
 disp(['[', datestr(now, datetimeFormat), ...
