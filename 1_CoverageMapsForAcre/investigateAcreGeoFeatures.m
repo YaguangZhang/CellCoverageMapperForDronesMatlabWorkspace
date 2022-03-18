@@ -45,17 +45,18 @@ else
         '] Loading outlines of ACRE fields ...'])
     [UTM_X_Y_BOUNDARY_ACRE, UTM_ZONE_ACRE] ...
         = extractBoundaryFromKmzFile(absDirToAcreKmz);
-    flagSkipValidityCheck = true;
     % We will use the latest boundaries for separate fields.
     [UTM_X_Y_BOUNDARY_ACRE_NEW, UTM_ZONE_ACRE_NEW, acreKmzStruct, ...
         utmXYAcrePolygons, lonLatAcrePolygons] ...
-        = extractBoundaryFromKmzFile(absDirToAcreNewKmz, ...
-        flagSkipValidityCheck);
+        = extractBoundaryFromKmzFile(absDirToAcreNewKmz);
 
     % We will use the union of both the old and new boundaries as the ACRE
     % outline.
     utmXYBoundaryAcrePoly = union(polyshape(UTM_X_Y_BOUNDARY_ACRE), ...
         polyshape(UTM_X_Y_BOUNDARY_ACRE_NEW));
+    % Remove holes.
+    utmXYBoundaryAcrePoly = rmholes(utmXYBoundaryAcrePoly);
+
     UTM_X_Y_BOUNDARY_ACRE = utmXYBoundaryAcrePoly.Vertices;
     % Close the boundary.
     UTM_X_Y_BOUNDARY_ACRE(end+1, :) = UTM_X_Y_BOUNDARY_ACRE(1, :);

@@ -42,33 +42,33 @@ end
 
 for idxPolygon = 1:numOfPolygons
     curPolygonStruct = polyonsLonLatStruct(idxPolygon);
-
+    
     % Make sure we have column vectors to work with.
     curLats = curPolygonStruct.Lat(:);
     % Remove the trailing NaN.
     curLats = curLats(1:(end-1));
-
+    
     if ~isempty(curLats)
         curLons = curPolygonStruct.Lon(:);
         curLons = curLons(1:(end-1));
-
+        
         assert(~any(isnan([curLats; curLons])), ...
             'We expect polygons without holes!');
-
+        
         [curXs, curYs, curZones] = deg2utm(curLats, curLons);
         if isempty(utmZone)
             utmZone = curZones(1,:);
             assert(all(strcmp(cellstr(curZones),utmZone)), ...
                 'Not all polygons are contained in the same UTM zone!');
         end
-
+        
         curUtmXYPolygon = polyshape(curXs, curYs);
         if ~isempty(utmXyPoly.Vertices)
             utmXyPoly = union(utmXyPoly, curUtmXYPolygon);
         else
             utmXyPoly = curUtmXYPolygon;
         end
-
+        
         if nargout > 3
             utmXYPolygons(idxPolygon) = curUtmXYPolygon;
             lonLatPolygons(idxPolygon) = polyshape(curLons, curLats);
@@ -81,7 +81,12 @@ utmXyBoundary = utmXyPoly.Vertices;
 if ~flagSkipValidityCheck
     % Make sure the output vertices are clockwise and the polygon is
     % closed.
-    assert(ispolycw(utmXyBoundary(:,1),utmXyBoundary(:,2)), ...
+    if ~ispolycw(utmXyBoundary(:,1),utmXyBoundary(:,2))
+        [utmXyBoundary(:,1),utmXyBoundary(:,2)] = poly2cw( ...
+            utmXyBoundary(:,1),utmXyBoundary(:,2));
+    end
+    
+    assert(all(ispolycw(utmXyBoundary(:,1),utmXyBoundary(:,2))), ...
         'The output vertices are not clockwise!')
 end
 utmXyBoundary(end+1, :) = utmXyBoundary(1, :);
