@@ -1,6 +1,6 @@
 function [ utmXyBoundary, utmZone, kmzStruct, ...
     utmXYPolygons, lonLatPolygons] ...
-    = extractBoundaryFromKmzFile(dirToKmzFile)
+    = extractBoundaryFromKmzFile(dirToKmzFile, flagSkipValidityCheck)
 %EXTRACTBOUNDARYFROMKMZFILE Extract the boundary of the union of all the
 %polygons stored in the input .kmz file.
 %
@@ -23,6 +23,10 @@ function [ utmXyBoundary, utmZone, kmzStruct, ...
 %     flipped the (lat, lon) to make it easier to plot.
 %
 % Yaguang Zhang, Purdue, 06/03/2020
+
+if ~exist('flagSkipValidityCheck', 'var')
+    flagSkipValidityCheck = false;
+end
 
 utmXyPoly = polyshape();
 utmZone = '';
@@ -74,9 +78,12 @@ end
 
 utmXyBoundary = utmXyPoly.Vertices;
 
-% Make sure the output vertices are clockwise and the polygon is closed.
-assert(ispolycw(utmXyBoundary(:,1),utmXyBoundary(:,2)), ...
-    'The output vertices are not clockwise!')
+if ~flagSkipValidityCheck
+    % Make sure the output vertices are clockwise and the polygon is
+    % closed.
+    assert(ispolycw(utmXyBoundary(:,1),utmXyBoundary(:,2)), ...
+        'The output vertices are not clockwise!')
+end
 utmXyBoundary(end+1, :) = utmXyBoundary(1, :);
 
 end
