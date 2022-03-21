@@ -223,7 +223,8 @@ else
     % Note: we use "height" to indicate the vertical distance from the
     % ground to the antenna; "elevation" to indicate the ground elevation;
     % and "altitude" to indicate elevation+height.
-    cellAntsLatLonH = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
+    cellAntsLatLonH = csvread( ...
+        ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1); %#ok<CSVRD>
 
     %% Cache the Results
     disp(' ')
@@ -277,7 +278,7 @@ boolsHighResGridPtsInAcre = InPolygon( ...
     highResGridUtmXMat(:), highResGridUtmYMat(:), ...
     UTM_X_Y_BOUNDARY_ACRE(:,1), UTM_X_Y_BOUNDARY_ACRE(:,2));
 highResGridDeltaEleAbsVs = (highResGridDeltaEleXs.^2 ...
-    + highResGridDeltaEleYs.^2).^0.5;
+    + highResGridDeltaEleYs.^2).^0.5./highResInM;
 
 % Merge the soil polygons into one for simplicity.
 soilLonLatMergedBoundAcre = soilLonLatPolyshapesAcre(1).Vertices;
@@ -461,7 +462,7 @@ set(gcf, 'Position', [0, 0, figureSize]);
 xlabel(''); ylabel(''); xticklabels(''); yticklabels('');
 adjustFigSizeByContent(gcf, axisToSet, ...
     'height', weightForWidth*1.05);
-hGM = plot_google_map('MapType', 'satellite');
+plot_google_map('MapType', 'satellite');
 export_fig(fullfile(pathToSaveResults, ...
     '0_SoilPolygons.jpg'), '-m3');
 
