@@ -1,4 +1,4 @@
-function [ gridXYPts ] = buildSimGrid( boundaryXYs, ...
+function [ gridXYPts, gridResolution ] = buildSimGrid( boundaryXYs, ...
     parameter, flagByResolution )
 %BUILDSIMGRID Create a grid
 %
@@ -16,6 +16,8 @@ function [ gridXYPts ] = buildSimGrid( boundaryXYs, ...
 %   - gridXYPts
 %     A matrix for the output grid, with each row being one grid point in
 %     the form of (x, y).
+%   - gridResolution
+%     The spatial resolution of the output grid.
 %
 % Yaguang Zhang, Purdue, 03/16/2022
 

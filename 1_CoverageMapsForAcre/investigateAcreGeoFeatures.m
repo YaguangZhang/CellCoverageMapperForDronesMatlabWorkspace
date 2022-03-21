@@ -71,6 +71,10 @@ else
         UTM_X_Y_BOUNDARY_ACRE(:,2));
 
     %% Soil Map
+
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Fetching the soil map ...'])
     % Note that we have data covering a larger area than ACRE. Soil
     % polygons are stored in the soilmu_a_aoi shape files.
     absDirToSoilShape = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
@@ -149,6 +153,43 @@ else
         lidarFileXYCentroids, lidarFileXYCoveragePolyshapes, ...
         lidarMatFileAbsDirs, 'both');
 
+    %% Ground Elevation Gradient
+
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Computing ground elevation gradient ...'])
+    % Create a low-resolution grid covering a little more area than ACRE.
+    extraDistInMToCover = 100;
+    numOfPtsAlongLongSide = 30;
+
+    minX = min(UTM_X_Y_BOUNDARY_ACRE(:,1)) - extraDistInMToCover/2;
+    maxX = max(UTM_X_Y_BOUNDARY_ACRE(:,1)) + extraDistInMToCover/2;
+    minY = min(UTM_X_Y_BOUNDARY_ACRE(:,2)) - extraDistInMToCover/2;
+    maxY = max(UTM_X_Y_BOUNDARY_ACRE(:,2)) + extraDistInMToCover/2;
+    lowResGridUtmXYBound = [minX, minY; minX, maxY;
+        maxX, maxY; maxX, minY; minX, minY];
+
+    [lowResGridUtmXYPts, lowResInM] = buildSimGrid( ...
+        lowResGridUtmXYBound, numOfPtsAlongLongSide);
+
+    % Fetch ground elevation for the low-resolution grid.
+    lowResGridTerrainEles = generateProfileSamps( ...
+        lowResGridUtmXYPts, utm2deg_speZone, ...
+        lidarFileXYCentroids, lidarFileXYCoveragePolyshapes, ...
+        lidarMatFileAbsDirs, 'elevation');
+
+    % Reshape the results to matrices.
+    lowResGridUtmXMat = reshape(lowResGridUtmXYPts(:, 1), ...
+        numOfPtsAlongLongSide, []);
+    lowResGridUtmYMat = reshape(lowResGridUtmXYPts(:, 2), ...
+        numOfPtsAlongLongSide, []);
+    lowResGridTerrainEleMat = reshape(lowResGridTerrainEles, ...
+        numOfPtsAlongLongSide, []);
+
+    % Compute gradient.
+    [lowResGridDeltaEleXs, lowResGridDeltaEleYs] ...
+        = gradient(lowResGridTerrainEleMat);
+
     %% Fetch Cell Towers
     disp(' ')
     disp(['    [', datestr(now, datetimeFormat), ...
@@ -181,7 +222,11 @@ else
         'gridResolutionInM', 'gridUtmXYPts', ...
         ... Ground elevation and LiDAR z values.
         'terrainEles', 'lidarZs', ...
-        ... Cell tower antenna locations.
+        ... Ground elevation gradient over a low-resolution grid.
+        'lowResInM', 'lowResGridUtmXMat', 'lowResGridUtmYMat', ...
+        'lowResGridTerrainEleMat', ...
+        'lowResGridDeltaEleXs', 'lowResGridDeltaEleYs', ...
+        ... Cell tower locations.
         'cellAntsLatLonH');
 end
 
