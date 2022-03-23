@@ -548,8 +548,8 @@ curFlagZoomIn = true;
 curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqInMhz = 1900;
-hightsToInspect = [1.5, 3, 5, 7.5, 10, 50, 100];
-indicesH = [1:5, 9, 14];
+hightsToInspect = [1.5, 3, 5, 7.5, 10:10:30, 50, 100];
+indicesH = [1:7, 9, 14];
 % For legends on maps for Tipp and IN.
 staLegendsShown = [false, false];
 % For distance scales on maps for Tipp, WHIN, and IN.
