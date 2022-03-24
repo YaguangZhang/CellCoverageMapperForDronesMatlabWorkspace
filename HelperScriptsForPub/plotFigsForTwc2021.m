@@ -8,7 +8,8 @@
 clear; clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
-cd(fileparts(mfilename('fullpath'))); cd('..'); addpath('lib');
+cd(fileparts(mfilename('fullpath'))); 
+addpath('.'); cd('..'); addpath('lib');
 curFileName = mfilename;
 
 prepareSimulationEnv;
@@ -1427,6 +1428,66 @@ for idxPreset = 1:numOfPresets
     saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
     close(curCovRatioGainFig);
 end
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
+%% Comparison with Opensignal
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating plots for comparison with OpenSignal records ...'])
+
+% Get boundary of the ShrinkedIN AoI.
+absPathToSimFolder = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'PostProcessingResults', ...
+    'Simulation_ShrinkedIN_Carrier_1900MHz_LiDAR_IN_DSM_2019');
+absPathToSimConfigs = fullfile(absPathToSimFolder, 'simConfigs.mat');
+load(absPathToSimConfigs);
+
+[latsBoundShrinkedIN, lonsBoundShrinkedIN] ...
+    = simConfigs.utm2deg_speZone( ...
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+
+% Simulation results.
+absPathToSimState = fullfile(absPathToSimFolder, 'simState.mat');
+load(absPathToSimState);
+
+idxH = 1;
+hInM = 1.5;
+assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH) == hInM, ...
+    'Unexpected RX height!');
+
+% There is an issue with overlaying the surf results with Google Maps
+% (random cracks show up), so we will save the background layer and the
+% overlaid layer separately.
+recreateOpensignalMap;
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'compWithOpenSig_BackGround');
+export_fig([pathToSaveFig, '.png'], '-m3');
+delete(hGM); delete(hGrey);
+
+% Blockage distance map.
+curBlockDistMap = simState.blockageDistMaps{idxH};
+hSurfBlockDist = ...
+    overlayOpenSigStyleMap(simConfigs, simState.mapGridLatLonPts, ...
+    curBlockDistMap, [0, 1000]);
+
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'compWithOpenSig_BlockDist_ShrinkedIN_1900MHz_hR_1_5');
+export_fig([pathToSaveFig, '.png'], '-m3');
+delete(hSurfBlockDist);
+
+% Path loss map.
+curPathLossMap = simState.coverageMaps{idxH};
+overlayOpenSigStyleMap(simConfigs, simState.mapGridLatLonPts, ...
+    curPathLossMap, [120, 150]);
+
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'compWithOpenSig_PathLoss_ShrinkedIN_1900MHz_hR_1_5');
+export_fig([pathToSaveFig, '.png'], '-m3');
+close(gcf);
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
