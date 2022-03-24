@@ -440,7 +440,10 @@ xticks([]); yticks([]); view(2); zlim([0, max(lidarZsToPlot)]);
 adjustFigSizeByContent(gcf, axisToSet, ...
     'height', weightForWidth*1.05);
 plot_google_map('MapType', 'satellite');
-export_fig(fullfile(pathToSaveResults, '1_LiDARZ_DSM_GridPts.jpg'), '-m3');
+curPathToSaveFig = fullfile(pathToSaveResults, ...
+    '1_LiDARZ_DSM_GridPts');
+export_fig([curPathToSaveFig, '.jpg'], '-m3');
+saveas(gcf, [curPathToSaveFig, '.fig']);
 
 figure('Position', [0, 0, figureSize], ...
     'PaperPositionMode', 'auto'); colormap turbo;
