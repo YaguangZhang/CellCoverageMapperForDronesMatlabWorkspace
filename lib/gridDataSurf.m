@@ -23,8 +23,8 @@ zi = griddata(XYZs(:,1), XYZs(:,2), XYZs(:,3), xi, yi, 'linear');
 % We will use a very big shrink factor to avoid (1) including to much
 % unwanted area and (2) removing any wanted area.
 indicesBoundPts = boundary(XYZs(:,1:2), 0.99);
-isInvalidZi = ~isinterior( ...
-    polyshape(XYZs(indicesBoundPts,1:2)), xi(:), yi(:));
+isInvalidZi = ~InPolygon(xi(:), yi(:), ...
+    XYZs(indicesBoundPts,1), XYZs(indicesBoundPts,2));
 zi(isInvalidZi) = nan;
 hSurf = surf(xi, yi, zi, varargin{:});
 
