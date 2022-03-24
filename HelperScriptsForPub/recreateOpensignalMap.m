@@ -11,7 +11,7 @@ greyOutAlpha = 0.33;
 targetLatRange = [37.644445, 41.899804];
 targetLonRange = [-88.235131 -84.631344];
 figure('Position', [0,0,targetFigSize]);
-set(gca, 'InnerPosition', [0,0,1,1]);
+set(gca, 'InnerPosition', [0,0,1,1], 'Color', 'none');
 hold on;
 plot(lonsBoundShrinkedIN, latsBoundShrinkedIN, 'k-');
 xlim(targetLonRange); ylim(targetLatRange);

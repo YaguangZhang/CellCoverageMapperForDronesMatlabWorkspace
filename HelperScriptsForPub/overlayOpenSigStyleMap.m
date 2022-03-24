@@ -1,4 +1,4 @@
-function [ hS ] = overlayOpenSigStyleMap(simConfigs, ...
+function [ hS, hCb ] = overlayOpenSigStyleMap(simConfigs, ...
     mapLatLonPts, mapVs, colorRange)
 %OVERLAYOPENSIGSTYLEMAP Plot a simulation map on the current figure
 %following the OpenSignal color scheme.
@@ -64,6 +64,11 @@ openSigColorMap = [(linspace(0,1,numOfColorPts))', ...
     (linspace(175,0,numOfColorPts)./255)', ...
     (linspace(15,0,numOfColorPts)./255)'];
 colormap(openSigColorMap)
+
+% Add a color bar and modify the max label.
+hCb =colorbar('Location', 'west', 'FontSize', 10, 'FontWeight', 'bold');
+hCb.TickLabels{end} = ['≥', hCb.TickLabels{end}];
+hCb.Position(4) = 0.9;
 
 end
 % EOF

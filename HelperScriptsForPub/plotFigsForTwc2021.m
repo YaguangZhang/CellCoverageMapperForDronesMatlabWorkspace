@@ -8,7 +8,7 @@
 clear; clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
-cd(fileparts(mfilename('fullpath'))); 
+cd(fileparts(mfilename('fullpath')));
 addpath('.'); cd('..'); addpath('lib');
 curFileName = mfilename;
 
@@ -1465,28 +1465,38 @@ assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH) == hInM, ...
 recreateOpensignalMap;
 pathToSaveFig = fullfile(pathToSaveResults, ...
     'compWithOpenSig_BackGround');
-export_fig([pathToSaveFig, '.png'], '-m3');
+saveas(gcf, [pathToSaveFig, '.png']);
+saveas(gcf, [pathToSaveFig, '.svg']);
 delete(hGM); delete(hGrey);
 
 % Blockage distance map.
 curBlockDistMap = simState.blockageDistMaps{idxH};
-hSurfBlockDist = ...
+[hSurfBlockDist, hCurCb] = ...
     overlayOpenSigStyleMap(simConfigs, simState.mapGridLatLonPts, ...
     curBlockDistMap, [0, 1000]);
+set(get(hCurCb, 'Title'), 'String', {'Blockage Distance (m)', ' '}, ...
+    'HorizontalAlignment', 'left');
 
 pathToSaveFig = fullfile(pathToSaveResults, ...
     'compWithOpenSig_BlockDist_ShrinkedIN_1900MHz_hR_1_5');
-export_fig([pathToSaveFig, '.png'], '-m3');
-delete(hSurfBlockDist);
+export_fig([pathToSaveFig, '.png'], '-m3', '-transparent');
+saveas(gcf, [pathToSaveFig, '.svg']);
+delete(hSurfBlockDist); delete(hCurCb);
 
 % Path loss map.
+curPathLossRangeToShow = [120, 150];
 curPathLossMap = simState.coverageMaps{idxH};
-overlayOpenSigStyleMap(simConfigs, simState.mapGridLatLonPts, ...
-    curPathLossMap, [120, 150]);
+[~, hCurCb] = ...
+    overlayOpenSigStyleMap(simConfigs, simState.mapGridLatLonPts, ...
+    curPathLossMap, curPathLossRangeToShow);
+set(get(hCurCb, 'Title'), 'String', {'Path Loss (dB)', ' '}, ...
+    'HorizontalAlignment', 'left');
+hCurCb.TickLabels{1} = ['≤', hCurCb.TickLabels{1}];
 
 pathToSaveFig = fullfile(pathToSaveResults, ...
     'compWithOpenSig_PathLoss_ShrinkedIN_1900MHz_hR_1_5');
-export_fig([pathToSaveFig, '.png'], '-m3');
+export_fig([pathToSaveFig, '.png'], '-m3', '-transparent');
+saveas(gcf, [pathToSaveFig, '.svg']);
 close(gcf);
 
 disp(['    [', datestr(now, datetimeFormat), ...
