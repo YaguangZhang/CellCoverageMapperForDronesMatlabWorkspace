@@ -31,7 +31,11 @@ absPythonPathWinArtsy ...
 %  - Local copy on the computer cluster at Purdue:
 absPythonPathLinuxCoverage = '/usr/bin/python3.7';
 %  - Local copy on the computer cluster at Purdue:
-absPythonPathLinuxCoverageOnFrankie = '/usr/bin/python3.7';
+if verLessThan('matlab','9.12')
+    absPythonPathLinuxCoverageOnFrankie = '/usr/bin/python3.7';
+else
+    absPythonPathLinuxCoverageOnFrankie = '/usr/bin/python3.8';
+end
 
 unknownComputerErrorMsg = ...
     ['Compute not recognized... \n', ...
