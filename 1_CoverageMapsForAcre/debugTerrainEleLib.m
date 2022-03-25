@@ -26,4 +26,6 @@ regionRef = fetchregion(lowResGridLatRange, lowResGridLonRange);
 rawRefElevData = regionRef.readelevation( ...
     lowResGridLatRange, lowResGridLonRange, 'sampleFactor', 1);
 
+dispelev(rawRefElevData, 'mode', 'latlong'); plot_google_map;
+
 % EOF
