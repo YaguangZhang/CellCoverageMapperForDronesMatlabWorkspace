@@ -67,11 +67,12 @@ indicesClosestTile = knnsearch(lidarFileXYCentroids, profileSampLocs);
 %      profileSampLocs(idx,1), profileSampLocs(idx,2)), ...
 %     1:numOfProfileSampLocs);
 
+deltaDist = lidarRasterResolutionInM*2;
 for curIdxTile = unique(indicesClosestTile)'
     % Only load the needed fields to save time.
     fieldsToLoad = {'getEleFromXYFct', 'getLiDarZFromXYFct', ...
         'lidarEles', 'lidarXs', 'lidarYs', 'lidarZs'};
-    
+
     try
         load(lidarMatFileAbsDirs{curIdxTile}, fieldsToLoad{:});
     catch err
@@ -85,7 +86,7 @@ for curIdxTile = unique(indicesClosestTile)'
         disp('succeeded!');
         disp(' ');
     end
-    
+
     % Find the profile locations which has the closest data tile as the
     % current one ...
     boolsProfileSampsWithCurTileAsClosest = indicesClosestTile==curIdxTile;
@@ -97,7 +98,7 @@ for curIdxTile = unique(indicesClosestTile)'
         profileSampLocs(boolsProfileSampsWithCurTileAsClosest,1), ...
         profileSampLocs(boolsProfileSampsWithCurTileAsClosest,2), ...
         xYBoundryPolygon.Vertices(:,1), xYBoundryPolygon.Vertices(:,2));
-    
+
     % Find the profile locations which has the closest data tile as the
     % current one ... and are NOT in the current data tile but close enough
     % to be included if we extend the current tile boundary a little.
@@ -105,7 +106,7 @@ for curIdxTile = unique(indicesClosestTile)'
         xYBoundryPolygon, sqrt(2)/2*lidarRasterResolutionInM);
     assert(xYBoundryPolygonExt.NumRegions==1, ...
         'The extended data tile should have only one region!');
-    
+
     % We only need to consider points not in the current tile.
     boolsCandidateProfileSampsNearCurTile = ...
         boolsProfileSampsWithCurTileAsClosest ...
@@ -129,7 +130,7 @@ for curIdxTile = unique(indicesClosestTile)'
             throw(err);
         end
     end
-    
+
     % For these points' LiDAR z, use nearest neighbor extrapolation,
     % instead of linear interp2, because the latter will output NaN in this
     % case. Note that:
@@ -142,7 +143,7 @@ for curIdxTile = unique(indicesClosestTile)'
     % one.
     numOfProfileSampsNearCurTile = sum(boolsProfileSampsNearCurTile);
     indicesProfileSampsNearCurTile = find(boolsProfileSampsNearCurTile);
-    
+
     indicesNearestPtInCurTile = nan(numOfProfileSampsNearCurTile, 1);
     for idxSamp = 1:numOfProfileSampsNearCurTile
         curIdxProfileSampsNearCurTile ...
@@ -150,11 +151,10 @@ for curIdxTile = unique(indicesClosestTile)'
         curProfileSampLoc ...
             = profileSampLocs(curIdxProfileSampsNearCurTile,1:2);
         % Filter out grid points that are too far away.
-        deltaDist = lidarRasterResolutionInM*2;
         boolsGridPtTooFar = abs(lidarXs-curProfileSampLoc(1))>deltaDist ...
             | abs(lidarYs-curProfileSampLoc(2))>deltaDist;
         curIndicesNearByGridPts = find(~boolsGridPtTooFar);
-        
+
         curIndicesNearestPtInCurTile = knnsearch( ...
             [lidarXs(curIndicesNearByGridPts), ...
             lidarYs(curIndicesNearByGridPts)], ...
@@ -162,7 +162,7 @@ for curIdxTile = unique(indicesClosestTile)'
         indicesNearestPtInCurTile(idxSamp) ...
             = curIndicesNearByGridPts(curIndicesNearestPtInCurTile);
     end
-    
+
     switch lower(terrainDataType)
         case 'elevation'
             % The terrain information saved should be able to cover all the
@@ -196,7 +196,7 @@ for curIdxTile = unique(indicesClosestTile)'
                 = getEleFromXYFct( ...
                 profileSampLocs(boolsEleProfSampsToUpdate,1), ...
                 profileSampLocs(boolsEleProfSampsToUpdate,2));
-            
+
             boolsLidarProfSampsToUpdate ...
                 = boolsProfileSampsInCurTile & isnan(profileLidar);
             profileLidar(boolsLidarProfSampsToUpdate) ...
