@@ -191,6 +191,8 @@ else
     [curXYBoundryPolygons, curLonLatBoundryPolygons] ...
         = deal(cell(numOfFilesToProcess,1));
 
+    load(fullfile(fileparts(mfilename('fullpath')), ...
+        'anomalyTileNameWithProjCRS.mat'), 'anomalyTileNameWithProjCRS');
     parfor idxPar = 1:numOfFilesToProcess
         idxF = indicesFilesToProcess(idxPar);
 
@@ -241,9 +243,20 @@ else
             catch err
                 disp(['        There was an error ', ...
                     'converting raster (row, col) to (lat, lon)!']);
-                disp('Current spatialRef.ProjectedCRS:');
+                disp('        Current spatialRef.ProjectedCRS:');
                 disp(spatialRef.ProjectedCRS);
-                rethrow(err);
+                disp(err);
+                disp(' ');
+                disp('        We will use proj ref from other tiles...');
+                % Convert the coordinates with projection information from
+                % other tiles.
+                [~, curTileName] = fileparts(curLidarFileAbsDir);
+                idxProjToUse = find(cellfun( ...
+                    @(n) contains(n, curTileName), ...
+                    anomalyTileNameWithProjCRS(:,1)), 1, 'first'); %#ok<PFBNS>
+                [lidarLats, lidarLons] = projinv( ...
+                    anomalyTileNameWithProjCRS{idxProjToUse,2}, ...
+                    lidarRasterXs(:), lidarRasterYs(:));
             end
 
             % Store the new (x,y,z) data.
