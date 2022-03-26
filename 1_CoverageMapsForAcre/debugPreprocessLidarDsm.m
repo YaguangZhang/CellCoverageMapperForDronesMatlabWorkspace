@@ -82,6 +82,27 @@ for idxF = 1:length(lidarFileRelDirs2)
     title('Ground Elevation from getEleFromXYFct');
 end
 
+%% Debug Case: Check the Spatial Reference for IN tiles on Frankie.
+
+dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'Lidar_2019', 'IN', 'DSM');
+tifFileHandles = rdir(fullfile( ...
+    dirToLidarFiles, '**', '*.tif'), '', dirToLidarFiles);
+lidarFileRelDirs = {tifFileHandles(:).name}';
+
+anomalyTileAbsDirs = {};
+for idxLidarF = 1:length(lidarFileRelDirs)
+    [~, R] =readgeoraster(fullfile(dirToLidarFiles, ...
+        lidarFileRelDirs{idxLidarF}));
+    if ~isa(R.ProjectedCRS, 'projcrs')
+        warning('Empty ProjectedCRS!')
+        anomalyTileAbsDirs{end+1} = fullfile( ...
+            dirToLidarFiles, lidarFileRelDirs{idxLidarF}); %#ok<SAGROW>
+        disp(anomalyTileAbsDirs{end})
+        disp(' ')
+    end
+end
+
 %% Debug Case: All IN tiles on Frankie.
 
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
