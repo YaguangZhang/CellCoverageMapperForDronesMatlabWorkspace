@@ -224,28 +224,25 @@ else
             % to always have a z value of 0.
             lidarDataImg(lidarDataImg(:)==0) = -inf;
 
-            [lidarRasterXLabels, lidarRasterYLabels] ...
-                = pixcenters(geotiffinfo(curLidarFileAbsDir));
-
             % Convert survery feet to meter.
             lidarDataImg = distdim(lidarDataImg, 'ft', 'm');
+
             % Convert raster (row, col) to (lat, lon).
             try
-
+                % Essentailly meshgrid matrices.
+                [lidarRasterXs, lidarRasterYs] ...
+                    = worldGrid(spatialRef);
+                % Column vectors.
+                [lidarLats, lidarLons] = projinv( ...
+                    spatialRef.ProjectedCRS, ...
+                    lidarRasterXs(:), lidarRasterYs(:));
             catch err
                 disp(['        There was an error ', ...
                     'converting raster (row, col) to (lat, lon)!']);
                 rethrow(err);
             end
 
-            [lidarRasterXs, lidarRasterYs] ...
-                = meshgrid(lidarRasterXLabels, lidarRasterYLabels);
-            [lidarLats, lidarLons] = projinv(spatialRef.ProjectedCRS, ...
-                lidarRasterXs(:), lidarRasterYs(:));
-
             % Store the new (x,y,z) data.
-            lidarLats = lidarLats(:);
-            lidarLons = lidarLons(:);
             [lidarXs, lidarYs] ...
                 = DEG2UTM_FCT(lidarLats, lidarLons); %#ok<PFBNS>
 

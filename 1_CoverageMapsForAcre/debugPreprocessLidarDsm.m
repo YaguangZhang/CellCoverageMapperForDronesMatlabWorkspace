@@ -17,18 +17,18 @@ if ~exist(pathToSaveResults, 'dir')
     mkdir(pathToSaveResults)
 end
 
-%% Test Case with Unknown Projection Name
-
-%   - The zone label to use in the UTM (x, y) system.
+% The zone label to use in the UTM (x, y) system.
 simConfigs.UTM_ZONE = '16 T';
-dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'Lidar_2019', 'IN', 'DSM_UnknownProjTiles');
-
 % For GPS and UTM conversions.
 [deg2utm_speZone, utm2deg_speZone] ...
     = genUtmConvertersForFixedZone(simConfigs.UTM_ZONE);
 
 addpath(fullfile(pwd, 'lib', 'lidar'));
+
+%% Test Case: Tiles with Unknown Projection Names
+
+dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'Lidar_2019', 'IN', 'DSM_UnknownProjTiles');
 [lidarFileRelDirs1, lidarFileXYCoveragePolyshapes1, ~] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone);
@@ -62,23 +62,24 @@ for idxF = 1:length(lidarFileRelDirs2)
 
     figure; plot3k([lidarLons, lidarLats, lidarZs]); view(2);
     plot_google_map('MapType', 'satellite');
-    zlim([0, max(lidarZs)]);
+    zlim([0, max(lidarZs)]); title('Orignal LiDAR z');
 
     lidarZsInt = getLiDarZFromXYFct(lidarXs, lidarYs);
     lidarZsInt(isinf(lidarZsInt(:))) = nan;
 
     figure; plot3k([lidarLons, lidarLats, lidarZsInt]); view(2);
     plot_google_map('MapType', 'satellite');
-    zlim([0, max(lidarZsInt)]);
+    zlim([0, max(lidarZsInt)]); title('LiDAR z from getLiDarZFromXYFct');
 
     figure; plot3k([lidarLons, lidarLats, lidarEles]); view(2);
     plot_google_map('MapType', 'satellite');
-    zlim([0, max(lidarEles)]);
+    zlim([0, max(lidarEles)]); title('Orignal Ground Elevation');
 
     lidarElesInt = getEleFromXYFct(lidarXs, lidarYs);
     figure; plot3k([lidarLons, lidarLats, lidarElesInt]); view(2);
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarEles)]);
+    title('Ground Elevation from getEleFromXYFct');
 end
 
 % EOF
