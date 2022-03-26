@@ -241,6 +241,8 @@ else
             catch err
                 disp(['        There was an error ', ...
                     'converting raster (row, col) to (lat, lon)!']);
+                disp('Current spatialRef.ProjectedCRS:');
+                disp(spatialRef.ProjectedCRS);
                 rethrow(err);
             end
 
@@ -492,6 +494,7 @@ else
         catch err
             disp('        There was an error!')
             dispErr(err);
+            disp(['File which caused the error:', lidarFileRelDirs{idxF}])
             error(...
                 ['Error processing LiDAR data for ', ...
                 'file # ', num2str(idxF), '/', ...
