@@ -194,9 +194,11 @@ else
     parfor idxPar = 1:numOfFilesToProcess
         idxF = indicesFilesToProcess(idxPar);
 
-        % We will ignore the warning for function handles and polyshape.
+        % We will ignore the warning for function handles, polyshape, and
+        % fetchregion.
         warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
         warning('off', 'MATLAB:polyshape:repairedBySimplify');
+        warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
         % Load our Python module.
         py_addpath(fullfile(pwd, 'lib', 'python'));
@@ -497,9 +499,6 @@ else
                 'file # ', num2str(idxF), '/', ...
                 num2str(numLidarFiles), '!']')
         end
-
-        warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
-        warning('on', 'MATLAB:polyshape:repairedBySimplify');
     end
 
     xYBoundryPolygons(indicesFilesToProcess) ...
@@ -509,6 +508,10 @@ else
 
     save(ABS_DIR_TO_SAVE_RESULTS, ...
         'lidarFileRelDirs', 'xYBoundryPolygons', 'lonLatBoundryPolygons');
+
+    warning('on', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+    warning('on', 'MATLAB:polyshape:repairedBySimplify');
+    warning('on', 'MATLAB:MKDIR:DirectoryExists');
 end
 
 disp('    Done!')
