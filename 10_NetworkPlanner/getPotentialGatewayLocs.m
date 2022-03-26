@@ -144,7 +144,7 @@ end
 % remove preprocessIndianaLidarDataSet from path after things are done.
 addpath(fullfile(pwd, 'lib', 'lidar'));
 [lidarFileRelDirs, lidarFileXYCoveragePolyshapes, ~] ...
-    = preprocessIndianaLidarDataSetDsm(dirToLidarFiles, ...
+    = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     simConfigs.deg2utm_speZone, simConfigs.utm2deg_speZone);
 rmpath(fullfile(pwd, 'lib', 'lidar'));
 lidarFileAbsDirs = cellfun(@(d) ...
@@ -333,41 +333,41 @@ end
 %% Terrain Classification
 
 % ptCloud = pointCloud([simConfigs.mapGridXYPts, simConfigs.mapGridLidarZs]);
-% 
+%
 % [groundPtsIdx,nonGroundPtCloud,groundPtCloud] = segmentGroundSMRF(ptCloud);
 % % Visualize ground and non-ground points in green and magenta, respectively
 % figure
 % pcshowpair(nonGroundPtCloud,groundPtCloud)
 % title('Classified Ground and Non-Ground Points')
-% 
-% neighbors = 10;  
+%
+% neighbors = 10;
 % [normals,curvatures,neighInds] = helperExtractFeatures(nonGroundPtCloud, ...
 %     neighbors);
-% 
+%
 % % Specify the normal threshold and curvature threshold
 % normalThresh = 0.85;
 % curveThresh = 0.02;
 % % Classify the points into building and vegetation
 % labels = helperClassify(normals,curvatures,neighInds, ...
 %     normalThresh,curveThresh);
-% 
+%
 % maskData = grdTruthLabels>=2 & grdTruthLabels<=6;
-% 
+%
 % % Compress low, medium, and high vegetation to a single value
 % grdTruthLabels(grdTruthLabels>=3 & grdTruthLabels<=5) = 4;
 % % Update grdTruthLabels for metrics calculation
-% grdTruthLabels(grdTruthLabels == 2) = 1;    
+% grdTruthLabels(grdTruthLabels == 2) = 1;
 % grdTruthLabels(grdTruthLabels == 4) = 2;
 % grdTruthLabels(grdTruthLabels == 6) = 3;
-% 
+%
 % estimatedLabels = zeros(ptCloud.Count,1);
-% estimatedLabels(groundPtsIdx) = 1; 
+% estimatedLabels(groundPtsIdx) = 1;
 % estimatedLabels(labels == 1) = 2;
 % estimatedLabels(labels == 2) = 3;
-% 
+%
 % grdTruthLabels = grdTruthLabels(maskData);
 % estimatedLabels = estimatedLabels(maskData);
-% 
+%
 % ptCloud = select(ptCloud,maskData);
 % hFig = figure('Position',[0 0 900 400]);
 % axMap1 = subplot(1,2,1,'Color','black','Parent',hFig);
@@ -380,7 +380,7 @@ end
 % pcshow(ptCloud.Location,estimatedLabels,'Parent',axMap2)
 % axis off
 % title(axMap2,'Aerial Lidar Data with Classified Labels')
-% 
+%
 % confusionMatrix = segmentationConfusionMatrix(estimatedLabels,double(grdTruthLabels));
 % ssm = evaluateSemanticSegmentation({confusionMatrix}, ...
 %     {'Ground' 'Vegetation' 'Building'},'Verbose',0);
