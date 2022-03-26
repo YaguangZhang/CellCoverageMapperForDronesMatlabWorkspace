@@ -82,4 +82,12 @@ for idxF = 1:length(lidarFileRelDirs2)
     title('Ground Elevation from getEleFromXYFct');
 end
 
+%% Debug Case: All IN tiles on Frankie.
+
+dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'Lidar_2019', 'IN', 'DSM');
+[lidarFileRelDirs2, lidarFileXYCoveragePolyshapes2, ~] ...
+    = preprocessLidarDataSetDsm(dirToLidarFiles, ...
+    deg2utm_speZone, utm2deg_speZone);
+
 % EOF
