@@ -187,6 +187,7 @@ else
 
             guardMemAvailOnLinux;
 
+            % Aggressively decrease the number of workers.
             maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, ...
                 maxNumOfWorkersToUseStart);
             parforProcLidarTiles;
@@ -194,6 +195,12 @@ else
 
         % Restart the pool if free RAM is too low.
         guardMemAvailOnLinux;
+        % Decrease the number of workers by one after rebooting the pool
+        % just incase RAM is insufficient.
+        if flagPoolRestarted
+            maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-1, ...
+                maxNumOfWorkersToUseStart);
+        end
     end
 
     xYBoundryPolygons(indicesFilesToProcess) ...
