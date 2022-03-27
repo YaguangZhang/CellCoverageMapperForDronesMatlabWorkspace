@@ -172,15 +172,19 @@ else
     % chunks and restart the pool if free RAM is too low.
     maxNumOfWorkersToUseStart = 16;
 
-    maxNumOfWorkersToUse = maxNumOfWorkersToUseStart;
+    curCluster = gcp('nocreate');
+    maxNumOfWorkers = curCluster.NumWorkers;
+    maxNumOfWorkersToUse = min(maxNumOfWorkersToUseStart, maxNumOfWorkers);
     numOfFsPerChunk = maxNumOfWorkersToUse*8;
+
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
         chunkEnd = min(numOfFsPerChunk*idxChunk, ...
             numOfFilesToProcess); %#ok<NASGU>
         try
             parforProcLidarTiles;
-            maxNumOfWorkersToUse = maxNumOfWorkersToUse+1;
+            maxNumOfWorkersToUse = min(maxNumOfWorkersToUse+1, ...
+                maxNumOfWorkers);
         catch err
             warning('Error in parfor!');
             disp(err);
