@@ -23,24 +23,25 @@ try
     xYBoundryPolygon = historyResult.xYBoundryPolygon;
     lonLatBoundryPolygon ...
         = historyResult.lonLatBoundryPolygon;
+
+    % Make sure the function getLiDarZFromXYFct in the file has a valid
+    % workspace. More specifically, the function handle
+    % fctLonLatToLidarStatePlaneXY should be struct with field
+    % 'spatialRef'.
+    getLiDarZFromXYFctDetails = functions( ...
+        historyResult.getLiDarZFromXYFct);
+    fctLonLatToLidarStatePlaneXYDetails ...
+        = functions(getLiDarZFromXYFctDetails.workspace{1} ...
+        .fctLonLatToLidarStatePlaneXY);
+    if ~isfield( ...
+            fctLonLatToLidarStatePlaneXYDetails.workspace{1}, ...
+            'spatialRef')
+        warning('Field spatialRef not found!')
+    end
 catch err
     disp('            There was an error!')
     dispErr(err);
     warning('The history result .mat file is invalid!');
-end
-
-% Make sure the function getLiDarZFromXYFct in the file has a valid
-% workspace. More specifically, the function handle
-% fctLonLatToLidarStatePlaneXY should be struct with field 'spatialRef'.
-getLiDarZFromXYFctDetails = functions( ...
-    historyResult.getLiDarZFromXYFct);
-fctLonLatToLidarStatePlaneXYDetails ...
-    = functions(getLiDarZFromXYFctDetails.workspace{1} ...
-    .fctLonLatToLidarStatePlaneXY);
-if ~isfield( ...
-        fctLonLatToLidarStatePlaneXYDetails.workspace{1}, ...
-        'spatialRef')
-    warning('Field spatialRef not found!')
 end
 
 % Check whether there is any warning in loading the desired data.
