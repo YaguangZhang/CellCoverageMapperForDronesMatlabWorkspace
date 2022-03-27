@@ -171,13 +171,10 @@ else
     % chunks and restart the pool if free RAM is too low.
     maxNumOfWorkersToUse = 16;
     numOfFsPerChunk = maxNumOfWorkersToUse*3;
-    % Randomize the file list order to balance the LiDAR tile size.
-    randIdxListForFsToPro = randperm(numOfFilesToProcess);
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1);
         chunkEnd = min(numOfFsPerChunk*idxChunk, numOfFilesToProcess);
-        parfor (idxPar = randIdxListForFsToPro(chunkStart:chunkEnd), ...
-                maxNumOfWorkersToUse)
+        parfor (idxPar = chunkStart:chunkEnd, maxNumOfWorkersToUse)
             tic;
 
             idxF = indicesFilesToProcess(idxPar);
