@@ -21,18 +21,23 @@ if ~isempty(curCluster)
         minAvailMemInGiBRequired = 32; % We want at least 32 GiB arailable.
         if availMemInGiB < minAvailMemInGiBRequired
             disp(' ');
-            disp(['Warning: Alailable memory (', num2str(availMemInGiB), ...
+            disp(['Warning: Alailable memory (', ...
+                num2str(availMemInGiB), ...
                 ' GiB) is less than the required amout (', ...
                 num2str(minAvailMemInGiBRequired), ' GiB)!']);
 
             disp(' ');
             disp('Restarting parallel pool...');
+
+            tic;
             delete(curCluster);
             curCluster = gcp;
             if exist('numOfWorkersInCurCluster', 'var')
                 assert(numOfWorkersInCurCluster==curCluster.NumWorkers, ...
                     'New cluster has a different number of workers!');
             end
+            toc;
+
             disp('Done!');
         end
     end
