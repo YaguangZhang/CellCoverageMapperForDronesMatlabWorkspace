@@ -7,6 +7,7 @@
 % Yaguang Zhang, Purdue, 03/02/2022
 
 % Only do the check if a parallel pool is present.
+flagPoolRestarted = false;
 curCluster = gcp('nocreate');
 if ~isempty(curCluster)
     % Only do the check for Linux machines, e.g., the Purdue cluster
@@ -36,6 +37,7 @@ if ~isempty(curCluster)
                 assert(numOfWorkersInCurCluster==curCluster.NumWorkers, ...
                     'New cluster has a different number of workers!');
             end
+            flagPoolRestarted = true;
             toc;
 
             disp('Done!');
