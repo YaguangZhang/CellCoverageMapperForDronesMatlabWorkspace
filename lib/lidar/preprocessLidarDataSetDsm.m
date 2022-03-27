@@ -468,7 +468,7 @@ else
 
                         lidarZsWaterRm = lidarZs;
                         lidarZsWaterRm(isinf(lidarZsWaterRm)) = nan;
-                        lidarXYZ = [lidarXs, lidarYs,
+                        lidarXYZ = [lidarXs, lidarYs, ...
                             double(lidarZsWaterRm)];
 
                         % Boundary on map.
