@@ -172,7 +172,7 @@ else
     numOfFsPerChunk = 256;
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1);
-        chunkEnd = min(1 + numOfFsPerChunk*idxChunk, numOfFilesToProcess);
+        chunkEnd = min(numOfFsPerChunk*idxChunk, numOfFilesToProcess);
         parfor idxPar = chunkStart:chunkEnd
             tic;
 
