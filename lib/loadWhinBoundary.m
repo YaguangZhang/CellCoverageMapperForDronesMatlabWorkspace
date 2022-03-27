@@ -57,6 +57,8 @@ else
         lonLatPolyshapeWhin = union(lonLatPolyshapeWhin, ...
             polyshape(countiesWhin(idxCnt).X, countiesWhin(idxCnt).Y));
     end
+    lonLatPolyshapeWhin = rmholes(lonLatPolyshapeWhin);
+
     whinBoundaryLats = lonLatPolyshapeWhin.Vertices(:,2);
     whinBoundaryLons = lonLatPolyshapeWhin.Vertices(:,1);
 
