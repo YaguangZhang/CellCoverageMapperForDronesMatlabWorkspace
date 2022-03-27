@@ -5,6 +5,20 @@
 %
 % Yaguang Zhang, Purdue, 03/27/2022
 
+if ~exist('fileNameHintRuler', 'var')
+    fileNameHintRuler = ' ------------------------- ';
+end
+if ~exist('datetimeFormat', 'var')
+    datetimeFormat = 'yyyy/mm/dd HH:MM:ss';
+end
+
+disp(fileNameHintRuler)
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Started new round of parforProcLidarTiles.'])
+disp(['    Current maxNumOfWorkersToUse = ', ...
+    num2str(maxNumOfWorkersToUse), ' ...'])
+disp(fileNameHintRuler)
+
 parfor (idxPar = chunkStart:chunkEnd, maxNumOfWorkersToUse)
     tic;
 
