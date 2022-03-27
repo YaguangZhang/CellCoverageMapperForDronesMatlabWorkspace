@@ -127,45 +127,15 @@ else
         % Try reusing the history results.
         if exist(curFullPathToSaveLidarResults, 'file') ...
                 && (~FLAG_FORCE_REPROCESSING_DATA)
+            % Try loading the .mat file.
+            [xYBoundryPolygonCache, lonLatBoundryPolygonCache, ...
+                warnMsgCache] = loadCachedLidarDsmTile( ...
+                curFullPathToSaveLidarResults);
 
-            % Clear last warning message.
-            lastwarn('');
-
-            % Make sure the file can be loaded properly.
-            try
-                historyResult = load(curFullPathToSaveLidarResults, ...
-                    'xYBoundryPolygon', 'lonLatBoundryPolygon', ...
-                    'getLiDarZFromXYFct');
-                xYBoundryPolygon = historyResult.xYBoundryPolygon;
-                lonLatBoundryPolygon ...
-                    = historyResult.lonLatBoundryPolygon;
-            catch err
-                disp('            There was an error!')
-                dispErr(err);
-                warning('The history result .mat file is invalid!');
-            end
-
-            % Make sure the function getLiDarZFromXYFct in the file has a
-            % valid workspace. More specifically, the function handle
-            % fctLonLatToLidarStatePlaneXY should be struct with field
-            % 'spatialRef'.
-            getLiDarZFromXYFctDetails = functions( ...
-                historyResult.getLiDarZFromXYFct);
-            fctLonLatToLidarStatePlaneXYDetails ...
-                = functions(getLiDarZFromXYFctDetails.workspace{1} ...
-                .fctLonLatToLidarStatePlaneXY);
-            if ~isfield( ...
-                    fctLonLatToLidarStatePlaneXYDetails.workspace{1}, ...
-                    'spatialRef')
-                warning('Field spatialRef not found!')
-            end
-
-            % Check whether there is any warning in loading the desired
-            % data.
-            [warnMsg, ~] = lastwarn;
-            if isempty(warnMsg)
-                curXYBoundryPolygons{idxPar} = xYBoundryPolygon;
-                curLonLatBoundryPolygons{idxPar} = lonLatBoundryPolygon;
+            if isempty(warnMsgCache)
+                curXYBoundryPolygons{idxPar} = xYBoundryPolygonCache;
+                curLonLatBoundryPolygons{idxPar} ...
+                    = lonLatBoundryPolygonCache;
                 curBoolsFilesProcessed(idxPar) = true;
             else
                 warning('Failed in loading history data!');
@@ -196,19 +166,39 @@ else
 
     % The workers may die in the parfor loop, which will cause reruns of
     % the whole loop and go through files that are already processeed. We
-    % will use flags to avoid unnecessary reprocessing attempts.
-    boolsFilesProcessedByParFor = false(numOfFilesToProcess,1);
+    % will (i) check whether .mat cache files are already available to
+    % avoid unnecessary reprocessing attempts, and (ii) break the jobs into
+    % chunks and restart the pool if free RAM is too low.
     parfor idxPar = 1:numOfFilesToProcess
         idxF = indicesFilesToProcess(idxPar);
         curFullPathToSaveLidarResults ...
             = fullPathToSaveNewLidarResults{idxPar};
 
-        try
-            tic;
-            if ~boolsFilesProcessedByParFor(idxPar)
+        tic;
+
+        % Try reusing the history results.
+        flagReuseCacheSuccess = false;
+        if exist(curFullPathToSaveLidarResults, 'file') ...
+                && (~FLAG_FORCE_REPROCESSING_DATA)
+            % Try loading the .mat file specified by
+            % curFullPathToSaveLidarResults.
+            [xYBoundryPolygon, lonLatBoundryPolygon, warnMsg] ...
+                = loadCachedLidarDsmTile(curFullPathToSaveLidarResults);
+
+            if isempty(warnMsg)
+                flagReuseCacheSuccess = true;
+            else
+                warning('Failed in loading history data!');
+                disp('            Aborted.');
+            end
+        end
+
+        if ~flagReuseCacheSuccess
+            try
                 % We will ignore the warning for function handles,
                 % polyshape, and fetchregion.
-                warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+                warning('off', ...
+                    'MATLAB:dispatcher:UnresolvedFunctionHandle');
                 warning('off', 'MATLAB:polyshape:repairedBySimplify');
                 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
@@ -219,7 +209,6 @@ else
                     num2str(idxF), '/', num2str(numLidarFiles), ...
                     ': Processing raw LiDAR data ...']);
 
-
                 [curLidarFileParentRelDir, curLidarFileName] ...
                     = fileparts(lidarFileRelDirs{idxF}); %#ok<PFBNS>
 
@@ -227,7 +216,8 @@ else
                 % Load LiDAR data.
                 curLidarFileAbsDir = fullfile(ABS_PATH_TO_LOAD_LIDAR, ...
                     curLidarFileParentRelDir, [curLidarFileName, '.tif']);
-                [lidarDataImg, spatialRef] = readgeoraster(curLidarFileAbsDir);
+                [lidarDataImg, spatialRef] ...
+                    = readgeoraster(curLidarFileAbsDir);
                 lidarDataImg(abs(lidarDataImg(:))>maxAllowedAbsLidarZ) ...
                     = nan;
                 % Reset samples with exact zero values. Regions with water
@@ -253,7 +243,8 @@ else
                     disp(spatialRef.ProjectedCRS);
                     disp(err);
                     disp(' ');
-                    disp('        We will use proj ref from other tiles...');
+                    disp(['        We will use projection ', ...
+                        'reference info from other tiles ...']);
                     % Convert the coordinates with projection information
                     % from other tiles.
                     [~, curTileName] = fileparts(curLidarFileAbsDir);
@@ -294,7 +285,8 @@ else
 
                 % Create a function to get LiDAR z from UTM coordinates.
                 fctLonLatToLidarStatePlaneXY ...
-                    = @(lon, lat) projfwd(spatialRef.ProjectedCRS, lat, lon);
+                    = @(lon, lat) projfwd( ...
+                    spatialRef.ProjectedCRS, lat, lon);
                 getLiDarZFromStatePlaneXYFct = @(spXs, spYs) ...
                     interp2(lidarRasterXs, lidarRasterYs, ...
                     lidarDataImg, spXs, spYs);
@@ -453,101 +445,81 @@ else
                     lidarLats, lidarLons, lidarEles, getEleFromXYFct, ...
                     lonLatBoundryPolygon, spatialRef, ...
                     DEG2UTM_FCT, UTM2DEG_FCT);
-                %====== END OF LIDAR DATA PROCESSING ======
-                boolsFilesProcessedByParFor(idxPar) = true;
-            else
+
                 if FLAG_GEN_DEBUG_FIGS
-                    histRes = load(curFullPathToSaveLidarResults, ...
-                        'lidarXs', 'lidarYs', 'lidarZs', ...
-                        'xYBoundryPolygon', 'getLiDarZFromXYFct', ...
-                        'lidarLats', 'lidarLons', ...
-                        'lidarEles', 'getEleFromXYFct', ...
-                        'lonLatBoundryPolygon'); %#ok<UNRCH>
-                    lidarXs = histRes.lidarXs;
-                    lidarYs = histRes.lidarYs;
-                    lidarZs = histRes.lidarZs;
-                    xYBoundryPolygon = histRes.xYBoundryPolygon;
-                    getLiDarZFromXYFct = histRes.getLiDarZFromXYFct;
-                    lidarLats = histRes.lidarLats;
-                    lidarLons = histRes.lidarLons;
-                    lidarEles = histRes.lidarEles;
-                    getEleFromXYFct = histRes.getEleFromXYFct;
-                    lonLatBoundryPolygon = histRes.lonLatBoundryPolygon;
-                else
-                    histRes = load(curFullPathToSaveLidarResults, ...
-                        'xYBoundryPolygon', 'lonLatBoundryPolygon');
-                    xYBoundryPolygon = histRes.xYBoundryPolygon;
-                    lonLatBoundryPolygon = histRes.lonLatBoundryPolygon;
+                    close all; %#ok<UNRCH>
+
+                    lidarZsWaterRm = lidarZs;
+                    lidarZsWaterRm(isinf(lidarZsWaterRm)) = nan;
+                    lidarXYZ = [lidarXs, lidarYs, double(lidarZsWaterRm)];
+
+                    % Boundary on map.
+                    figure;
+                    plot(lonLatBoundryPolygon, ...
+                        'FaceColor','red','FaceAlpha',0.1);
+                    plot_google_map('MapType', 'satellite');
+
+                    % (lidarLons, lidarLats, lidarZs).
+                    figure; hold on;
+                    plot(lonLatBoundryPolygon, ...
+                        'FaceColor','red','FaceAlpha',0.1);
+                    plot3k([lidarLons, lidarLats, lidarZsWaterRm]);
+                    view(2);
+                    plot_google_map('MapType', 'satellite');
+
+                    % lidarXYZ.
+                    figure; hold on;
+                    plot(xYBoundryPolygon, ...
+                        'FaceColor','red','FaceAlpha',0.1);
+                    plot3k(lidarXYZ);
+                    axis equal; view(2);
+
+                    % A preview of all the elevation data fetched.
+                    dispelev(rawElevData, 'mode', 'latlong');
+                    plot_google_map('MapType', 'satellite');
+
+                    % lidarZ - getLiDarZFromXYFct(lidarX, lidarY).
+                    figure; hold on;
+                    plot(xYBoundryPolygon, ...
+                        'FaceColor','red','FaceAlpha',0.1);
+                    plot3k([lidarXYZ(:,1:2), lidarZsWaterRm ...
+                        - getLiDarZFromXYFct(lidarXs, lidarYs)]);
+                    axis equal; view(2);
+
+                    % lidarEles - getEleFromXYFct(lidarX, lidarY).
+                    figure; hold on;
+                    plot(xYBoundryPolygon, ...
+                        'FaceColor','red','FaceAlpha',0.1);
+                    plot3k([lidarXYZ(:,1:2), ...
+                        lidarEles - getEleFromXYFct(lidarXs, lidarYs)]);
+                    axis equal; view(2);
+
+                    % lidarZ - lidarEles.
+                    figure; hold on;
+                    plot(xYBoundryPolygon, ...
+                        'FaceColor','red','FaceAlpha',0.1);
+                    plot3k([lidarXYZ(:,1:2), ...
+                        lidarZsWaterRm - lidarEles]);
+                    axis equal; view(2);
                 end
+                %====== END OF LIDAR DATA PROCESSING ======
+            catch err
+                disp('        There was an error!')
+                dispErr(err);
+                disp(['File which caused the error:', lidarFileRelDirs{idxF}])
+                toc;
+                error(...
+                    ['Error processing LiDAR data for ', ...
+                    'file # ', num2str(idxF), '/', ...
+                    num2str(numLidarFiles), '!']')
             end
-            curXYBoundryPolygons{idxPar} = xYBoundryPolygon;
-            curLonLatBoundryPolygons{idxPar} = lonLatBoundryPolygon;
-
-            if FLAG_GEN_DEBUG_FIGS
-                close all; %#ok<UNRCH>
-
-                lidarZsWaterRm = lidarZs;
-                lidarZsWaterRm(isinf(lidarZsWaterRm)) = nan;
-                lidarXYZ = [lidarXs, lidarYs, double(lidarZsWaterRm)];
-
-                % Boundary on map.
-                figure;
-                plot(lonLatBoundryPolygon, ...
-                    'FaceColor','red','FaceAlpha',0.1);
-                plot_google_map('MapType', 'satellite');
-
-                % (lidarLons, lidarLats, lidarZs).
-                figure; hold on;
-                plot(lonLatBoundryPolygon, ...
-                    'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarLons, lidarLats, lidarZsWaterRm]);
-                view(2);
-                plot_google_map('MapType', 'satellite');
-
-                % lidarXYZ.
-                figure; hold on;
-                plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k(lidarXYZ);
-                axis equal; view(2);
-
-                % A preview of all the elevation data fetched.
-                dispelev(rawElevData, 'mode', 'latlong');
-                plot_google_map('MapType', 'satellite');
-
-                % lidarZ - getLiDarZFromXYFct(lidarX, lidarY).
-                figure; hold on;
-                plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarXYZ(:,1:2), lidarZsWaterRm ...
-                    - getLiDarZFromXYFct(lidarXs, lidarYs)]);
-                axis equal; view(2);
-
-                % lidarEles - getEleFromXYFct(lidarX, lidarY).
-                figure; hold on;
-                plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarXYZ(:,1:2), ...
-                    lidarEles - getEleFromXYFct(lidarXs, lidarYs)]);
-                axis equal; view(2);
-
-                % lidarZ - lidarEles.
-                figure; hold on;
-                plot(xYBoundryPolygon, 'FaceColor','red','FaceAlpha',0.1);
-                plot3k([lidarXYZ(:,1:2), ...
-                    lidarZsWaterRm - lidarEles]);
-                axis equal; view(2);
-            end
-
-            toc;
-            disp('        Done!');
-        catch err
-            disp('        There was an error!')
-            dispErr(err);
-            disp(['File which caused the error:', lidarFileRelDirs{idxF}])
-            toc;
-            error(...
-                ['Error processing LiDAR data for ', ...
-                'file # ', num2str(idxF), '/', ...
-                num2str(numLidarFiles), '!']')
         end
+
+        curXYBoundryPolygons{idxPar} = xYBoundryPolygon;
+        curLonLatBoundryPolygons{idxPar} = lonLatBoundryPolygon;
+
+        toc;
+        disp('        Done!');
     end
 
     xYBoundryPolygons(indicesFilesToProcess) ...
