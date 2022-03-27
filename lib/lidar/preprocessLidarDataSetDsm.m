@@ -169,7 +169,7 @@ else
     % will (i) check whether .mat cache files are already available to
     % avoid unnecessary reprocessing attempts, and (ii) break the jobs into
     % chunks and restart the pool if free RAM is too low.
-    numOfFsPerChunk = 256;
+    numOfFsPerChunk = 96;
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1);
         chunkEnd = min(numOfFsPerChunk*idxChunk, numOfFilesToProcess);
