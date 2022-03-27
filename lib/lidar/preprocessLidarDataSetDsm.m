@@ -170,12 +170,12 @@ else
     % will (i) check whether .mat cache files are already available to
     % avoid unnecessary reprocessing attempts, and (ii) break the jobs into
     % chunks and restart the pool if free RAM is too low.
-    maxNumOfWorkersToUseStart = 16;
+    maxNumOfWorkersToUseStart = 32;
 
-    curCluster = gcp('nocreate');
+    curCluster = gcp;
     maxNumOfWorkers = curCluster.NumWorkers;
     maxNumOfWorkersToUse = min(maxNumOfWorkersToUseStart, maxNumOfWorkers);
-    numOfFsPerChunk = maxNumOfWorkersToUse*8;
+    numOfFsPerChunk = maxNumOfWorkersToUse*4;
 
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
@@ -183,8 +183,19 @@ else
             numOfFilesToProcess); %#ok<NASGU>
         try
             parforProcLidarTiles;
-            maxNumOfWorkersToUse = min(maxNumOfWorkersToUse+1, ...
-                maxNumOfWorkers);
+
+            % Restart the pool and reduce number of workers to use if any
+            % worker dies.
+            curCluster = gcp('nocreate');
+            if curCluster.NumWorkers<maxNumOfWorkers
+                delete(curCluster); gcp;
+
+                % Aggressively decrease the number of workers.
+                maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, 1);
+            else
+                maxNumOfWorkersToUse = min(maxNumOfWorkersToUse+1, ...
+                    maxNumOfWorkers);
+            end
         catch err
             warning('Error in parfor!');
             disp(err);
@@ -192,8 +203,7 @@ else
             guardMemAvailOnLinux;
 
             % Aggressively decrease the number of workers.
-            maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, ...
-                maxNumOfWorkersToUseStart);
+            maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, 1);
             parforProcLidarTiles;
         end
 
