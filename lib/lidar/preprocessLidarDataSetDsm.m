@@ -1,6 +1,6 @@
 function [lidarFileRelDirs, xYBoundryPolygons, lonLatBoundryPolygons] ...
     = preprocessLidarDataSetDsm(ABS_PATH_TO_LOAD_LIDAR, ...
-    DEG2UTM_FCT, UTM2DEG_FCT) %#ok<INUSD> 
+    DEG2UTM_FCT, UTM2DEG_FCT) %#ok<INUSD>
 %PREPROCESSLIDARDATASETDSM Preprocess the digital surface model (DSM) LiDAR
 %data set located at ABS_PATH_TO_LOAD_LIDAR.
 %
@@ -173,6 +173,7 @@ else
     maxNumOfWorkersToUseStart = 16;
 
     maxNumOfWorkersToUse = maxNumOfWorkersToUseStart;
+    numOfFsPerChunk = maxNumOfWorkersToUse*8;
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
         chunkEnd = min(numOfFsPerChunk*idxChunk, ...

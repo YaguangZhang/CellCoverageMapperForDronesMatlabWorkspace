@@ -5,7 +5,6 @@
 %
 % Yaguang Zhang, Purdue, 03/27/2022
 
-numOfFsPerChunk = maxNumOfWorkersToUse*3;
 parfor (idxPar = chunkStart:chunkEnd, maxNumOfWorkersToUse)
     tic;
 
