@@ -41,6 +41,9 @@ try
 catch err
     disp('            There was an error!')
     dispErr(err);
+
+    % Output empty results.
+    [xYBoundryPolygon, lonLatBoundryPolygon] = deal(polyshape);
     warning('The history result .mat file is invalid!');
 end
 
