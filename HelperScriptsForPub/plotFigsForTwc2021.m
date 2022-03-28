@@ -92,6 +92,11 @@ whinScaleFontS = 9;
 inScalePos = [-85.5442, 38.3774, largeZValue];
 inScaleFontS = 9;
 
+% FSPL calculated for clear LoS links at 50 m as the best performance
+% limit.
+refClearPathFsplMapIdx = 9;
+refClearPathFsplMapRxHInM = 50;
+
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
 disp(' ')
@@ -1329,8 +1334,7 @@ visiblePathLossRange = [100, 140];
 
 % FSPL calculated for clear LoS links at 50 m as the best performance
 % limit.
-refBlockageMapIdx = 9;
-refBlockageMapRxHInM = 50;
+%   refClearPathFsplMapIdx = 9; refClearPathFsplMapRxHInM = 50;
 
 idxF = 1;
 fcInMHz = freqsToInspectInMhz(idxF);
@@ -1383,11 +1387,11 @@ for idxPreset = 1:numOfPresets
     % FSPL calculated for clear LoS links at specified height as the best
     % performance limit.
     assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M( ...
-        refBlockageMapIdx) ...
-        == refBlockageMapRxHInM, ...
+        refClearPathFsplMapIdx) ...
+        == refClearPathFsplMapRxHInM, ...
         ['refBlockageMapIdx does not match with ', ...
-        'refBlockageMapRxHInM!'])
-    curRefFsplVs = simState.blockageMaps{refBlockageMapIdx};
+        'refClearPathFsplMapRxHInM!'])
+    curRefFsplVs = simState.blockageMaps{refClearPathFsplMapIdx};
 
     [curEmpCdfFig, coverageMapsCovRatioMetas{idxPreset}] ...
         = plotEmpiricalCdfForCoverage(tempSimState, tempSimConfigs, ...
@@ -1454,6 +1458,15 @@ load(absPathToSimConfigs);
 absPathToSimState = fullfile(absPathToSimFolder, 'simState.mat');
 load(absPathToSimState);
 
+% FSPL calculated for clear LoS links at specified height as the best
+% performance limit.
+assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M( ...
+    refClearPathFsplMapIdx) ...
+    == refClearPathFsplMapRxHInM, ...
+    ['refBlockageMapIdx does not match with ', ...
+    'refClearPathFsplMapRxHInM!'])
+curRefFsplVs = simState.blockageMaps{refClearPathFsplMapIdx};
+
 idxH = 1;
 hInM = 1.5;
 assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH) == hInM, ...
@@ -1509,6 +1522,26 @@ for idxRange = 1:length(pathLossRangesToShow)
     saveas(gcf, [pathToSaveFig, '.svg']);
     delete(hSurfPathLoss); delete(hCurCb);
 end
+
+% Best-scenario path loss map based on 2D FSPL.
+curPathLossRangeToShow = [120, 150];
+
+[hSurfPathLoss, hCurCb] = ...
+    overlayOpenSigStyleMap(simConfigs, simState.mapGridLatLonPts, ...
+    curRefFsplVs, curPathLossRangeToShow);
+set(get(hCurCb, 'Title'), 'String', {'Path Loss (dB)', ' '}, ...
+    'HorizontalAlignment', 'left');
+hCurCb.TickLabels{1} = ['≤', hCurCb.TickLabels{1}];
+
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    ['compWithOpenSig_ClearPathFSPL_ShrinkedIN_1900MHz_hR_50_PLRange_', ...
+    num2str(curPathLossRangeToShow(1)), '_', ...
+    num2str(curPathLossRangeToShow(2))]);
+export_fig([pathToSaveFig, '.png'], '-m3', '-transparent');
+saveas(gcf, [pathToSaveFig, '.svg']);
+delete(hSurfPathLoss); delete(hCurCb);
+
+close(gcf);
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
