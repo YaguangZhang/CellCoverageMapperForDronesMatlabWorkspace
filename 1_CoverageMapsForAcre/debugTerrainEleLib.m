@@ -18,7 +18,7 @@ if ~exist(pathToSaveResults, 'dir')
     mkdir(pathToSaveResults)
 end
 
-%% Test Case
+%% Test Case for fetchregion
 
 lowResGridLatRange = [40.467071825508839; 40.501647105371035];
 lowResGridLonRange = [-87.015786097515942; -86.976458345550711];
@@ -27,5 +27,30 @@ rawRefElevData = regionRef.readelevation( ...
     lowResGridLatRange, lowResGridLonRange, 'sampleFactor', 1);
 
 dispelev(rawRefElevData, 'mode', 'latlong'); plot_google_map;
+
+figure;
+surf(rawRefElevData.longs, rawRefElevData.lats, rawRefElevData.elev, ...
+    'FaceAlpha', 0.5, 'EdgeColor', 'none');
+plot_google_map('MapType', 'hybrid');
+view(2); zlim([0, max(rawRefElevData.elev(:))]);
+axis(axis([-87.0145, -87.0084, 40.4971, 40.5007]));
+
+
+%% Test Case for fetchAnomalyRegion
+
+lowResGridLatRange = [40.467071825508839; 40.501647105371035];
+lowResGridLonRange = [-87.015786097515942; -86.976458345550711];
+regionRef = fetchAnomalyRegion(lowResGridLatRange, lowResGridLonRange);
+rawRefElevData = regionRef.readelevation( ...
+    lowResGridLatRange, lowResGridLonRange, 'sampleFactor', 1);
+
+dispelev(rawRefElevData, 'mode', 'latlong'); plot_google_map;
+
+figure;
+surf(rawRefElevData.longs, rawRefElevData.lats, rawRefElevData.elev, ...
+    'FaceAlpha', 0.5, 'EdgeColor', 'none');
+plot_google_map('MapType', 'hybrid');
+view(2); zlim([0, max(rawRefElevData.elev(:))]);
+axis(axis([-87.0145, -87.0084, 40.4971, 40.5007]));
 
 % EOF
