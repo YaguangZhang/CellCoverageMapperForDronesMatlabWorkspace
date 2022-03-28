@@ -33,7 +33,7 @@ surf(rawRefElevData.longs, rawRefElevData.lats, rawRefElevData.elev, ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none');
 plot_google_map('MapType', 'hybrid');
 view(2); zlim([0, max(rawRefElevData.elev(:))]);
-axis(axis([-87.0145, -87.0084, 40.4971, 40.5007]));
+axis([-87.0145, -87.0084, 40.4971, 40.5007]);
 
 
 %% Test Case for fetchAnomalyRegion
@@ -51,6 +51,6 @@ surf(rawRefElevData.longs, rawRefElevData.lats, rawRefElevData.elev, ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none');
 plot_google_map('MapType', 'hybrid');
 view(2); zlim([0, max(rawRefElevData.elev(:))]);
-axis(axis([-87.0145, -87.0084, 40.4971, 40.5007]));
+axis([-87.0145, -87.0084, 40.4971, 40.5007]);
 
 % EOF
