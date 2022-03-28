@@ -67,7 +67,8 @@ usgsBoxPadInM = 15; %#ok<NASGU>
 % Display more details for warnings.
 warning on verbose;
 % Throw an error instead of issuing a warning when workers die.
-warning('error', 'MATLAB:remoteparfor:ParforWorkerAborted');
+errIdWorkerAborted = 'MATLAB:remoteparfor:ParforWorkerAborted';
+warning('error', errIdWorkerAborted);
 
 [~, datasetName] = fileparts(ABS_PATH_TO_LOAD_LIDAR);
 
@@ -198,15 +199,19 @@ else
                 warning('Error in parfor!');
                 disp(err);
 
-                % Restart the pool and reduce number of workers to use if
-                % any worker dies.
-                curCluster = gcp('nocreate');
-                if curCluster.NumWorkers<maxNumOfWorkers
-                    delete(curCluster); gcp;
-                end
-
                 % Aggressively decrease the number of workers.
                 maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, 1);
+
+                % Consider restarting the pool if any worker dies.
+                if strcmp(err.identifier, errIdWorkerAborted)
+                    curCluster = gcp('nocreate');
+                    % Restart pool only when available worker is (i) less
+                    % than max and (ii) less than needed.
+                    if (curCluster.NumWorkers<maxNumOfWorkers) ...
+                            && (curCluster.NumWorkers<maxNumOfWorkersToUse)
+                        delete(curCluster); gcp;
+                    end
+                end
             end
 
             % Restart the pool if free RAM is too low.
