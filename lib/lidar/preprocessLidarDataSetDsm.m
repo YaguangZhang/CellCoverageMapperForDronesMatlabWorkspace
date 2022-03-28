@@ -64,6 +64,11 @@ maxAllowedAbsLidarZ = 10^38; %#ok<NASGU>
 % edge. Note: 1/3 arc second approximately correspond to 10 meters.
 usgsBoxPadInM = 15; %#ok<NASGU>
 
+% Display more details for warnings.
+warning on verbose;
+% Throw an error instead of issuing a warning when workers die.
+warning('error', 'parallel:cluster:LocalWorkerCrash');
+
 [~, datasetName] = fileparts(ABS_PATH_TO_LOAD_LIDAR);
 
 disp(' ')
@@ -181,39 +186,37 @@ else
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
         chunkEnd = min(numOfFsPerChunk*idxChunk, ...
             numOfFilesToProcess); %#ok<NASGU>
-        try
-            parforProcLidarTiles;
 
-            % Restart the pool and reduce number of workers to use if any
-            % worker dies.
-            curCluster = gcp('nocreate');
-            if curCluster.NumWorkers<maxNumOfWorkers
-                delete(curCluster); gcp;
+        flagCurrentChunkDone = false;
+        while ~flagCurrentChunkDone
+            try
+                parforProcLidarTiles;
+                flagCurrentChunkDone = true;
+                maxNumOfWorkersToUse = min(maxNumOfWorkersToUse+1, ...
+                    maxNumOfWorkers);
+            catch err
+                warning('Error in parfor!');
+                disp(err);
+
+                % Restart the pool and reduce number of workers to use if
+                % any worker dies.
+                curCluster = gcp('nocreate');
+                if curCluster.NumWorkers<maxNumOfWorkers
+                    delete(curCluster); gcp;
+                end
 
                 % Aggressively decrease the number of workers.
                 maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, 1);
-            else
-                maxNumOfWorkersToUse = min(maxNumOfWorkersToUse+1, ...
-                    maxNumOfWorkers);
             end
-        catch err
-            warning('Error in parfor!');
-            disp(err);
 
+            % Restart the pool if free RAM is too low.
             guardMemAvailOnLinux;
-
-            % Aggressively decrease the number of workers.
-            maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, 1);
-            parforProcLidarTiles;
-        end
-
-        % Restart the pool if free RAM is too low.
-        guardMemAvailOnLinux;
-        % Decrease the number of workers by one after rebooting the pool
-        % just incase RAM is insufficient.
-        if flagPoolRestarted
-            maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-1, ...
-                maxNumOfWorkersToUseStart);
+            % Decrease the number of workers by one after rebooting the
+            % pool just incase RAM is insufficient.
+            if flagPoolRestarted
+                maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-1, ...
+                    maxNumOfWorkersToUseStart);
+            end
         end
     end
 
