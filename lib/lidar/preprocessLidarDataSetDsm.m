@@ -179,12 +179,12 @@ else
     % will (i) check whether .mat cache files are already available to
     % avoid unnecessary reprocessing attempts, and (ii) break the jobs into
     % chunks and restart the pool if free RAM is too low.
-    maxNumOfWorkersToUseStart = 32;
+    maxNumOfWorkersToUseStart = 36;
 
     curCluster = gcp;
     maxNumOfWorkers = curCluster.NumWorkers;
     maxNumOfWorkersToUse = min(maxNumOfWorkersToUseStart, maxNumOfWorkers);
-    numOfFsPerChunk = maxNumOfWorkersToUse*4;
+    numOfFsPerChunk = maxNumOfWorkersToUse*10;
 
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
