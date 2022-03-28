@@ -25,6 +25,34 @@ simConfigs.UTM_ZONE = '16 T';
 
 addpath(fullfile(pwd, 'lib', 'lidar'));
 
+%% Tests for Python Environment and Downloader
+
+py_addpath(fullfile(pwd, 'lib', 'python'));
+
+disp('Fetching by lib ''Matlab'':')
+tic;
+elesTestMatlab = queryElevationPointsFromUsgs(40:50, -80:-70, 'Matlab');
+toc;
+
+disp('Fetching by lib ''Python'':')
+tic;
+elesTestPy = queryElevationPointsFromUsgs(40:50, -80:-70);
+toc;
+
+disp('Fetching by lib ''Python'' in Chunks:')
+tic;
+elesTestPyChunk = queryElevationPointsFromUsgsInChunks(40:50, -80:-70);
+toc;
+
+assert(all(isnan(elesTestMatlab)==isnan(elesTestPy)) ...
+    && all(elesTestMatlab(~isnan(elesTestMatlab)) ...
+    ==elesTestPy(~isnan(elesTestPy))) && ...
+    ...
+    all(isnan(elesTestPyChunk)==isnan(elesTestPy)) ...
+    && all(elesTestPyChunk(~isnan(elesTestPyChunk)) ...
+    ==elesTestPy(~isnan(elesTestPy))), ...
+    'Results fetched from different libraries do not agree!');
+
 %% Test Case: Tiles with Unknown Projection Names
 
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...

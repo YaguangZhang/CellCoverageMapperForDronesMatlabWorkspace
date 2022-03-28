@@ -46,7 +46,8 @@ def concurrent_fetch_urls(urls):
 if __name__ == '__main__':
     # For testing.
     urls = ["https://www.google.com", "http://www.yahoo.com", "http://www.baidu.com", \
-        "https://nationalmap.gov/epqs/pqs.php?x=-80&y=42&units=Meters&output=json", \
-        "http://artsy.com"]
+        "https://nationalmap.gov/epqs/pqs.php?x=-80&y=42&units=Meters&output=json"]
     htmls = concurrent_fetch_urls(urls)
     print('Successfully fetched', sum(h is not None for h in htmls), 'out of', len(urls), 'URLs!')
+    for i, val in enumerate(htmls):
+        if val == None: print ('    Failed URL: ', urls[i])

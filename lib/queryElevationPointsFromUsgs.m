@@ -17,6 +17,9 @@ function [ eles ] = queryElevationPointsFromUsgs(lats, lons, language)
 % Output:
 %   - The corresponding elevation in meters.
 %
+% Test:
+%   elesTest = queryElevationPointsFromUsgs(40:50, -80:-70);
+%
 % Yaguang Zhang, Purdue, 09/18/2019
 
 if ~exist('language', 'var')
@@ -41,10 +44,13 @@ end
 % does not work (11 digits), but
 %   https://nationalmap.gov/epqs/pqs.php?x=-87.5821444519&y=40.1690376169&units=Meters&output=json
 % works (10 digits).
+%
+% Update 20220328: USGS uses a string to indicate unavailable data points
+% now.
 numToStrFormatter = '%.10f';
 maxNumOfTrials = 100;
 urlUsgsEpqs = 'https://nationalmap.gov/epqs/pqs.php';
-usgsNanValue = -1000000;
+usgsNanValue = '-1000000';
 
 numQueryPts = length(lats);
 urls = arrayfun(@(idx) sprintf( ...
@@ -68,8 +74,11 @@ switch lower(language)
                         .USGS_Elevation_Point_Query_Service ...
                         .Elevation_Query.Elevation;
                     % Only record valid elevation values.
-                    if fetchedEle ~= usgsNanValue
+                    if ~ischar(fetchedEle)
                         eles(idxPt) = fetchedEle;
+                    else
+                        assert(strcmp(fetchedEle, usgsNanValue), ...
+                            ['Unknown USGS ele value: ', fetchedEle, '!']);
                     end
                     ctnTrials = inf;
                 catch err
@@ -91,10 +100,11 @@ switch lower(language)
         while ctnTrials<maxNumOfTrials
             ctnTrials = ctnTrials+1;
             try
+                boolsEleFetched = false(numPts, 1);
                 % Concurrently fetch the elevation data from USGS via
                 % Python with a maximum batch size.
-                while(any(isnan(eles)))
-                    curIdxStart = find(isnan(eles), 1);
+                while(any(~boolsEleFetched))
+                    curIdxStart = find(~boolsEleFetched, 1);
                     if (numPts-curIdxStart+1) ...
                             <=MAX_NUM_OF_CONCURRENT_REQUESTS
                         curIdxEnd = numPts;
@@ -130,12 +140,22 @@ switch lower(language)
 
                     indicesToUpdate = curIdxStart:curIdxEnd;
                     indicesToUpdate = indicesToUpdate(boolsIsValidJson);
-                    eles(indicesToUpdate) = arrayfun(@(resp) resp ...
+                    fetchedElesCell = arrayfun(@(resp) resp ...
                         .USGS_Elevation_Point_Query_Service ...
-                        .Elevation_Query.Elevation, fetchedJsons');
+                        .Elevation_Query.Elevation, fetchedJsons', ...
+                        'UniformOutput', false);
+                    boolsUsgsEleIsChar = cellfun( ...
+                        @ (ele) ischar(ele), fetchedElesCell);
+                    cellfun(@ (charEle) ...
+                        assert(strcmp(charEle, usgsNanValue), ...
+                        ['Unknown USGS ele value: ', charEle, '!']), ...
+                        fetchedElesCell(boolsUsgsEleIsChar));
+
+                    fetchedElesCell(boolsUsgsEleIsChar) = {nan};
+                    eles(indicesToUpdate) = cell2mat(fetchedElesCell);
+                    boolsEleFetched(indicesToUpdate) = true;
                 end
 
-                eles(eles==usgsNanValue) = nan;
                 ctnTrials = inf;
             catch err
                 disp(['There was an error fetching data ', ...
