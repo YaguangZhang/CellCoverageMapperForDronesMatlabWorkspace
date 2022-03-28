@@ -179,12 +179,12 @@ else
     % will (i) check whether .mat cache files are already available to
     % avoid unnecessary reprocessing attempts, and (ii) break the jobs into
     % chunks and restart the pool if free RAM is too low.
-    maxNumOfWorkersToUseStart = 36;
-
     curCluster = gcp;
     maxNumOfWorkers = curCluster.NumWorkers;
-    maxNumOfWorkersToUse = min(maxNumOfWorkersToUseStart, maxNumOfWorkers);
-    numOfFsPerChunk = maxNumOfWorkersToUse*10;
+
+    [numOfWorkersToUseStart, curNumOfWorkersToUse] ...
+        = deal(max(floor(maxNumOfWorkers*0.9), 1));
+    numOfFsPerChunk = curNumOfWorkersToUse*10;
 
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
@@ -196,14 +196,14 @@ else
             try
                 parforProcLidarTiles;
                 flagCurrentChunkDone = true;
-                maxNumOfWorkersToUse = min(maxNumOfWorkersToUse+1, ...
+                curNumOfWorkersToUse = min(curNumOfWorkersToUse+1, ...
                     maxNumOfWorkers);
             catch err
                 warning('Error in parfor!');
                 disp(err);
 
                 % Aggressively decrease the number of workers.
-                maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-5, 1);
+                curNumOfWorkersToUse = max(curNumOfWorkersToUse-5, 1);
 
                 % Consider restarting the pool if any worker dies.
                 if strcmp(err.identifier, errIdWorkerAborted)
@@ -211,7 +211,7 @@ else
                     % Restart pool only when available worker is (i) less
                     % than max and (ii) less than needed.
                     if (curCluster.NumWorkers<maxNumOfWorkers) ...
-                            && (curCluster.NumWorkers<maxNumOfWorkersToUse)
+                            && (curCluster.NumWorkers<curNumOfWorkersToUse)
                         delete(curCluster); gcp;
                     end
                 end
@@ -222,8 +222,8 @@ else
             % Decrease the number of workers by one after rebooting the
             % pool just incase RAM is insufficient.
             if flagPoolRestarted
-                maxNumOfWorkersToUse = max(maxNumOfWorkersToUse-1, ...
-                    maxNumOfWorkersToUseStart);
+                curNumOfWorkersToUse = max(curNumOfWorkersToUse-1, ...
+                    numOfWorkersToUseStart);
             end
         end
     end

@@ -16,11 +16,11 @@ disp(' ')
 disp(fileNameHintRuler)
 disp(['[', datestr(now, datetimeFormat), ...
     '] Started new round of parforProcLidarTiles.'])
-disp(['    Current maxNumOfWorkersToUse = ', ...
-    num2str(maxNumOfWorkersToUse), ' ...'])
+disp(['    Current curNumOfWorkersToUse = ', ...
+    num2str(curNumOfWorkersToUse), ' ...'])
 disp(fileNameHintRuler)
 
-parfor (idxPar = chunkStart:chunkEnd, maxNumOfWorkersToUse)
+parfor (idxPar = chunkStart:chunkEnd, curNumOfWorkersToUse)
     tic;
 
     idxF = indicesFilesToProcess(idxPar);
