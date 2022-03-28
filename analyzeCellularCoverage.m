@@ -5,6 +5,9 @@
 %   5_SimulationForExtendedTipp/simulateChannelForExtendedTipp.m
 %
 % Notes:
+%   - Please make sure to run the testing script debugPreprocessLidarDsm.m
+%     under 1_CoverageMapsForAcre/ before doing the simulation to make sure
+%     the environment is set up correctly.
 %   - This simulator has configuration presets available for carrying out
 %     simulation with different areas of interest. Please adjust the value
 %     of the viable PRESET below to choose the desired simulation.
@@ -136,7 +139,7 @@ switch PRESET
         assert(strcmp(simConfigs.UTM_ZONE, ...
             tippBoundary.boundary.UTM_ZONE), 'UTM zone mismatch!');
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
-            = tippBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST;        
+            = tippBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST;
     case {'ExtendedTipp', 'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}
         % Note that for the WHIN weather station case, we will set the
         % simulation boundary, but the grid points will be set to the

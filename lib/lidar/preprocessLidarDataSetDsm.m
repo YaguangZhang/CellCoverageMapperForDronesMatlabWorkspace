@@ -1,6 +1,6 @@
 function [lidarFileRelDirs, xYBoundryPolygons, lonLatBoundryPolygons] ...
     = preprocessLidarDataSetDsm(ABS_PATH_TO_LOAD_LIDAR, ...
-    DEG2UTM_FCT, UTM2DEG_FCT) %#ok<INUSD>
+    DEG2UTM_FCT, UTM2DEG_FCT, FLAG_FORCE_REPROCESSING_DATA) %#ok<INUSL>
 %PREPROCESSLIDARDATASETDSM Preprocess the digital surface model (DSM) LiDAR
 %data set located at ABS_PATH_TO_LOAD_LIDAR.
 %
@@ -47,7 +47,10 @@ ABS_DIR_TO_SAVE_RESULTS = fullfile(ABS_PATH_TO_LOAD_LIDAR, 'metaInfo.mat');
 flagDatasetProcessed = exist(ABS_DIR_TO_SAVE_RESULTS, 'file');
 
 % Set this to be false to reuse history processing results.
-FLAG_FORCE_REPROCESSING_DATA = false;
+if ~exist('FLAG_FORCE_REPROCESSING_DATA', 'var')
+    FLAG_FORCE_REPROCESSING_DATA = false;
+end
+
 % Set this to be true to generate figures for debugging. Because reusing
 % history processing results will skip loading all the data needed for
 % plotting, we will not generate figures if the data set of interest is
