@@ -67,7 +67,7 @@ usgsBoxPadInM = 15; %#ok<NASGU>
 % Display more details for warnings.
 warning on verbose;
 % Throw an error instead of issuing a warning when workers die.
-warning('error', 'parallel:cluster:LocalWorkerCrash');
+warning('error', 'MATLAB:remoteparfor:ParforWorkerAborted');
 
 [~, datasetName] = fileparts(ABS_PATH_TO_LOAD_LIDAR);
 

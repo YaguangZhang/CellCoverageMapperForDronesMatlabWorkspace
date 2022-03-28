@@ -12,6 +12,7 @@ if ~exist('datetimeFormat', 'var')
     datetimeFormat = 'yyyy/mm/dd HH:MM:ss';
 end
 
+disp(' ')
 disp(fileNameHintRuler)
 disp(['[', datestr(now, datetimeFormat), ...
     '] Started new round of parforProcLidarTiles.'])
