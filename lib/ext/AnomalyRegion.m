@@ -3,13 +3,13 @@ classdef AnomalyRegion
     %   Abstractly represents a matrix of 1x1 degree lat/long "cells".
     %   Various subranges of this elevation data can then be queried at
     %   varying resolutions using the readElevation function.
-    
+
     properties
         latCellRange % The min/max cell top-left corner latitude range
         longCellRange % The min/max cell top-left corner longitude range
         fltDataFiles % An array of file paths for each cell
     end
-    
+
     methods
         function [elevData] = readelevation(obj, latRange, longRange, varargin)
         %READELEVATION Reads ElevationData from fltDataFiles
@@ -35,52 +35,60 @@ classdef AnomalyRegion
             p.addParameter('display', false, @(x) isa(x, 'logical'));
             p.parse(obj, latRange, longRange, varargin{:});
             inputs = p.Results;
-            
+
             RASTER_SIZE = 10812;
-            
+
             [cellLats, cellLongs] = rangeparse(inputs.latRange, ...
                                                inputs.longRange);
-            
+
             % The appropriate rows and cols to fetch from fltDataFiles
             dataRows = fliplr(inputs.obj.latCellRange(end) - cellLats + 1);
             dataCols = abs(inputs.obj.longCellRange(1)) - abs(cellLongs) + 1;
-            
+
             sampleSize = ceil(RASTER_SIZE / inputs.sampleFactor);
-            
+
             elev = zeros(sampleSize * length(cellLats), ...
                          sampleSize * length(cellLongs));
             lats = zeros(sampleSize * length(cellLats), 1);
             longs = zeros(sampleSize * length(cellLongs), 1);
-            
+
             for i = dataRows
                 for j = dataCols
                     if inputs.display
                         fprintf('Reading elevation data %d,%d\n', i, j);
                     end
-                    
+
                     % Read the data file
                     try
-                        [e, R] = arcgridread(char(inputs.obj.fltDataFiles(i, j)));
+                        % [e, R] = arcgridread(char(inputs.obj.fltDataFiles(i, j)));
+                        [e, R] = readgeoraster( ...
+                            char(inputs.obj.fltDataFiles(i, j)), ...
+                            'CoordinateSystemType', 'geographic');
                     catch
                         error('Unable to read elevation data. Make sure that the specified lat/long range lies inside the region.');
                     end
-                    
+
                     % Sample the elevation data
                     e = e(1:inputs.sampleFactor:size(e,1), ...
                           1:inputs.sampleFactor:size(e,2));
-                    
-                    % Sample the latitude / longitude data; two raster 
+
+                    % Sample the latitude / longitude data; two raster
                     % referencing information formats are possible
-                    if isa(R, 'map.rasterref.GeographicCellsReference')
+                    if isunix && isa(R, 'map.rasterref.MapCellsReference')
+                        cellLats = linspace(R.YWorldLimits(1), ...
+                            R.YWorldLimits(2), RASTER_SIZE);
+                        cellLongs = linspace(R.XWorldLimits(1), ...
+                            R.XWorldLimits(2), RASTER_SIZE);
+                    elseif isa(R, 'map.rasterref.GeographicCellsReference')
                         cellLats = linspace(R.LatitudeLimits(1), ...
-                                        R.LatitudeLimits(2), RASTER_SIZE);
+                            R.LatitudeLimits(2), RASTER_SIZE);
                         cellLongs = linspace(R.LongitudeLimits(1), ...
-                                         R.LongitudeLimits(2), RASTER_SIZE);
+                            R.LongitudeLimits(2), RASTER_SIZE);
                     elseif ismatrix(R)
                         cellLats = linspace(round(R(3, 2)) - 1, ...
-                                        round(R(3, 2)), RASTER_SIZE);
+                            round(R(3, 2)), RASTER_SIZE);
                         cellLongs = linspace(round(R(3, 1)), ...
-                                        round(R(3, 1)) + 1, RASTER_SIZE);
+                            round(R(3, 1)) + 1, RASTER_SIZE);
                     else
                         error('Unrecognized raster referencing information.');
                     end
@@ -91,33 +99,52 @@ classdef AnomalyRegion
                         longs(sampleSize*(j-1) + 1 : sampleSize*j) ...
                             = cellLongs(1:inputs.sampleFactor:size(cellLongs,2));
                     end
-                    
-                    % If on the first column of data, copy the cell 
+
+                    % If on the first column of data, copy the cell
                     % latitude values into the overall latitude vector
                     if j == min(dataCols)
                         lats(sampleSize*(i-1) + 1 : sampleSize*i) ...
                             = fliplr(cellLats(1:inputs.sampleFactor:size(cellLats,2)));
                     end
-                    
+
                     % Copy the cell elevation matrix into the overall
                     % elevation matrix
-                    elev(sampleSize * (i - 1) + 1 : sampleSize * i, ...
-                         sampleSize * (j - 1) + 1 : sampleSize * j) ...
-                         = e(1:RASTER_SIZE, 1:RASTER_SIZE);
+                    try
+                        elev(sampleSize * (i - 1) + 1 : sampleSize * i, ...
+                            sampleSize * (j - 1) + 1 : sampleSize * j) = e;
+                    catch err
+                        if strcmpi(err.identifier, ...
+                            'MATLAB:subsassigndimmismatch')
+                            % A workaround for a bug in the terrain
+                            % elevation libary. Some downloaded tiles have
+                            % more data than what the raster needs.
+                            % Typically, if the size of the raster is m x
+                            % n, the data fetched could be (m+1) x (n+1).
+                            % We will only use m x n of the data fetched,
+                            % then.
+                            elev(sampleSize * (i - 1) ...
+                                + 1 : sampleSize * i, ...
+                                sampleSize * (j - 1) ...
+                                + 1 : sampleSize * j) ...
+                                = e(1:RASTER_SIZE, 1:RASTER_SIZE);
+                        else
+                            rethrow(err)
+                        end
+                    end
                 end
             end
-            
+
             if inputs.display
                 fprintf('Trimming data to specified range\n');
             end
-            
+
             % Trim off latitudes, longitudes, and corresponding elevations
             % that lie outside the specified ranges
             latInds = find(lats > min(inputs.latRange) & ...
                            lats < max(inputs.latRange));
             longInds = find(longs > min(inputs.longRange) & ...
                             longs < max(inputs.longRange));
-            
+
             elevData = ElevationData;
             elevData.lats = lats(latInds);
             elevData.longs = longs(longInds);

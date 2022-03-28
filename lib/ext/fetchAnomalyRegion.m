@@ -1,4 +1,4 @@
-function [ region ] = fetchregion( latRange, longRange, varargin )
+function [ region ] = fetchAnomalyRegion( latRange, longRange, varargin )
 %FETCHREGION Retrieves a region of USGS elevation data
 %   Downloads, extracts, and indexes all 1x1 degree latitude/longitude
 %   cells necessary to cover the specified latitude and longitude range
