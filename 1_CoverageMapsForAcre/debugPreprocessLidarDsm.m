@@ -154,7 +154,7 @@ end
 
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'Lidar_2019', 'IN', 'DSM_UnknownProjTiles');
-[lidarFileRelDirs1, lidarFileXYCoveragePolyshapes1, ~] ...
+[lidarFileRelDirs1, ~, lidarFileLonLatCoveragePolyshapes1] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone, true);
 
@@ -163,11 +163,18 @@ for idxF = 1:length(lidarFileRelDirs1)
     load(fullfile(dirToLidarFiles, 'MatlabCache', [curFileName,'.mat']));
     lidarZs(isinf(lidarZs(:))) = nan;
 
-    figure; plot3k([lidarLons, lidarLats, lidarZs]); view(2);
+    curLonLats = lidarFileLonLatCoveragePolyshapes1{idxF}.Vertices;
+    curLonLats(end+1,:) = curLonLats(1,:); %#ok<SAGROW>
+
+    figure; plot3k([lidarLons, lidarLats, lidarZs]); view(2); hold on;
+    plot3(curLonLats(:,1), curLonLats(:,2), ...
+        ones(length(curLonLats(:,1)), 1).*max(lidarZs), 'r-.');
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarZs)]);
 
-    figure; plot3k([lidarLons, lidarLats, lidarEles]); view(2);
+    figure; plot3k([lidarLons, lidarLats, lidarEles]); view(2); hold on;
+    plot3(curLonLats(:,1), curLonLats(:,2), ...
+        ones(length(curLonLats(:,1)), 1).*max(lidarEles), 'r-.');
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarEles)]);
 end
@@ -176,7 +183,7 @@ end
 
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'Lidar_2019', 'IN', 'DSM_InspectGroundEle_ACRE_TestNewPrep');
-[ lidarFileRelDirs2 ] ...
+[ lidarFileRelDirs2, ~, lidarFileLonLatCoveragePolyshapes2 ] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone, true);
 
@@ -185,23 +192,34 @@ for idxF = 1:length(lidarFileRelDirs2)
     load(fullfile(dirToLidarFiles, 'MatlabCache', [curFileName,'.mat']));
     lidarZs(isinf(lidarZs(:))) = nan;
 
-    figure; plot3k([lidarLons, lidarLats, lidarZs]); view(2);
+    curLonLats = lidarFileLonLatCoveragePolyshapes2{idxF}.Vertices;
+    curLonLats(end+1,:) = curLonLats(1,:); %#ok<SAGROW>
+
+    figure; plot3k([lidarLons, lidarLats, lidarZs]); view(2); hold on;
+    plot3(curLonLats(:,1), curLonLats(:,2), ...
+        ones(length(curLonLats(:,1)), 1).*max(lidarZs), 'r-.');
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarZs)]); title('Orignal LiDAR z');
 
     lidarZsInt = getLiDarZFromXYFct(lidarXs, lidarYs);
     lidarZsInt(isinf(lidarZsInt(:))) = nan;
 
-    figure; plot3k([lidarLons, lidarLats, lidarZsInt]); view(2);
+    figure; plot3k([lidarLons, lidarLats, lidarZsInt]); view(2); hold on;
+    plot3(curLonLats(:,1), curLonLats(:,2), ...
+        ones(length(curLonLats(:,1)), 1).*max(lidarZsInt), 'r-.');
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarZsInt)]); title('LiDAR z from getLiDarZFromXYFct');
 
-    figure; plot3k([lidarLons, lidarLats, lidarEles]); view(2);
+    figure; plot3k([lidarLons, lidarLats, lidarEles]); view(2); hold on;
+    plot3(curLonLats(:,1), curLonLats(:,2), ...
+        ones(length(curLonLats(:,1)), 1).*max(lidarEles), 'r-.');
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarEles)]); title('Orignal Ground Elevation');
 
     lidarElesInt = getEleFromXYFct(lidarXs, lidarYs);
-    figure; plot3k([lidarLons, lidarLats, lidarElesInt]); view(2);
+    figure; plot3k([lidarLons, lidarLats, lidarElesInt]); view(2); hold on;
+    plot3(curLonLats(:,1), curLonLats(:,2), ...
+        ones(length(curLonLats(:,1)), 1).*max(lidarElesInt), 'r-.');
     plot_google_map('MapType', 'satellite');
     zlim([0, max(lidarEles)]);
     title('Ground Elevation from getEleFromXYFct');
