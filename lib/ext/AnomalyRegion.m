@@ -60,35 +60,25 @@ classdef AnomalyRegion
 
                     % Read the data file
                     try
-                        % [e, R] = arcgridread(char(inputs.obj.fltDataFiles(i, j)));
                         [e, R] = readgeoraster( ...
                             char(inputs.obj.fltDataFiles(i, j)), ...
                             'CoordinateSystemType', 'geographic');
                     catch
-                        error('Unable to read elevation data. Make sure that the specified lat/long range lies inside the region.');
+                        error(['Unable to read elevation data. ' ...
+                            'Make sure that the specified lat/long ' ...
+                            'range lies inside the region.']);
                     end
 
                     % Sample the elevation data
                     e = e(1:inputs.sampleFactor:size(e,1), ...
-                          1:inputs.sampleFactor:size(e,2));
+                        1:inputs.sampleFactor:size(e,2));
 
-                    % Sample the latitude / longitude data; two raster
-                    % referencing information formats are possible
-                    if isunix && isa(R, 'map.rasterref.MapCellsReference')
-                        cellLats = linspace(R.YWorldLimits(1), ...
-                            R.YWorldLimits(2), RASTER_SIZE);
-                        cellLongs = linspace(R.XWorldLimits(1), ...
-                            R.XWorldLimits(2), RASTER_SIZE);
-                    elseif isa(R, 'map.rasterref.GeographicCellsReference')
+                    % We only accept GeographicCellsReference for accuracy.
+                    if isa(R, 'map.rasterref.GeographicCellsReference')
                         cellLats = linspace(R.LatitudeLimits(1), ...
                             R.LatitudeLimits(2), RASTER_SIZE);
                         cellLongs = linspace(R.LongitudeLimits(1), ...
                             R.LongitudeLimits(2), RASTER_SIZE);
-                    elseif ismatrix(R)
-                        cellLats = linspace(round(R(3, 2)) - 1, ...
-                            round(R(3, 2)), RASTER_SIZE);
-                        cellLongs = linspace(round(R(3, 1)), ...
-                            round(R(3, 1)) + 1, RASTER_SIZE);
                     else
                         error('Unrecognized raster referencing information.');
                     end

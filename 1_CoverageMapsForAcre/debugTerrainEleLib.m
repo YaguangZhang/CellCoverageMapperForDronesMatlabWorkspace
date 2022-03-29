@@ -19,6 +19,8 @@ if ~exist(pathToSaveResults, 'dir')
 end
 
 %% Test Case for fetchregion
+% Note that on Frankie (Linux) the center field part does not match with the
+% satellite image. However, they match perfectly on Artsy (Windows).
 
 lowResGridLatRange = [40.467071825508839; 40.501647105371035];
 lowResGridLonRange = [-87.015786097515942; -86.976458345550711];
@@ -37,6 +39,7 @@ axis([-87.0145, -87.0084, 40.4971, 40.5007]);
 
 
 %% Test Case for fetchAnomalyRegion
+% The mismatch is fixed for Frankie (Linux).
 
 lowResGridLatRange = [40.467071825508839; 40.501647105371035];
 lowResGridLonRange = [-87.015786097515942; -86.976458345550711];
