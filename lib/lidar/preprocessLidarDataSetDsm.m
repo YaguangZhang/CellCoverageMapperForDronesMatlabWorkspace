@@ -184,12 +184,19 @@ else
 
     [numOfWorkersToUseStart, curNumOfWorkersToUse] ...
         = deal(max(floor(maxNumOfWorkers*0.9), 1));
-    numOfFsPerChunk = curNumOfWorkersToUse*10;
+    numOfFsPerChunk = curNumOfWorkersToUse*3;
 
     for idxChunk = 1:ceil(numOfFilesToProcess/numOfFsPerChunk)
         chunkStart = 1 + numOfFsPerChunk*(idxChunk-1); %#ok<NASGU>
         chunkEnd = min(numOfFsPerChunk*idxChunk, ...
             numOfFilesToProcess); %#ok<NASGU>
+
+        % Restart the pool if free RAM is too low.
+        guardMemAvailOnLinux;
+        % Reset the number of workers to use if it is low.
+        if curNumOfWorkersToUse<numOfWorkersToUseStart
+            curNumOfWorkersToUse = numOfWorkersToUseStart;
+        end
 
         flagCurrentChunkDone = false;
         while ~flagCurrentChunkDone
@@ -215,15 +222,6 @@ else
                         delete(curCluster); gcp;
                     end
                 end
-            end
-
-            % Restart the pool if free RAM is too low.
-            guardMemAvailOnLinux;
-            % Decrease the number of workers by one after rebooting the
-            % pool just incase RAM is insufficient.
-            if flagPoolRestarted
-                curNumOfWorkersToUse = max(min(curNumOfWorkersToUse-1, ...
-                    numOfWorkersToUseStart), 1);
             end
         end
     end
