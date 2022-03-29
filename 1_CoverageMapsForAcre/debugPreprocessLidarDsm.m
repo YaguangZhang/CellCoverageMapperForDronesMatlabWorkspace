@@ -208,6 +208,7 @@ for idxF = 1:length(lidarFileRelDirs2)
 end
 
 %% Debug Case: All IN tiles on Frankie.
+% Note 20220328: We used MATLAB R2021a on Frankie.
 
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'Lidar_2019', 'IN', 'DSM');
