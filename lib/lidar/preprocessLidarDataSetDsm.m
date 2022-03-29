@@ -222,8 +222,8 @@ else
             % Decrease the number of workers by one after rebooting the
             % pool just incase RAM is insufficient.
             if flagPoolRestarted
-                curNumOfWorkersToUse = max(curNumOfWorkersToUse-1, ...
-                    numOfWorkersToUseStart);
+                curNumOfWorkersToUse = max(min(curNumOfWorkersToUse-1, ...
+                    numOfWorkersToUseStart), 1);
             end
         end
     end
