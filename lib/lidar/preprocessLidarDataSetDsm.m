@@ -88,6 +88,12 @@ else
     tifFileHandles = rdir(fullfile( ...
         ABS_PATH_TO_LOAD_LIDAR, '**', '*.tif'), ...
         '', ABS_PATH_TO_LOAD_LIDAR);
+    % Randomize the file list to balance the work load for each parfor
+    % chunk. This can be done because when ordered by name, files close to
+    % each other tend to require similar amount of resource such as RAM and
+    % some of them require a lot more than others.
+    rng(1);
+    tifFileHandles = tifFileHandles(randperm(length(tifFileHandles)));
     lidarFileRelDirs = {tifFileHandles(:).name}';
 
     numLidarFiles = length(lidarFileRelDirs);
