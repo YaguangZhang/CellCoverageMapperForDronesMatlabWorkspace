@@ -237,6 +237,11 @@ else
     lonLatBoundryPolygons(indicesFilesToProcess) ...
         = curLonLatBoundryPolygons;
 
+    % Sort the result by tile name before saving it.
+    [lidarFileRelDirs, indicesNewOrder] = sort(lidarFileRelDirs);
+    xYBoundryPolygons = xYBoundryPolygons(indicesNewOrder);
+    lonLatBoundryPolygons = lonLatBoundryPolygons(indicesNewOrder);
+
     save(ABS_DIR_TO_SAVE_RESULTS, ...
         'lidarFileRelDirs', 'xYBoundryPolygons', 'lonLatBoundryPolygons');
 
