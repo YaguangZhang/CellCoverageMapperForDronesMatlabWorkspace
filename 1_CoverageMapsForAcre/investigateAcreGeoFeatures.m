@@ -181,7 +181,7 @@ else
     % 3rd-party library as reference.
     [lowResGridLatRange, lowResGridLonRange] ...
         = utm2deg_speZone([minX; maxX], [minY; maxY]);
-    regionRef = fetchregion(lowResGridLatRange, lowResGridLonRange);
+    regionRef = fetchAnomalyRegion(lowResGridLatRange, lowResGridLonRange);
     rawRefElevData = regionRef.readelevation( ...
         lowResGridLatRange, lowResGridLonRange, 'sampleFactor', 1);
 
