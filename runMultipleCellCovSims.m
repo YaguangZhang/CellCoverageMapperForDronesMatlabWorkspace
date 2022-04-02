@@ -76,6 +76,7 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
         catch err
             diary(pathToSaveSimManDiary);
             disp(getReport(err))
+            rethrow(err);
         end
         disp(['    [', datestr(now, datetimeFormat), ...
             '] Done!'])
