@@ -28,6 +28,10 @@ simConfigs.UTM_ZONE = '16 T';
 
 addpath(fullfile(pwd, 'lib', 'lidar'));
 
+% Save output into a log file.
+dirToDiary = fullfile(pathToSaveResults, 'diary.log');
+diary(dirToDiary);
+
 %% Tests for Python Environment and Downloader
 
 py_addpath(fullfile(pwd, 'lib', 'python'));
@@ -241,5 +245,9 @@ dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 [lidarFileRelDirs3, lidarFileXYCoveragePolyshapes3, ~] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone);
+
+%% Cleanup
+
+diary off;
 
 % EOF
