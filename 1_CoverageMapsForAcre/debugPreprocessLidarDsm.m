@@ -30,7 +30,6 @@ addpath(fullfile(pwd, 'lib', 'lidar'));
 
 % Save output into a log file.
 dirToDiary = fullfile(pathToSaveResults, 'diary.log');
-diary(dirToDiary);
 
 %% Tests for Python Environment and Downloader
 
@@ -60,12 +59,17 @@ assert(all(isnan(elesTestMatlab)==isnan(elesTestPy)) ...
     ==elesTestPy(~isnan(elesTestPy))), ...
     'Results fetched from different libraries do not agree!');
 
-%% Debug Case: Check the Spatial Reference for IN tiles on Frankie.
+%% Debug Case: Check the Spatial Reference for IN tiles on Frankie
 
 absPathToSaveProjCrs = fullfile(pwd, 'lib', 'lidar', ...
     'anomalyTileNameWithProjCRS.mat');
 if ~exist(absPathToSaveProjCrs, 'file')
-    diary(fullfile(pathToSaveResults, 'diary.log'));
+    diary(dirToDiary);
+    disp('------------------')
+    disp(['Debug Case: ' ...
+        'Check the Spatial Reference for IN tiles on Frankie'])
+    disp('------------------')
+    disp(datetime('now'))
 
     dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
         'Lidar_2019', 'IN', 'DSM');
@@ -240,13 +244,18 @@ dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
 
 %% Debug Case: Selected Tiles which Caused Error
 
+diary(dirToDiary);
+
+disp('------------------')
+disp(['Debug Case: Selected Tiles which Caused Error'])
+disp('------------------')
+disp(datetime('now'))
+
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'Lidar_2019', 'IN', 'DSM_ErrInFetchEle');
 [lidarFileRelDirs3, lidarFileXYCoveragePolyshapes3, ~] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone);
-
-%% Cleanup
 
 diary off;
 
