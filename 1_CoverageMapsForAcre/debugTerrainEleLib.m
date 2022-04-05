@@ -113,6 +113,7 @@ axis(axisToSet);
 % Save the machine type and Matlab version in the file name.
 curVer = strrep(version, '.', '-');
 curEnv = computer;
-saveas(gcf, fullfile(pwd, [curEnv, '_', curVer, '_Ref.jpg']));
+saveas(gcf, fullfile(pathToSaveResults, ...
+    [curEnv, '_', curVer, '_Ref.jpg']));
 
 % EOF
