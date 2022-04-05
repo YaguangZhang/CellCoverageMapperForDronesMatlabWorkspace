@@ -20,6 +20,8 @@ disp(['    Current curNumOfWorkersToUse = ', ...
     num2str(curNumOfWorkersToUse), ' ...'])
 disp(fileNameHintRuler)
 
+% For debugging:
+%   for idxPar = chunkStart:chunkEnd
 parfor (idxPar = chunkStart:chunkEnd, curNumOfWorkersToUse)
     tic;
 

@@ -225,12 +225,20 @@ for idxF = 1:length(lidarFileRelDirs2)
     title('Ground Elevation from getEleFromXYFct');
 end
 
-%% Debug Case: All IN tiles on Frankie.
+%% Debug Case: All IN Tiles on Frankie.
 % Note 20220328: We used MATLAB R2021a on Frankie.
 
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'Lidar_2019', 'IN', 'DSM');
 [lidarFileRelDirs2, lidarFileXYCoveragePolyshapes2, ~] ...
+    = preprocessLidarDataSetDsm(dirToLidarFiles, ...
+    deg2utm_speZone, utm2deg_speZone);
+
+%% Debug Case: Selected Tiles which Caused Error
+
+dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'Lidar_2019', 'IN', 'DSM_ErrInFetchEle');
+[lidarFileRelDirs3, lidarFileXYCoveragePolyshapes3, ~] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone);
 
