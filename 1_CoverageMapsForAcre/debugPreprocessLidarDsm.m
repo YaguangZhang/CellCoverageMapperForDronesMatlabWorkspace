@@ -236,18 +236,27 @@ end
 %% Debug Case: All IN Tiles on Frankie.
 % Note 20220328: We used MATLAB R2021a on Frankie.
 
+diary(dirToDiary);
+
+disp('------------------')
+disp('Debug Case: All IN Tiles on Frankie.')
+disp('------------------')
+disp(datetime('now'))
+
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'Lidar_2019', 'IN', 'DSM');
 [lidarFileRelDirs2, lidarFileXYCoveragePolyshapes2, ~] ...
     = preprocessLidarDataSetDsm(dirToLidarFiles, ...
     deg2utm_speZone, utm2deg_speZone);
 
+diary off;
+
 %% Debug Case: Selected Tiles which Caused Error
 
 diary(dirToDiary);
 
 disp('------------------')
-disp(['Debug Case: Selected Tiles which Caused Error'])
+disp('Debug Case: Selected Tiles which Caused Error')
 disp('------------------')
 disp(datetime('now'))
 
