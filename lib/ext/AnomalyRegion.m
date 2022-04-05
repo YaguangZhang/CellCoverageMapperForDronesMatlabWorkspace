@@ -70,8 +70,16 @@ classdef AnomalyRegion
                     end
 
                     % Sample the elevation data
-                    e = e(1:inputs.sampleFactor:size(e,1), ...
-                        1:inputs.sampleFactor:size(e,2));
+                    %   e = e(1:inputs.sampleFactor:size(e,1), ...
+                    %       1:inputs.sampleFactor:size(e,2));
+                    % A workaround for a bug in the terrain elevation
+                    % libary. Some downloaded tiles have more data than
+                    % what the raster needs. Typically, if the size of the
+                    % raster is m x n, the data fetched could be (m+1) x
+                    % (n+1). We will only use m x n of the data fetched,
+                    % then.
+                    e = e(1:inputs.sampleFactor:RASTER_SIZE, ...
+                        1:inputs.sampleFactor:RASTER_SIZE);
 
                     % We only accept GeographicCellsReference for accuracy.
                     if isa(R, 'map.rasterref.GeographicCellsReference')
@@ -85,14 +93,16 @@ classdef AnomalyRegion
                     % values into the overall longitude vector
                     if i == min(dataRows)
                         longs(sampleSize*(j-1) + 1 : sampleSize*j) ...
-                            = cellLongs(1:inputs.sampleFactor:size(cellLongs,2));
+                            ... = cellLongs(1:inputs.sampleFactor:size(cellLongs,2));
+                            = cellLongs(1:inputs.sampleFactor:RASTER_SIZE);
                     end
 
                     % If on the first column of data, copy the cell
                     % latitude values into the overall latitude vector
                     if j == min(dataCols)
                         lats(sampleSize*(i-1) + 1 : sampleSize*i) ...
-                            = cellLats(1:inputs.sampleFactor:size(cellLats,2));
+                            ... = cellLats(1:inputs.sampleFactor:size(cellLats,2));
+                            = cellLats(1:inputs.sampleFactor:RASTER_SIZE);
                     end
 
                     % Copy the cell elevation matrix into the overall
@@ -103,13 +113,7 @@ classdef AnomalyRegion
                     catch err
                         if strcmpi(err.identifier, ...
                             'MATLAB:subsassigndimmismatch')
-                            % A workaround for a bug in the terrain
-                            % elevation libary. Some downloaded tiles have
-                            % more data than what the raster needs.
-                            % Typically, if the size of the raster is m x
-                            % n, the data fetched could be (m+1) x (n+1).
-                            % We will only use m x n of the data fetched,
-                            % then.
+                           
                             elev(sampleSize * (i - 1) ...
                                 + 1 : sampleSize * i, ...
                                 sampleSize * (j - 1) ...
