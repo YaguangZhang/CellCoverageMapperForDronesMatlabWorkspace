@@ -75,10 +75,8 @@ classdef AnomalyRegion
 
                     % We only accept GeographicCellsReference for accuracy.
                     if isa(R, 'map.rasterref.GeographicCellsReference')
-                        cellLats = linspace(R.LatitudeLimits(1), ...
-                            R.LatitudeLimits(2), RASTER_SIZE);
-                        cellLongs = linspace(R.LongitudeLimits(1), ...
-                            R.LongitudeLimits(2), RASTER_SIZE);
+                        [cellLats, cellLongs] ...
+                            = geographicGrid(R, 'gridvectors');
                     else
                         error('Unrecognized raster referencing information.');
                     end
@@ -94,7 +92,7 @@ classdef AnomalyRegion
                     % latitude values into the overall latitude vector
                     if j == min(dataCols)
                         lats(sampleSize*(i-1) + 1 : sampleSize*i) ...
-                            = fliplr(cellLats(1:inputs.sampleFactor:size(cellLats,2)));
+                            = cellLats(1:inputs.sampleFactor:size(cellLats,2));
                     end
 
                     % Copy the cell elevation matrix into the overall
