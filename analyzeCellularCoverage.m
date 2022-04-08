@@ -49,6 +49,10 @@ if ~exist('PRESET', 'var')
     PRESET = 'WHIN_LORAWAN';
 end
 
+% Suppress selected warnings to reduce messages.
+warning('off', 'MATLAB:polyshape:repairedBySimplify');
+warning('off', 'export_fig:transparency');
+
 %% Script Parameters
 
 % The LiDAR data set to use. Currently we only suppor the 2019 Indiana
