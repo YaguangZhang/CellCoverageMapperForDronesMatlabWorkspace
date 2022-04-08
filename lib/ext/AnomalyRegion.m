@@ -112,13 +112,12 @@ classdef AnomalyRegion
                             sampleSize * (j - 1) + 1 : sampleSize * j) = e;
                     catch err
                         if strcmpi(err.identifier, ...
-                            'MATLAB:subsassigndimmismatch')
-                           
+                                'MATLAB:subsassigndimmismatch')
                             elev(sampleSize * (i - 1) ...
                                 + 1 : sampleSize * i, ...
                                 sampleSize * (j - 1) ...
                                 + 1 : sampleSize * j) ...
-                                = e(1:RASTER_SIZE, 1:RASTER_SIZE);
+                                = e(1:sampleSize, 1:sampleSize);
                         else
                             rethrow(err)
                         end
@@ -144,4 +143,3 @@ classdef AnomalyRegion
         end
     end
 end
-
