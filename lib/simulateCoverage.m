@@ -138,6 +138,13 @@ function [ simState ] ...
 
 %% Before Processing the Data
 
+% Close the pool if it exists to make sure all resource/workers are
+% available for the simulation.
+previousPool = gcp('nocreate');
+if ~isempty(previousPool)
+    delete(previousPool);
+end
+
 % Create directories if necessary.
 if exist(pathToSaveResults, 'dir')~=7
     mkdir(pathToSaveResults);
