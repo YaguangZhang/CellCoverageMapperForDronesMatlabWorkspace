@@ -156,9 +156,9 @@ end
     = generateProfileSamps( ...
     [refGridXs(:), refGridYs(:)], utm2deg_speZone, ...
     lidarFileXYCentroids, lidarFileXYCoveragePolyshapes, ...
-    lidarMatFileAbsDirs, 'elevation');
+    lidarMatFileAbsDirs, 'both');
 terrainEles(isnan(terrainEles)) = curEleForNanPts(isnan(terrainEles));
-terrainEles(isnan(lidarZs)) = curEleForNanPts(isnan(lidarZs));
+lidarZs(isnan(lidarZs)) = curEleForNanPts(isnan(lidarZs));
 
 % Plot ground ele.
 figure;
