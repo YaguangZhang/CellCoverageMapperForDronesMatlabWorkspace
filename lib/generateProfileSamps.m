@@ -213,11 +213,20 @@ for curIdxTile = unique(indicesClosestTile)'
     end
 end
 
-boolsNeedFallbackEle = isnan(profileTerrain)&isnan(profileLidar);
-[profileNanSampLats, profileNanSampLons] = utmToDegFct( ...
-    profileSampLocs(boolsNeedFallbackEle,1), ...
-    profileSampLocs(boolsNeedFallbackEle,2));
+switch lower(terrainDataType)
+    case 'elevation'
+        boolsNeedFallbackEle = isnan(profileTerrain);
+    case 'lidar'
+        boolsNeedFallbackEle = isnan(profileLidar);
+    case 'both'
+        boolsNeedFallbackEle = isnan(profileTerrain) | isnan(profileLidar);
+end
+
 if any(boolsNeedFallbackEle)
+    [profileNanSampLats, profileNanSampLons] = utmToDegFct( ...
+        profileSampLocs(boolsNeedFallbackEle,1), ...
+        profileSampLocs(boolsNeedFallbackEle,2));
+
     eleForNanLocs(boolsNeedFallbackEle) ...
         = queryElevationPointsFromUsgsInChunks(profileNanSampLats, ...
         profileNanSampLons);
