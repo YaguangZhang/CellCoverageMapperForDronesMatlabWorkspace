@@ -166,7 +166,7 @@ surf(refGridLons, refGridLats, ...
     reshape(terrainEles, size(refGridLons)), ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none');
 plot_google_map('MapType', 'hybrid');
-view(2); zlim([0, max(terrainEles)]);
+view(2); zlim([0, max(terrainEles(~isnan(terrainEles)))]);
 axis(axisToSet);
 
 curVer = strrep(version, '.', '-');
@@ -180,7 +180,7 @@ surf(refGridLons, refGridLats, ...
     reshape(lidarZs, size(refGridLons)), ...
     'FaceAlpha', 0.5, 'EdgeColor', 'none');
 plot_google_map('MapType', 'hybrid');
-view(2); zlim([0, max(lidarZs)]);
+view(2); zlim([0, max(lidarZs(~isnan(lidarZs)))]);
 axis(axisToSet);
 
 curVer = strrep(version, '.', '-');
