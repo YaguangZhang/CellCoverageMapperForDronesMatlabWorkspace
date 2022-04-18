@@ -52,15 +52,19 @@ towerLatLonHsHifld = csvread(absPathToHifldCsv, 1, 1);
 
 load(pathToLoadSimResults);
 
-% Functions to convert GPS degrees (lat, lon) from/to UTM (x, y).
-[deg2utm_speZone, utm2deg_speZone] ...
-    = genUtmConvertersForFixedZone(simConfigs.UTM_ZONE);
+[inBoundaryLatLons, ~, ~] = loadInBoundary;
+boundOfInterestLats = inBoundaryLatLons(:,1);
+boundOfInterestLons = inBoundaryLatLons(:,2);
 
-% GPS boundary for the area of interest (here we have IN).
-labelForAreaOfInterest = 'IN';
-[boundOfInterestLats, boundOfInterestLons] ...
-    = utm2deg_speZone(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
-    simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+% % Functions to convert GPS degrees (lat, lon) from/to UTM (x, y).
+% [deg2utm_speZone, utm2deg_speZone] ...
+%     = genUtmConvertersForFixedZone(simConfigs.UTM_ZONE);
+%
+% % GPS boundary for the area of interest (here we have IN).
+%  labelForAreaOfInterest = 'IN';
+% [boundOfInterestLats, boundOfInterestLons] ...
+%     = utm2deg_speZone(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
+%      simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
 
 disp('    Done!')
 
@@ -74,15 +78,6 @@ pathToSaveDistMin ...
 
 numOfExistingTs = size(towerLatLonHsNtia, 1);
 numOfNewTs = size(towerLatLonHsHifld, 1);
-
-areaOfIntLonLatPolyshape = ...
-    polyshape(boundOfInterestLons, boundOfInterestLats);
-boolsExistingTxInAreaOfInt = isinterior(areaOfIntLonLatPolyshape, ...
-    towerLatLonHsNtia(:,2), towerLatLonHsNtia(:,1));
-boolsNewTxInAreaOfInt = isinterior(areaOfIntLonLatPolyshape, ...
-    towerLatLonHsHifld(:,2), towerLatLonHsHifld(:,1));
-numOfExistingTsIndiana = sum(boolsExistingTxInAreaOfInt);
-numOfNewTsIndiana = sum(boolsNewTxInAreaOfInt);
 
 if exist(pathToSaveDistMin, 'file')
     disp('        Loading history results ...')
@@ -136,6 +131,24 @@ numOfDistsToIns = length(distsToInspectInM);
 figResolutionFactor = 1.25;
 curAlpha = 0.5;
 curDotSize = 10;
+
+% boolsExistingTxInAreaOfInt = InPolygon( ...
+%     towerLatLonHsNtia(:,2), towerLatLonHsNtia(:,1), ...
+%      boundOfInterestLons, boundOfInterestLats);
+boolsNewTxInAreaOfInt = InPolygon( ...
+    towerLatLonHsHifld(:,2), towerLatLonHsHifld(:,1), ...
+    boundOfInterestLons, boundOfInterestLats);
+
+% areaOfIntLonLatPolyshape = ...
+%     polyshape(boundOfInterestLons, boundOfInterestLats);
+%
+% boolsExistingTxInAreaOfInt = isinterior(areaOfIntLonLatPolyshape, ...
+%     towerLatLonHsNtia(:,2), towerLatLonHsNtia(:,1));
+% boolsNewTxInAreaOfInt = isinterior(areaOfIntLonLatPolyshape, ...
+%     towerLatLonHsHifld(:,2), towerLatLonHsHifld(:,1));
+
+% numOfExistingTsIndiana = sum(boolsExistingTxInAreaOfInt);
+numOfNewTsIndiana = sum(boolsNewTxInAreaOfInt);
 
 for idxDistToIns = 1:numOfDistsToIns
     curDistToInsInM = distsToInspectInM(idxDistToIns);
