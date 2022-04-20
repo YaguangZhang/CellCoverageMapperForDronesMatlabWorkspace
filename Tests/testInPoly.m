@@ -33,6 +33,9 @@ tic;
 load(fullfile(pathToSaveResults, 'inpolyTestData.mat'));
 toc;
 
+% Attach the boundary vertices to the test dataset.
+gpsLonLatCoors = [gpsLonLatCoors; inBoundaryLatLons(:,2:-1:1)];
+
 disp(' ')
 disp(['[', datestr(now, datetimeFormat), ...
     '] Done!'])
@@ -64,7 +67,7 @@ toc;
 rmpath(genpath(absPathToCurLib));
 
 disp(['    [', datestr(now, datetimeFormat), ...
-    '] inpoly2 ...'])
+    '] inpoly2 x100 ...'])
 tic;
 for idx = 1:100
     boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
@@ -73,7 +76,7 @@ end
 toc;
 
 disp(['    [', datestr(now, datetimeFormat), ...
-    '] InPolygon replacer (inpoly2) ...'])
+    '] InPolygon replacer (inpoly2) x100 ...'])
 absPathToCurLib = fullfile(pathToSaveResults, ...
     'InPolyLibs', 'InPolygonReplacer');
 addpath(genpath(absPathToCurLib));

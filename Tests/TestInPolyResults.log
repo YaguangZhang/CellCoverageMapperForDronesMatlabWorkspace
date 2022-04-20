@@ -391,3 +391,25 @@ for idx = 1:100
 end
 toc;
 Elapsed time is 21.579230 seconds.
+rmpath(genpath(absPathToCurLib));
+ 
+[2022/04/19 20:54:33] Loading test dataset ...
+Elapsed time is 0.185874 seconds.
+ 
+[2022/04/19 20:54:34] Done!
+ 
+[2022/04/19 20:54:34] Speed tests ...
+    [2022/04/19 20:54:34] inpolygon ...
+Elapsed time is 1198.532467 seconds.
+    [2022/04/19 21:14:32] InPolygon ...
+Elapsed time is 71.588100 seconds.
+    [2022/04/19 21:15:44] inpoly2 x100 ...
+Elapsed time is 19.851196 seconds.
+    [2022/04/19 21:16:04] InPolygon replacer (inpoly2) x100 ...
+Elapsed time is 23.760235 seconds.
+ 
+[2022/04/19 21:16:28] Done!
+Num of misclassified pts - InPolygon: 11
+Num of misclassified pts - inpoly2: 0
+Num of misclassified pts - InPolygon replacer: 0
+opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)
