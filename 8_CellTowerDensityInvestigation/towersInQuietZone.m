@@ -69,8 +69,7 @@ cellAntsLatLonH = csvread( ...
 %% Towers in NRQZ
 
 % Check which towers are in/on the NRQZ boundary.
-boolsTsInNrqz = InPolygon(cellAntsLatLonH(:,2), cellAntsLatLonH(:,1), ...
-    nrqzLonLatBound(:,1), nrqzLonLatBound(:,2));
+boolsTsInNrqz = inpoly2(cellAntsLatLonH(:,2:-1:1), nrqzLonLatBound);
 effeCellAntsLons = cellAntsLatLonH(boolsTsInNrqz, 2);
 effeCellAntsLats = cellAntsLatLonH(boolsTsInNrqz, 1);
 

@@ -68,7 +68,7 @@ zsNew = griddata(xs, ys, zs, xsNew, ysNew);
 
 % Ignore points out of the area of interest by seting the z values for them
 % to NaN.
-boolsInOrOnPoly = InPolygon(xsNew(:), ysNew(:), xsBoI, ysBoI);
+boolsInOrOnPoly = inpoly2([xsNew(:), ysNew(:)], [xsBoI, ysBoI]);
 boolsPtsToIgnore = ~boolsInOrOnPoly;
 if any(boolsPtsToIgnore)
     zsNew(boolsPtsToIgnore) = nan;

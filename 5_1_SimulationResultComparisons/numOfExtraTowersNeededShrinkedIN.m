@@ -92,11 +92,11 @@ switch cellSizeEstiMethod
         if ~libisloaded('ehata')
             loadlibrary('ehata');
         end
-        
+
         % The distance values to inspect for creating the cell radius vs
         % path loss data set.
         distsInMToInspect = 1:20000;
-        
+
         expectedTowerHInM = 50;
     otherwise
         error(['Unsupported cell size estimation method ', ...
@@ -136,18 +136,18 @@ for idxCarrier = 1:numOfCarriers
     clearvars simState simConfig;
     load(curAbsPathToSimResMat);
     load(curAbsPathToSimConfMat);
-    
+
     % For GPS and UTM conversions.
     [deg2utm_speZone, utm2deg_speZone] ...
         = genUtmConvertersForFixedZone(simConfigs.UTM_ZONE);
-    
+
     % Compute the area for the region of interest considering the error
     % caused by reference system conversion.
     areasInSqKm(idxCarrier) = polyarea( ...
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2))./(10^6) ...
         ./estAreaInSqKmIN.*areaInSqKmIN;
-    
+
     assert( ...
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(1)==expectedRxHInM, ...
         ['The first RX ant height expected (', ...
@@ -156,7 +156,7 @@ for idxCarrier = 1:numOfCarriers
     coveredAreasInSqKm(idxCarrier) = ...
         sum(simState.coverageMaps{1}<=maxAllowedPathLossInDb) ...
         ./length(simState.coverageMaps{1}).*areasInSqKm(idxCarrier);
-    
+
     switch cellSizeEstiMethod
         case 'FSPL'
             coveredRadiiPerCellInKm(idxCarrier) ...
@@ -176,24 +176,22 @@ for idxCarrier = 1:numOfCarriers
                 interp1(preCompPathLossRecords, ...
                 distsInMToInspect, maxAllowedPathLossInDb)/1000;
     end
-    
+
     coveredAreasPerCellInSqKm(idxCarrier) ...
         = pi*((coveredRadiiPerCellInKm(idxCarrier))^2);
-    
+
     [cellAntsXYH(:,1), cellAntsXYH(:,2)] ...
         = deg2utm_speZone(cellAntsLatLonH(:,1), cellAntsLatLonH(:,2));
-    
-    boolsTsInAreaOfInt = inpolygon( ...
-        cellAntsXYH(:,1), cellAntsXYH(:,2), ...
-        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
-        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+
+    boolsTsInAreaOfInt = inpoly2(cellAntsXYH(:,1:2), ...
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST);
     numsOfExistingTs(idxCarrier) = sum(boolsTsInAreaOfInt);
-    
+
     numsOfExtraTs(idxCarrier) = ...
         (areasInSqKm(idxCarrier) ...
         - coveredAreasInSqKm(idxCarrier)) ...
         /coveredAreasPerCellInSqKm(idxCarrier);
-    
+
     % Only need to generate the overview plot once.
     if ~exist([dirToSaveIllu, '.jpg'], 'file')
         % Keep only the cell towers which can cover some part of the area
@@ -202,21 +200,19 @@ for idxCarrier = 1:numOfCarriers
             = polybuffer( ...
             polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
             simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
-        
+
         assert(utmXYBoundaryPolyToKeepCellTowers.NumRegions==1, ...
             'The extended area of interest have more than one region!');
-        
+
         utmXYBoundaryToKeepCellTowers = ...
             utmXYBoundaryPolyToKeepCellTowers.Vertices;
-        boolsCellAntsToKeep ...
-            = inpolygon(cellAntsXYH(:,1), cellAntsXYH(:,2), ...
-            utmXYBoundaryToKeepCellTowers(:,1), ...
-            utmXYBoundaryToKeepCellTowers(:,2));
-        
+        boolsCellAntsToKeep = inpoly2(cellAntsXYH(:,1:2), ...
+            utmXYBoundaryToKeepCellTowers);
+
         % Effective cellular towers.
         effeCellAntsXYH = cellAntsXYH(boolsCellAntsToKeep, :);
         inEffeCellAntsXYH = cellAntsXYH(~boolsCellAntsToKeep, :);
-        
+
         [effeCellAntsLats, effeCellAntsLons] ...
             = simConfigs.utm2deg_speZone(effeCellAntsXYH(:,1), ...
             effeCellAntsXYH(:,2));
@@ -231,7 +227,7 @@ for idxCarrier = 1:numOfCarriers
         [inEffeCellAntsLats, inEffeCellAntsLons] ...
             = simConfigs.utm2deg_speZone(inEffeCellAntsXYH(:,1), ...
             inEffeCellAntsXYH(:,2));
-        
+
         % Convert IN boundary in the UTM system to GPS.
         assert( ...
             strcmp(inBoundary.boundary.UTM_ZONE, simConfigs.UTM_ZONE), ...
@@ -241,7 +237,7 @@ for idxCarrier = 1:numOfCarriers
             utm2deg_speZone( ...
             inBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
             inBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
-        
+
         curCustomFigSize = [500, 500];
         % For plotting.
         areaOfInterestColor = [0.9290 0.6940 0.1250];
@@ -253,7 +249,7 @@ for idxCarrier = 1:numOfCarriers
         colorIneffectiveTowers = lightBlue;
         markerIneffectiveTowers = '.';
         lineWidthIneffectiveTowers = 1.5;
-        
+
         hFigCellOverview = figure('Position', [0,0,curCustomFigSize]);
         hold on; set(gca, 'fontWeight', 'bold');
         hIneffeCells = plot(inEffeCellAntsLons, ...
@@ -301,15 +297,15 @@ for idxCarrier = 1:numOfCarriers
             hMS = makescale('nw', 'units', 'si');
             hMS(3).FontSize = 9;
             hMS(3).FontWeight = 'bold';
-        end    
+        end
         hPolyIn = plot3(inBoundaryLons, inBoundaryLats, ...
             ones(size(inBoundaryLons)), ...
             'r-.', 'LineWidth', 3);
-        
+
         saveas(hFigCellOverview, [dirToSaveIllu, '.fig']);
-        saveas(hFigCellOverview, [dirToSaveIllu, '.jpg']);        
+        saveas(hFigCellOverview, [dirToSaveIllu, '.jpg']);
         saveas(hFigCellOverview, [dirToSaveIllu, '.eps'], 'epsc');
-        
+
         set(hFigCellOverview, 'Color', 'w');
         export_fig(hFigCellOverview, [dirToSaveIllu, '_alt.eps']);
     end

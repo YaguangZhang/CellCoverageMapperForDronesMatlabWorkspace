@@ -60,9 +60,8 @@ mapYLabels = constructAxisGrid( ...
 [mapXs,mapYs] = meshgrid(mapXLabels,mapYLabels);
 
 % Discard map grid points out of the area of interest.
-boolsMapGridPtsToKeep = inpolygon(mapXs(:), mapYs(:), ...
-    UTM_X_Y_BOUNDARY_OF_INTEREST(:,1), ...
-    UTM_X_Y_BOUNDARY_OF_INTEREST(:,2));
+boolsMapGridPtsToKeep = inpoly2([mapXs(:), mapYs(:)], ...
+    UTM_X_Y_BOUNDARY_OF_INTEREST);
 
 % The grid point locations to evaluate the regional RMSD.
 gridXYPts = [mapXs(boolsMapGridPtsToKeep), ...
@@ -74,20 +73,20 @@ numGridPts = sum(boolsMapGridPtsToKeep);
 regRmsdsWrtMean = nan(numGridPts, 1);
 for idxGridPt = 1:numGridPts
     curGridPtXY = gridXYPts(idxGridPt, :);
-    
+
     % First filter out Lidar points out of the maximum x and y ranges.
     minXToConsider = curGridPtXY(1)-regionalCircleRadiusInM;
     maxXToConsider = curGridPtXY(1)+regionalCircleRadiusInM;
     minYToConsider = curGridPtXY(2)-regionalCircleRadiusInM;
     maxYToConsider = curGridPtXY(2)+regionalCircleRadiusInM;
-    
+
     boolsLidarPtsToConsider = (lidarXYZ(:,1)>=minXToConsider) ...
         & (lidarXYZ(:,1)<=maxXToConsider) ...
         & (lidarXYZ(:,2)>=minYToConsider) ...
         & (lidarXYZ(:,2)<=maxYToConsider);
-    
+
     lidarXYZToConsider = lidarXYZ(boolsLidarPtsToConsider, :);
-    
+
     % Further filter out Lidar points too far away.
     distsFromLidarPtsToCurGridPt = vecnorm( ...
         [lidarXYZToConsider(:,1)-curGridPtXY(1), ...
@@ -95,7 +94,7 @@ for idxGridPt = 1:numGridPts
     boolsLidarPtsToConsider = ...
         distsFromLidarPtsToCurGridPt<=regionalCircleRadiusInM;
     lidarXYZToConsider = lidarXYZToConsider(boolsLidarPtsToConsider, :);
-    
+
     % Regional mean.
     regMean = mean(lidarXYZToConsider(:,3));
     regRmsdsWrtMean(idxGridPt) ...

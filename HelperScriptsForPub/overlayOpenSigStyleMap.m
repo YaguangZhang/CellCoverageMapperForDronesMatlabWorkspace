@@ -45,7 +45,7 @@ zsNew(isnan(ziNearest)) = nan;
 
 % Ignore points out of the area of interest by seting the z values for them
 % to NaN.
-[in,on] = InPolygon(lonsNew(:), latsNew(:), lonsBoI, latsBoI);
+[in,on] = inpoly2([lonsNew(:), latsNew(:)], [lonsBoI, latsBoI]);
 boolsPtsToIgnore = ~(in|on);
 if any(boolsPtsToIgnore)
     zsNew(boolsPtsToIgnore) = nan;
