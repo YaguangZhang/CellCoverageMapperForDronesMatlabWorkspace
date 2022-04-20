@@ -1,0 +1,393 @@
+testInPoly
+ ------------ 
+  testInPoly  
+ ------------ 
+[Warning: "D:\One Drive - Purdue\OneDrive -
+purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\lib\ext\eHataNtiaLinux"
+not found in path.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rmpath', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m', 71)" style="font-weight:bold">rmpath</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m',71,0)">line 71</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 21)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)">line 21</a>)] 
+[Warning: "D:\One Drive - Purdue\OneDrive -
+purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\lib\lidar"
+not found in path.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rmpath', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m', 71)" style="font-weight:bold">rmpath</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m',71,0)">line 71</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 21)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)">line 21</a>)] 
+<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',24,1)">24  </a>diary(fullfile(pathToSaveResults, 'TestInPolyResults.log'));
+uiopen('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\PostProcessingResults\1_GpsTrackOverview\DailyTrackOverviews\SamplesOutOfIndiana.fig',1)
+{Unrecognized function or variable 'plot_google_map'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('plot_google_map>update_google_map_fig', 'D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m', 673)" style="font-weight:bold">plot_google_map>update_google_map_fig</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,0)">line 673</a>)
+        plot_google_map(params{:});
+} 
+Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('matlab.graphics.internal.figfile.FigFile/read', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\graphics\+matlab\+graphics\+internal\+figfile\@FigFile\read.m', 31)" style="font-weight:bold">matlab.graphics.internal.figfile.FigFile/read</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\graphics\+matlab\+graphics\+internal\+figfile\@FigFile\read.m',31,0)">line 31</a>)
+Error while evaluating Figure SizeChangedFcn.
+
+{Unrecognized function or variable 'plot_google_map'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('plot_google_map>update_google_map_fig', 'D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m', 673)" style="font-weight:bold">plot_google_map>update_google_map_fig</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,0)">line 673</a>)
+        plot_google_map(params{:});
+} 
+<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,1)">673 </a>        plot_google_map(params{:});
+{Unrecognized function or variable 'plot_google_map'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('plot_google_map>update_google_map_fig', 'D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m', 673)" style="font-weight:bold">plot_google_map>update_google_map_fig</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,0)">line 673</a>)
+        plot_google_map(params{:});
+} 
+<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,1)">673 </a>        plot_google_map(params{:});
+{Unrecognized function or variable 'plot_google_map'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('plot_google_map>update_google_map_fig', 'D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m', 673)" style="font-weight:bold">plot_google_map>update_google_map_fig</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,0)">line 673</a>)
+        plot_google_map(params{:});
+} 
+<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\IndotActivityMatlabWorkspace\lib\ext\zoharby-plot_google_map\plot_google_map.m',673,1)">673 </a>        plot_google_map(params{:});
+uiopen('D:\One Drive - Purdue\OneDrive - purdue.edu\INDOT\20210929_TelematicsEnabledRecordKeeping\PostProcessingResults\1_GpsTrackOverview\DailyTrackOverviews\SamplesOutOfIndiana.fig',1)
+if system_dependent('IsDebugMode')==1, dbquit all; end
+dbquit
+dbquit
+dbquit
+testInPoly
+ ------------ 
+  testInPoly  
+ ------------ 
+[Warning: "D:\One Drive - Purdue\OneDrive -
+purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\lib\ext\eHataNtiaLinux"
+not found in path.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rmpath', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m', 71)" style="font-weight:bold">rmpath</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m',71,0)">line 71</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 21)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)">line 21</a>)] 
+[Warning: "D:\One Drive - Purdue\OneDrive -
+purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\lib\lidar"
+not found in path.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rmpath', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m', 71)" style="font-weight:bold">rmpath</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m',71,0)">line 71</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 21)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)">line 21</a>)] 
+<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',24,1)">24  </a>diary(fullfile(pathToSaveResults, 'TestInPolyResults.log'));
+dbcont
+ 
+[2022/04/19 18:57:40] Loading test dataset ...
+ 
+[2022/04/19 18:57:40] Done!
+ 
+[2022/04/19 18:57:40] Speed tests ...
+    [2022/04/19 18:57:40] InPolygon ...
+{Operation terminated by user during <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 46)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',46,0)">line 46</a>)
+} 
+testInPoly
+ ------------ 
+  testInPoly  
+ ------------ 
+[Warning: "D:\One Drive - Purdue\OneDrive -
+purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\lib\ext\eHataNtiaLinux"
+not found in path.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rmpath', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m', 71)" style="font-weight:bold">rmpath</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m',71,0)">line 71</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 21)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)">line 21</a>)] 
+[Warning: "D:\One Drive - Purdue\OneDrive -
+purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\lib\lidar"
+not found in path.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rmpath', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m', 71)" style="font-weight:bold">rmpath</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\general\rmpath.m',71,0)">line 71</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('testInPoly', 'D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m', 21)" style="font-weight:bold">testInPoly</a> (<a href="matlab: opentoline('D:\One Drive - Purdue\OneDrive - purdue.edu\OATS\CellCoverageMapper\MatlabWorkspace\Tests\testInPoly.m',21,0)">line 21</a>)] 
+ 
+[2022/04/19 18:58:56] Loading test dataset ...
+Elapsed time is 0.185405 seconds.
+ 
+[2022/04/19 18:58:57] Done!
+ 
+[2022/04/19 18:58:57] Speed tests ...
+    [2022/04/19 18:58:57] inpolygon ...
+Elapsed time is 1074.453894 seconds.
+    [2022/04/19 19:16:51] InPolygon ...
+Elapsed time is 68.838418 seconds.
+    [2022/04/19 19:18:00] inpoly2 ...
+Elapsed time is 0.292638 seconds.
+    [2022/04/19 19:18:00] inpoly2 ...
+Elapsed time is 0.242347 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:19:15] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.251908 seconds.
+rmpath(genpath(absPathToCurLib));
+
+disp(' ')
+ 
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
+[2022/04/19 20:19:16] Done!
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:22] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.205330 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:33] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.229490 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:35] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.246531 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:37] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.231498 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:40] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.220863 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:43] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.236300 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:44] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.223295 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:45] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.228582 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:46] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.224815 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:47] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.232773 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:19:49] inpoly2 ...
+tic;
+boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+    inBoundaryLatLons(:,2:-1:1));
+toc;
+Elapsed time is 0.216426 seconds.
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:19:57] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.250688 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:19:58] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.230842 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:00] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.231082 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:01] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.231742 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:02] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.249844 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:03] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.238909 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:04] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.238845 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:06] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.246184 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:07] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.233212 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:11] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.234374 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:20:12] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+    gpsLonLatCoors(:,2), ...
+    inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+toc;
+Elapsed time is 0.241259 seconds.
+rmpath(genpath(absPathToCurLib));
+disp(['Num of misclassified pts - InPolygon: ', ...
+    num2str(boolsGpsLonLatCoorsOutOfIn1~=boolsGpsLonLatCoorsOutOfIn)]);
+{Operation terminated by user during <a href="matlab:matlab.internal.language.introspective.errorDocCallback('int2str', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\strfun\int2str.m', 48)" style="font-weight:bold">int2str</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\strfun\int2str.m',48,0)">line 48</a>)
+
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('num2str', 'C:\Program Files\MATLAB\R2021b\toolbox\matlab\strfun\num2str.m', 74)" style="font-weight:bold">num2str</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021b\toolbox\matlab\strfun\num2str.m',74,0)">line 74</a>)
+                s = int2str(x); % Enhance the performance
+} 
+disp(['Num of misclassified pts - InPolygon: ', num2str(sum( ...
+    boolsGpsLonLatCoorsOutOfIn1~=boolsGpsLonLatCoorsOutOfIn))]);
+Num of misclassified pts - InPolygon: 11
+disp(['Num of misclassified pts - inpoly2: ', num2str(sum( ...
+    boolsGpsLonLatCoorsOutOfIn2~=boolsGpsLonLatCoorsOutOfIn))]);
+Num of misclassified pts - inpoly2: 0
+disp(['Num of misclassified pts - InPolygon replacer: ', num2str(sum( ...
+    boolsGpsLonLatCoorsOutOfIn3~=boolsGpsLonLatCoorsOutOfIn))]);
+Num of misclassified pts - InPolygon replacer: 0
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] inpoly2 ...'])
+    [2022/04/19 20:24:45] inpoly2 ...
+tic;
+for idx = 1:100
+    boolsGpsLonLatCoorsOutOfIn2 = ~inpoly2(gpsLonLatCoors, ...
+        inBoundaryLatLons(:,2:-1:1));
+end
+toc;
+Elapsed time is 18.396146 seconds.
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] InPolygon replacer (inpoly2) ...'])
+    [2022/04/19 20:25:03] InPolygon replacer (inpoly2) ...
+absPathToCurLib = fullfile(pathToSaveResults, ...
+    'InPolyLibs', 'InPolygonReplacer');
+addpath(genpath(absPathToCurLib));
+tic;
+for idx = 1:100
+    boolsGpsLonLatCoorsOutOfIn3 = ~InPolygon(gpsLonLatCoors(:,1), ...
+        gpsLonLatCoors(:,2), ...
+        inBoundaryLatLons(:,2), inBoundaryLatLons(:,1));
+end
+toc;
+Elapsed time is 21.579230 seconds.
