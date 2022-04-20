@@ -249,7 +249,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
     adjustFigSizeByContent(hFigAreaOfInterest, [], 'height', 0.9);
     axis equal; view(2); %grid on; grid minor;
     hLeg = legend([hAreaOfInterest, hGridPts], ...
-        'Area of interest', 'UAV location grid');
+        'Area of interest', 'UAV location grid', 'AutoUpdate', 'off');
     xlabel('UTM x (m)'); ylabel('UTM y (m)');
     % Adjust legend and the exponent label for y axis.
     switch lower(simConfigs.CURRENT_SIMULATION_TAG)
@@ -330,9 +330,10 @@ if ~exist(curDirToSave, 'file')
     uistack(hIneffeCells, 'bottom'); uistack(hEffeCells, 'top');
     adjustFigSizeByContent(hFigCellOverview, axisXYToSet, 'height');
     xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
-    hLeg = legend([hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
+    hLeg = legend([hAreaOfInterest, hExtendedArea, ...
+        hEffeCells, hIneffeCells], ...
         'Area of interest', 'Extended area', 'Cell towers to consider', ...
-        'Ineffective cell towers');
+        'Ineffective cell towers', 'AutoUpdate', 'off');
     if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
         set(hLeg, 'Location', 'SouthEast');
     end
@@ -400,7 +401,7 @@ if ~exist([curDirToSave, '.eps'], 'file')
     hLeg = legend( ...
         [hAreaOfInterest, hExtendedArea, hEffeCells, hIneffeCells], ...
         'Area of interest', 'Extended area', 'Cell towers to consider', ...
-        'Ineffective cell towers', 'defaultLegendAutoUpdate','off');
+        'Ineffective cell towers', 'AutoUpdate', 'off');
     if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'ExtendedTipp')
         % Manually adjust the figure for publication.
         set(hLeg, 'Position', [0.4043, 0.7667, 0.5091, 0.1680]);
