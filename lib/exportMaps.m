@@ -27,9 +27,10 @@ for curIdxH = 1
         Lat = simState.mapGridLatLonPts(:,1);
         Lon = simState.mapGridLatLonPts(:,2);
         PathLossWithVegInDb = simState.pathLossWithVegMaps{curIdxH};
+
+        writetable(table(Lat, Lon, PathLossWithVegInDb), ...
+            curPathToSaveCsv);
     end
-    writetable(table(Lat, Lon, PathLossWithVegInDb), ...
-        curPathToSaveCsv)
 end
 flagSuccess = true;
 
