@@ -19,7 +19,8 @@
 % Yaguang Zhang, Purdue, 05/05/2021
 
 clearvars -except PRESETS CARRIER_FREQUENCIES_IN_MHZ ...
-    PRESET CARRIER_FREQUENCY_IN_MHZ pathToSaveSimManDiary idxFre;
+    PRESET CARRIER_FREQUENCY_IN_MHZ pathToSaveSimManDiary idxFre ...
+    idxT;
 clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
@@ -46,7 +47,11 @@ if ~exist('PRESET', 'var')
     % For LoRaWAN built by WHIN (ExtendedTipp as area of interest with full
     % grid user locs):
     %   {'WHIN_LORAWAN'}
-    PRESET = 'WHIN_LORAWAN';
+    % For LoRaWAN gateways installed on the mobile trailer:
+    %   {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
+    % Note: 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY' can be carried out by
+    % runMultipleCellCovSims.m or after idxT is manually set.
+    PRESET = 'ACRE_LORA_TRAILER';
 end
 
 % Suppress selected warnings to reduce messages.
@@ -75,6 +80,12 @@ switch PRESET
         pathToWhinGatewayLocs = parseWhinGatewayInfo(...
             ABS_PATH_TO_SHARED_FOLDER);
         ABS_PATH_TO_CELL_ANTENNAS_CSV = pathToWhinGatewayLocs;
+    case {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
+        % The location information for the three WHIN gateways installed on
+        % the mobile trailer.
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
+            ABS_PATH_TO_SHARED_FOLDER, ...
+            'CellTowerInfo', 'PurdueAcreLoraWanTowersOnTrailer.csv');
     otherwise
         % Default to the NTIA+HIFLD cell tower locations.
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
@@ -133,6 +144,12 @@ switch PRESET
             = constructUtmRectanglePolyMat(...
             [40.467907, -87.001530; ...
             40.482402, -86.982589]);
+    case {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
+        % Use a square area that covers the whole WHIN region.
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = constructUtmRectanglePolyMat(...
+            [40.46661144, -87.01630345; ...
+            40.50229251, -86.97594568]);
     case 'Tipp'
         % simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
         %     = constructUtmRectanglePolyMat(...
@@ -183,7 +200,8 @@ end
 if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
     if ismember(PRESET, {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
             'ACRE_LORA_HALF_MILE_R', ...
-            'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'})
+            'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN', ...
+            'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'})
         % LoRa simulations.
         CARRIER_FREQUENCY_IN_MHZ = 915;
     else
@@ -239,6 +257,8 @@ switch PRESET
         %         'ACRE_LORA_HALF_MILE_R'}
         %     simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
         %         = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
+    case {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = 1.5;
     otherwise
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
             = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
@@ -336,6 +356,10 @@ pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'PostProcessingResults', ['Simulation_', PRESET, ...
     '_Carrier_', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ...
     'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
+if strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY') ...
+        && exist('idxT', 'var')
+    pathToSaveResults = [pathToSaveResults, '_idxT_', num2str(idxT)];
+end
 
 % Turn the diary logging function on.
 dirToSaveDiary = fullfile(pathToSaveResults, 'diary.txt');
@@ -423,7 +447,10 @@ disp(['    [', datestr(now, datetimeFormat), ...
 % Note: we use "height" to indicate the vertical distance from the ground
 % to the antenna; "elevation" to indicate the ground elevation; and
 % "altitude" to indicate elevation+height.
-cellAntsLatLonH = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1);
+cellAntsLatLonH = csvread(ABS_PATH_TO_CELL_ANTENNAS_CSV, 1, 1); %#ok<CSVRD>
+if strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY')
+    cellAntsLatLonH = cellAntsLatLonH(idxT, :);
+end
 numAnts = size(cellAntsLatLonH, 1);
 cellAntsXYH = nan(numAnts, 3);
 [cellAntsXYH(:,1), cellAntsXYH(:,2)] ...

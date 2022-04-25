@@ -31,7 +31,10 @@ diary(pathToSaveSimManDiary);
 %     The WHIN LoRaWAN + WHIN weather stations.
 %   - 'acreLoRaWan'
 %     The ACRE LoRaWAN.
-SIM_GROUP_PRESET = 'cellularCov';
+%   - 'acreLoRaTrailer
+%     The ACRE LoRa gateways installed on the mobile trailer, simulated (1)
+%     individually and (2) together.
+SIM_GROUP_PRESET = 'acreLoRaTrailer';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -56,6 +59,10 @@ switch SIM_GROUP_PRESET
         PRESETS = {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
             'ACRE_LORA_HALF_MILE_R'};
         CARRIER_FREQUENCIES_IN_MHZ = {915};
+    case 'acreLoRaTrailer'
+        PRESETS = {'ACRE_LORA_TRAILER', ...
+            'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'};
+        CARRIER_FREQUENCIES_IN_MHZ = {915};
     otherwise
         error(['Unknown simulation group: ', SIM_GROUP_PRESET, '!']);
 end
@@ -71,7 +78,13 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
 
         try
             diary off;
-            analyzeCellularCoverage;
+            if strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY')
+                for idxT = 1:3
+                    analyzeCellularCoverage;
+                end
+            else
+                analyzeCellularCoverage;
+            end
             diary(pathToSaveSimManDiary);
         catch err
             diary(pathToSaveSimManDiary);
