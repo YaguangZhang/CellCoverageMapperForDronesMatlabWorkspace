@@ -284,8 +284,7 @@ for idxH = 1:numOfRxHeightToInspect
     %------ 2 ------
     % For blockage status maps.
     %---------------
-    [ hCurBlMap ] ...
-        = plotBlockageMap( ...
+    [ hCurBlMap ] = plotBlockageMap( ...
         [mapGridLonLats, simState.blockageMaps{idxH}], ...
         effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
         curFlagZoomIn, customFigSize);
@@ -348,6 +347,168 @@ for idxH = 1:numOfRxHeightToInspect
 
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['BlockageDist_SameColorBarHidden_RxHeight_', num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3_extra_extra_extra ------
+    % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
+    % distance ruler.
+    %---------------------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'on');
+    caxis([0, 1000]);
+    hLeg = findobj(gcf, 'Type', 'Legend'); set(hLeg, 'AutoUpdate', 'off');
+    h = makescale; largeZValue = 10^6;
+    % The scale will be blocked by the plot if not adjusted along the z
+    % axis.
+    h(1).ZData = ones(4,1).*largeZValue;
+    h(2).ZData = ones(2,1).*largeZValue;
+    curScalePos = get(h(3), 'Position');
+    set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
+    tightfig(hCurDistMap);
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageDist_FixedColorBarWithScale_RxHeight_', ...
+        num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    close(hCurDistMap);
+
+    %------ 3-1 ------
+    % For blockage-by-terrain distance maps.
+    %-----------------
+    [ hCurDistMap ] = plotPathLossMap( ...
+        [mapGridLonLats, simState.blockageByTerrainDistMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn, 'griddatasurf', customFigSize);
+
+    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        hLeg = findobj(gcf, 'Type', 'Legend');
+        set(hLeg, 'Location', 'best');
+    end
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByTerrainDist_RxHeight_', num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3-1_extra ------
+    % The version with colorbar adjusted to be the same one.
+    %---------------------
+    caxis([0, maxBlockDistInM]);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByTerrainDist_SameColorBar_RxHeight_', num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3-1_extra_extra ------
+    % The version with colorbar adjusted to be the same one but hidden.
+    %---------------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'off');
+    tightfig(hCurDistMap);
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByTerrainDist_SameColorBarHidden_RxHeight_', ...
+        num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3-1_extra_extra_extra ------
+    % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
+    % distance ruler.
+    %---------------------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'on');
+    caxis([0, 1000]);
+    hLeg = findobj(gcf, 'Type', 'Legend'); set(hLeg, 'AutoUpdate', 'off');
+    h = makescale; largeZValue = 10^6;
+    % The scale will be blocked by the plot if not adjusted along the z
+    % axis.
+    h(1).ZData = ones(4,1).*largeZValue;
+    h(2).ZData = ones(2,1).*largeZValue;
+    curScalePos = get(h(3), 'Position');
+    set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
+    tightfig(hCurDistMap);
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByTerrainDist_FixedColorBarWithScale_RxHeight_', ...
+        num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    close(hCurDistMap);
+
+    %------ 3-2 ------
+    % For blockage-by-veg distance maps.
+    %-----------------
+    [ hCurDistMap ] = plotPathLossMap( ...
+        [mapGridLonLats, simState.blockageByVegDistMaps{idxH}], ...
+        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+        curFlagZoomIn, 'griddatasurf', customFigSize);
+
+    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        hLeg = findobj(gcf, 'Type', 'Legend');
+        set(hLeg, 'Location', 'best');
+    end
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByVegDist_RxHeight_', num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3-2_extra ------
+    % The version with colorbar adjusted to be the same one.
+    %---------------------
+    caxis([0, maxBlockDistInM]);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByVegDist_SameColorBar_RxHeight_', num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3-2extra_extra ------
+    % The version with colorbar adjusted to be the same one but hidden.
+    %---------------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'off');
+    tightfig(hCurDistMap);
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByVegDist_SameColorBarHidden_RxHeight_', ...
+        num2str(rxAntH)]);
+    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+    saveas(hCurDistMap, [pathToSaveFig, '.png']);
+    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+    %------ 3-2_extra_extra_extra ------
+    % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
+    % distance ruler.
+    %---------------------------------
+    hCb = findobj(gcf, 'Type', 'Colorbar');
+    set(hCb, 'Visible', 'on');
+    caxis([0, 1000]);
+    hLeg = findobj(gcf, 'Type', 'Legend'); set(hLeg, 'AutoUpdate', 'off');
+    h = makescale; largeZValue = 10^6;
+    % The scale will be blocked by the plot if not adjusted along the z
+    % axis.
+    h(1).ZData = ones(4,1).*largeZValue;
+    h(2).ZData = ones(2,1).*largeZValue;
+    curScalePos = get(h(3), 'Position');
+    set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
+    tightfig(hCurDistMap);
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['BlockageByVegDist_FixedColorBarWithScale_RxHeight_', ...
+        num2str(rxAntH)]);
     saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
     saveas(hCurDistMap, [pathToSaveFig, '.png']);
     saveas(hCurDistMap, [pathToSaveFig, '.fig']);
