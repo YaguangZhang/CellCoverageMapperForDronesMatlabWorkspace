@@ -38,6 +38,9 @@ function [ blockagePL, blockageDistInM ] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
+% Set this to be true to generate debugging figures.
+FLAG_DEBUG = false;
+
 distTxToRx = norm(txXYAlt(1:2)-rxXYAlt(1:2));
 numPoints = length(lidarProfile);
 blockagePL = nan;
@@ -45,16 +48,20 @@ blockagePL = nan;
 % We only need to compare the points between the cellular tower (TX) and
 % the mobile device (RX). These points are considered as the top points of
 % the obstacles.
-obsLidarProfDists = linspace(0, distTxToRx, numPoints)';
+lidarProfDists = linspace(0, distTxToRx, numPoints)';
 % Ignore the LiDAR data at the TX and the RX.
-obsLidarProfDists = obsLidarProfDists(2:(end-1));
+obsLidarProfDists = lidarProfDists(2:(end-1));
 obsLidarProfileZs = lidarProfile(2:(end-1));
 
-% Polynomial parameters for the LoS path.
-parsLoSPath = polyfit([0; distTxToRx], ...
-    [txXYAlt(3); rxXYAlt(3)], 1);
-% LoS path height at the LiDAR profile sample locations.
-losPathHs = polyval(parsLoSPath, obsLidarProfDists);
+% % Polynomial parameters for the LoS path.
+%  parsLoSPath = polyfit([0; distTxToRx], ...
+%     [txXYAlt(3); rxXYAlt(3)], 1);
+% % LoS path height at the LiDAR profile sample locations.
+%  losPathHs = polyval(parsLoSPath, obsLidarProfDists);
+%
+% For better speed (we assume distTxToRx is not zero):
+losPathHs = obsLidarProfDists./distTxToRx ...
+    .*(rxXYAlt(3)-txXYAlt(3))+txXYAlt(3);
 
 % Locations with LiDAR z points NOT below the direct path can be already
 % treated as blocked.
@@ -98,6 +105,36 @@ if all(~boolsBlocked)
     % We will consider the 3D distance in FSPL computation.
     distTxToRx3D = norm(txXYAlt - rxXYAlt);
     blockagePL = fspl(distTxToRx3D, simConfigs.CARRIER_WAVELENGTH_IN_M);
+end
+
+if FLAG_DEBUG
+    dirToSaveDebugFig = fullfile(evalin('base', 'pathToSaveResults'), ...
+        'blockageDistPaths'); %#ok<UNRCH>
+    if ~exist(dirToSaveDebugFig, 'dir')
+        mkdir(dirToSaveDebugFig)
+    end
+
+    absPathToSaveDebugFig = fullfile(dirToSaveDebugFig, ...
+        ['path_timestampInMs_now_', ...
+        num2str(floor(now*24*60*60*1000), '%d')]);
+
+    % A side view of the path with profile points.
+    xs = linspace(0, norm(txXYAlt(1:2)-rxXYAlt(1:2)), ...
+        length(lidarProfile));
+    hFigPath = figure; hold on;
+    hTx = plot(xs(1), txXYAlt(3), 'vg');
+    hRx = plot(xs(end), rxXYAlt(3), 'og');
+    hLoS = plot([xs(1), xs(end)], [txXYAlt(3), rxXYAlt(3)], '--b');
+    hProf = plot(lidarProfDists, lidarProfile, '.k')
+    xs = xs(2:(end-1));
+    hBlocked = plot(obsLidarProfDists(boolsBlocked), ...
+        obsLidarProfileZs(boolsBlocked), 'rx');
+    axis equal;
+    legend([hTx, hRx, hLoS, hProf, hBlocked], ...
+        'Tx', 'Rx', 'LoS Path', 'Profile', 'Blocked');
+
+    saveas(hFigPath, [absPathToSaveDebugFig, '.jpg']);
+    close(hFigPath);
 end
 end
 % EOF
