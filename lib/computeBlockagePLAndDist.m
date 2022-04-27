@@ -152,7 +152,8 @@ if FLAG_DEBUG
 
     absPathToSaveDebugFig = fullfile(dirToSaveDebugFig, ...
         ['path_timestampInMs_now_', ...
-        num2str(floor(now*24*60*60*1000), '%d')]);
+        num2str(floor(now*24*60*60*1000), '%d'), '_rand_', ...
+        num2str(floor(rand*10^6), '%d')]);
 
     boolsBlocked = logical(boolsBlocked);
 
