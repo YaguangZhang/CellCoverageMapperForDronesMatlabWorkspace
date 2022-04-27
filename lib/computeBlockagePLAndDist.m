@@ -162,8 +162,8 @@ if FLAG_DEBUG
         num2str(floor(rand*10^6), '%d')]);
 
     boolsBlocked = logical(boolsBlocked);
-    boolsBlockedType3_1 = logical(boolsBlockedType3_1);
-    boolsBlockedType2 = logical(boolsBlockedType2);
+    boolsBlockedType3_1 = boolsBlockedType3_1 == true;
+    boolsBlockedType2 = boolsBlockedType2 == true;
 
     % A side view of the path with profile points.
     hFigPath = figure; hold on;
