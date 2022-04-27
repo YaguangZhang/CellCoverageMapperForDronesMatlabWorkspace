@@ -97,6 +97,9 @@ boolsBlockedTBD = nan(size(curDistsToDirectPath));
 boolsBlockedTBD(curDistsToDirectPath >= ...
     simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadiiMax) = false;
 boolsBlocked(boolsTBD) = boolsBlockedTBD;
+if FLAG_DEBUG
+    boolsBlockedType2 = boolsBlocked; %#ok<UNRCH>
+end
 
 % (iii) Remaining points will essentially be inspected one by one.
 boolsTBD = isnan(boolsBlocked);
@@ -117,6 +120,9 @@ d2s = distTxToRx - d1s;
 % (iii-1) P NOT on line segment Rx-Tx: clear.
 boolsBlockedTBD(d2s<0) = false;
 boolsBlocked(boolsTBD) = boolsBlockedTBD;
+if FLAG_DEBUG
+    boolsBlockedType3_1 = boolsBlocked; %#ok<UNRCH>
+end
 
 % (iii-2) All remaining points' blockage labels are determined by the
 % point-by-point Fresnel Zone radius.
@@ -156,22 +162,30 @@ if FLAG_DEBUG
         num2str(floor(rand*10^6), '%d')]);
 
     boolsBlocked = logical(boolsBlocked);
+    boolsBlockedType3_1 = logical(boolsBlockedType3_1);
+    boolsBlockedType2 = logical(boolsBlockedType2);
 
     % A side view of the path with profile points.
     hFigPath = figure; hold on;
     hTx = plot(lidarProfDists(1), txXYAlt(3), 'vg');
-    hRx = plot(lidarProfDists(end), rxXYAlt(3), 'og');
+    hRx = plot(lidarProfDists(end), rxXYAlt(3), 'ob');
     hLoS = plot([lidarProfDists(1), lidarProfDists(end)], ...
-        [txXYAlt(3), rxXYAlt(3)], '--b');
+        [txXYAlt(3), rxXYAlt(3)], '--k');
     hProf = plot(lidarProfDists, lidarProfile, '.k');
-    hBlocked = plot(obsLidarProfDists(boolsBlocked), ...
-        obsLidarProfileZs(boolsBlocked), 'r.');
+    hBlocked3_2 = plot(obsLidarProfDists(boolsBlocked), ...
+        obsLidarProfileZs(boolsBlocked), '.');
+    hBlocked3_1 = plot(obsLidarProfDists(boolsBlockedType3_1), ...
+        obsLidarProfileZs(boolsBlockedType3_1), '.');
+    hBlocked2 = plot(obsLidarProfDists(boolsBlockedType2), ...
+        obsLidarProfileZs(boolsBlockedType2), '.');
     hBlocked1 = plot(obsLidarProfDists(boolsBelowDirectPath), ...
-        obsLidarProfileZs(boolsBelowDirectPath), 'rx');
+        obsLidarProfileZs(boolsBelowDirectPath), '.');
     % axis equal;
-    legend([hTx, hRx, hLoS, hProf, hBlocked, hBlocked1], ...
-        'Tx', 'Rx', 'LoS Path', 'Profile', 'All Blockage', ...
-        'Blockage Type (i)');
+    legend([hTx, hRx, hLoS, hProf, ...
+        hBlocked1, hBlocked2, hBlocked3_1, hBlocked3_2], ...
+        'Tx', 'Rx', 'LoS Path', 'Profile', ...
+        'Blockage (i)', 'Blockage (ii)', ...
+        'Blockage (iii-1)', 'Blockage (iii-2)');
     transparentizeCurLegends;
 
     saveas(hFigPath, [absPathToSaveDebugFig, '.jpg']);
