@@ -34,7 +34,7 @@ diary(pathToSaveSimManDiary);
 %   - 'acreLoRaTrailer
 %     The ACRE LoRa gateways installed on the mobile trailer, simulated (1)
 %     individually and (2) together.
-SIM_GROUP_PRESET = 'acreLoRaTrailer';
+SIM_GROUP_PRESET = 'cellularCov';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
