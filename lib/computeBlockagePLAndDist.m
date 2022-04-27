@@ -166,20 +166,20 @@ if FLAG_DEBUG
     boolsBlockedType2 = boolsBlockedType2 == true;
 
     % A side view of the path with profile points.
-    hFigPath = figure; hold on;
+    hFigPath = figure('Position', [0, 0, 1000, 500]); hold on;
     hTx = plot(lidarProfDists(1), txXYAlt(3), 'vg');
     hRx = plot(lidarProfDists(end), rxXYAlt(3), 'ob');
     hLoS = plot([lidarProfDists(1), lidarProfDists(end)], ...
         [txXYAlt(3), rxXYAlt(3)], '--k');
-    hProf = plot(lidarProfDists, lidarProfile, '.k');
+    hProf = plot(lidarProfDists, lidarProfile, '.k', 'MarkerSize', 9);
     hBlocked3_2 = plot(obsLidarProfDists(boolsBlocked), ...
-        obsLidarProfileZs(boolsBlocked), '.');
+        obsLidarProfileZs(boolsBlocked), '.r');
     hBlocked3_1 = plot(obsLidarProfDists(boolsBlockedType3_1), ...
-        obsLidarProfileZs(boolsBlockedType3_1), '.');
+        obsLidarProfileZs(boolsBlockedType3_1), '.y');
     hBlocked2 = plot(obsLidarProfDists(boolsBlockedType2), ...
-        obsLidarProfileZs(boolsBlockedType2), '.');
-    hBlocked1 = plot(obsLidarProfDists(boolsBelowDirectPath), ...
-        obsLidarProfileZs(boolsBelowDirectPath), '.');
+        obsLidarProfileZs(boolsBlockedType2), '.c');
+    hBlocked1 = plot(obsLidarProfDists(~boolsBelowDirectPath), ...
+        obsLidarProfileZs(~boolsBelowDirectPath), '.m');
     % axis equal;
     legend([hTx, hRx, hLoS, hProf, ...
         hBlocked1, hBlocked2, hBlocked3_1, hBlocked3_2], ...
