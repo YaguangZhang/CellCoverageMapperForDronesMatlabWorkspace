@@ -45,6 +45,9 @@ distTxToRx = norm(txXYAlt(1:2)-rxXYAlt(1:2));
 numPoints = length(lidarProfile);
 blockagePL = nan;
 
+calcFirstFresRadii = @(d1s, d2s) sqrt( ...
+    (simConfigs.CARRIER_WAVELENGTH_IN_M .* d1s .* d2s)./(d1s + d2s));
+
 % We only need to compare the points between the cellular tower (TX) and
 % the mobile device (RX). These points are considered as the top points of
 % the obstacles.
@@ -63,39 +66,73 @@ obsLidarProfileZs = lidarProfile(2:(end-1));
 losPathHs = obsLidarProfDists./distTxToRx ...
     .*(rxXYAlt(3)-txXYAlt(3))+txXYAlt(3);
 
-% Locations with LiDAR z points NOT below the direct path can be already
-% treated as blocked.
+boolsBlocked = nan(numPoints-2, 1);
+% (i) Locations with LiDAR z points NOT below the direct path can be
+% already treated as blocked.
 boolsBelowDirectPath = obsLidarProfileZs<losPathHs;
-boolsBlocked = ~boolsBelowDirectPath;
+boolsBlocked(~boolsBelowDirectPath) = true;
 
 % For locations with LiDAR z below the direct path, we need to consider the
 % first Fresnel zone to accurately determine the blockage distance.
 
-% Distances between the celluar tower and the lidar z locations.
-d1s = vecnorm( ...
-    [obsLidarProfDists(boolsBelowDirectPath)'; ...
-    obsLidarProfileZs(boolsBelowDirectPath)'-txXYAlt(3)]);
-% Distances between the lidar z locations and the mobile device.
-d2s = vecnorm( ...
-    [distTxToRx - obsLidarProfDists(boolsBelowDirectPath)'; ...
-    obsLidarProfileZs(boolsBelowDirectPath)'-rxXYAlt(3)]);
-% First Fresnel zone radii for the lidar z locations.
-firstFresRadii ...
-    = (sqrt( ...
-    (simConfigs.CARRIER_WAVELENGTH_IN_M .* d1s .* d2s)./(d1s + d2s)))';
+% (ii) LiDAR z points below the direct path that are far enough from the
+% direct path are "clear".
+boolsTBD = isnan(boolsBlocked);
+
+% Max 1st Fresnel zone radius.
+distTxToRx3D = norm(txXYAlt - rxXYAlt);
+firstFresRadiiMax = calcFirstFresRadii(distTxToRx3D/2, distTxToRx3D/2);
 
 % The distances between the lidar z locations and the TX-RX direct path.
-distsToDirectPath ...
-    = point_to_line_distance( ...
-    [obsLidarProfDists(boolsBelowDirectPath), ...
-    obsLidarProfileZs(boolsBelowDirectPath)], ...
+curDistsToDirectPath = point_to_line_distance( ...
+    [obsLidarProfDists(boolsTBD), ...
+    obsLidarProfileZs(boolsTBD)], ...
     [0, txXYAlt(3)], ...
     [distTxToRx, rxXYAlt(3)]);
 
+% Note: simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadius is treated
+% as the minimum distance required for reliable wireless communication
+% links.
+boolsBlockedTBD = nan(size(curDistsToDirectPath));
+boolsBlockedTBD(curDistsToDirectPath >= ...
+    simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadiiMax) = false;
+boolsBlocked(boolsTBD) = boolsBlockedTBD;
+
+% (iii) Remaining points will essentially be inspected one by one.
+boolsTBD = isnan(boolsBlocked);
+curDistsToDirectPath = curDistsToDirectPath(isnan(boolsBlockedTBD));
+boolsBlockedTBD = nan(size(curDistsToDirectPath));
+
+% Distances between the Tx and P, the intersection point of (a) the direct
+% path with (b) the line which goes through that profile point and is
+% perpendicular to the direct path.
+d1s = sqrt( sum( ...
+    ([obsLidarProfDists(boolsTBD), obsLidarProfileZs(boolsTBD)] ...
+    - [0, txXYAlt(3)]).^2, 2) - curDistsToDirectPath.^2);
+% % Distances between P and the Rx.
+%  d2s = sqrt( sum(([obsLidarProfDists, obsLidarProfileZs] ...
+%     - [distTxToRx, rxXYAlt(3)]).^2, 2) - curDistsToDirectPath.^2);
+d2s = distTxToRx - d1s;
+
+% (iii-1) P NOT on line segment Rx-Tx: clear.
+boolsBlockedTBD(d2s<0) = false;
+boolsBlocked(boolsTBD) = boolsBlockedTBD;
+
+% (iii-2) All remaining points' blockage labels are determined by the
+% point-by-point Fresnel Zone radius.
+boolsTBD = isnan(boolsBlocked);
+boolsNanBlockedTBD = isnan(boolsBlockedTBD);
+curDistsToDirectPath = curDistsToDirectPath(boolsNanBlockedTBD);
+d1s = d1s(boolsNanBlockedTBD);
+d2s = d2s(boolsNanBlockedTBD);
+
+% First Fresnel zone radii for the lidar z locations.
+firstFresRadii = calcFirstFresRadii(d1s, d2s);
+
 % The extra clearance ratio respective to the first Fresnel zone radius for
 % LoS paths.
-boolsBlocked(boolsBelowDirectPath) = distsToDirectPath ...
-    <= simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadii;
+boolsBlocked(boolsTBD) = curDistsToDirectPath ...
+    < simConfigs.LOS_FIRST_FRES_CLEAR_RATIO.*firstFresRadii;
 
 % For simplicity, we will estimate blockageDistInM based on boolsBlocked
 % (without considering the start and end points).
@@ -103,13 +140,12 @@ blockageDistInM = distTxToRx*(sum(boolsBlocked)/length(boolsBlocked));
 
 if all(~boolsBlocked)
     % We will consider the 3D distance in FSPL computation.
-    distTxToRx3D = norm(txXYAlt - rxXYAlt);
     blockagePL = fspl(distTxToRx3D, simConfigs.CARRIER_WAVELENGTH_IN_M);
 end
 
 if FLAG_DEBUG
-    dirToSaveDebugFig = fullfile(evalin('base', 'pathToSaveResults'), ...
-        'blockageDistPaths'); %#ok<UNRCH>
+    dirToSaveDebugFig = fullfile(pwd, '..', 'PostProcessingResults', ...
+        'blockageDistPathDebugFigs'); %#ok<UNRCH>
     if ~exist(dirToSaveDebugFig, 'dir')
         mkdir(dirToSaveDebugFig)
     end
@@ -118,20 +154,24 @@ if FLAG_DEBUG
         ['path_timestampInMs_now_', ...
         num2str(floor(now*24*60*60*1000), '%d')]);
 
+    boolsBlocked = logical(boolsBlocked);
+
     % A side view of the path with profile points.
-    xs = linspace(0, norm(txXYAlt(1:2)-rxXYAlt(1:2)), ...
-        length(lidarProfile));
     hFigPath = figure; hold on;
-    hTx = plot(xs(1), txXYAlt(3), 'vg');
-    hRx = plot(xs(end), rxXYAlt(3), 'og');
-    hLoS = plot([xs(1), xs(end)], [txXYAlt(3), rxXYAlt(3)], '--b');
-    hProf = plot(lidarProfDists, lidarProfile, '.k')
-    xs = xs(2:(end-1));
+    hTx = plot(lidarProfDists(1), txXYAlt(3), 'vg');
+    hRx = plot(lidarProfDists(end), rxXYAlt(3), 'og');
+    hLoS = plot([lidarProfDists(1), lidarProfDists(end)], ...
+        [txXYAlt(3), rxXYAlt(3)], '--b');
+    hProf = plot(lidarProfDists, lidarProfile, '.k');
     hBlocked = plot(obsLidarProfDists(boolsBlocked), ...
-        obsLidarProfileZs(boolsBlocked), 'rx');
-    axis equal;
-    legend([hTx, hRx, hLoS, hProf, hBlocked], ...
-        'Tx', 'Rx', 'LoS Path', 'Profile', 'Blocked');
+        obsLidarProfileZs(boolsBlocked), 'r.');
+    hBlocked1 = plot(obsLidarProfDists(boolsBelowDirectPath), ...
+        obsLidarProfileZs(boolsBelowDirectPath), 'rx');
+    % axis equal;
+    legend([hTx, hRx, hLoS, hProf, hBlocked, hBlocked1], ...
+        'Tx', 'Rx', 'LoS Path', 'Profile', 'All Blockage', ...
+        'Blockage Type (i)');
+    transparentizeCurLegends;
 
     saveas(hFigPath, [absPathToSaveDebugFig, '.jpg']);
     close(hFigPath);
