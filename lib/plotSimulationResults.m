@@ -377,143 +377,148 @@ for idxH = 1:numOfRxHeightToInspect
 
     close(hCurDistMap);
 
-    %------ 3-1 ------
-    % For blockage-by-terrain distance maps.
-    %-----------------
-    [ hCurDistMap ] = plotPathLossMap( ...
-        [mapGridLonLats, simState.blockageByTerrainDistMaps{idxH}], ...
-        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-        curFlagZoomIn, 'griddatasurf', customFigSize);
+    if simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG
+        %------ 3-1 ------
+        % For blockage-by-terrain distance maps.
+        %-----------------
+        [ hCurDistMap ] = plotPathLossMap( ...
+            [mapGridLonLats, simState.blockageByTerrainDistMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, 'griddatasurf', customFigSize);
 
-    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            hLeg = findobj(gcf, 'Type', 'Legend');
+            set(hLeg, 'Location', 'best');
+        end
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByTerrainDist_RxHeight_', num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        %------ 3-1_extra ------
+        % The version with colorbar adjusted to be the same one.
+        %---------------------
+        caxis([0, maxBlockDistInM]);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByTerrainDist_SameColorBar_RxHeight_', ...
+            num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        %------ 3-1_extra_extra ------
+        % The version with colorbar adjusted to be the same one but hidden.
+        %---------------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'off');
+        tightfig(hCurDistMap);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByTerrainDist_SameColorBarHidden_RxHeight_', ...
+            num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        %------ 3-1_extra_extra_extra ------
+        % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
+        % distance ruler.
+        %---------------------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'on');
+        caxis([0, 1000]);
         hLeg = findobj(gcf, 'Type', 'Legend');
-        set(hLeg, 'Location', 'best');
-    end
+        set(hLeg, 'AutoUpdate', 'off');
+        h = makescale; largeZValue = 10^6;
+        % The scale will be blocked by the plot if not adjusted along the z
+        % axis.
+        h(1).ZData = ones(4,1).*largeZValue;
+        h(2).ZData = ones(2,1).*largeZValue;
+        curScalePos = get(h(3), 'Position');
+        set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
+        tightfig(hCurDistMap);
 
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByTerrainDist_RxHeight_', num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByTerrainDist_FixedColorBarWithScale_RxHeight_', ...
+            num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
 
-    %------ 3-1_extra ------
-    % The version with colorbar adjusted to be the same one.
-    %---------------------
-    caxis([0, maxBlockDistInM]);
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByTerrainDist_SameColorBar_RxHeight_', num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+        close(hCurDistMap);
 
-    %------ 3-1_extra_extra ------
-    % The version with colorbar adjusted to be the same one but hidden.
-    %---------------------------
-    hCb = findobj(gcf, 'Type', 'Colorbar');
-    set(hCb, 'Visible', 'off');
-    tightfig(hCurDistMap);
+        %------ 3-2 ------
+        % For blockage-by-veg distance maps.
+        %-----------------
+        [ hCurDistMap ] = plotPathLossMap( ...
+            [mapGridLonLats, simState.blockageByVegDistMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, 'griddatasurf', customFigSize);
 
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByTerrainDist_SameColorBarHidden_RxHeight_', ...
-        num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            hLeg = findobj(gcf, 'Type', 'Legend');
+            set(hLeg, 'Location', 'best');
+        end
 
-    %------ 3-1_extra_extra_extra ------
-    % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
-    % distance ruler.
-    %---------------------------------
-    hCb = findobj(gcf, 'Type', 'Colorbar');
-    set(hCb, 'Visible', 'on');
-    caxis([0, 1000]);
-    hLeg = findobj(gcf, 'Type', 'Legend'); set(hLeg, 'AutoUpdate', 'off');
-    h = makescale; largeZValue = 10^6;
-    % The scale will be blocked by the plot if not adjusted along the z
-    % axis.
-    h(1).ZData = ones(4,1).*largeZValue;
-    h(2).ZData = ones(2,1).*largeZValue;
-    curScalePos = get(h(3), 'Position');
-    set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
-    tightfig(hCurDistMap);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByVegDist_RxHeight_', num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
 
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByTerrainDist_FixedColorBarWithScale_RxHeight_', ...
-        num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+        %------ 3-2_extra ------
+        % The version with colorbar adjusted to be the same one.
+        %-----------------------
+        caxis([0, maxBlockDistInM]);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByVegDist_SameColorBar_RxHeight_', num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
 
-    close(hCurDistMap);
+        %------ 3-2_extra_extra ------
+        % The version with colorbar adjusted to be the same one but hidden.
+        %-----------------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'off');
+        tightfig(hCurDistMap);
 
-    %------ 3-2 ------
-    % For blockage-by-veg distance maps.
-    %-----------------
-    [ hCurDistMap ] = plotPathLossMap( ...
-        [mapGridLonLats, simState.blockageByVegDistMaps{idxH}], ...
-        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-        curFlagZoomIn, 'griddatasurf', customFigSize);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByVegDist_SameColorBarHidden_RxHeight_', ...
+            num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
 
-    if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+        %------ 3-2_extra_extra_extra ------
+        % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
+        % distance ruler.
+        %-----------------------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'on');
+        caxis([0, 1000]);
         hLeg = findobj(gcf, 'Type', 'Legend');
-        set(hLeg, 'Location', 'best');
+        set(hLeg, 'AutoUpdate', 'off');
+        h = makescale; largeZValue = 10^6;
+        % The scale will be blocked by the plot if not adjusted along the z
+        % axis.
+        h(1).ZData = ones(4,1).*largeZValue;
+        h(2).ZData = ones(2,1).*largeZValue;
+        curScalePos = get(h(3), 'Position');
+        set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
+        tightfig(hCurDistMap);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['BlockageByVegDist_FixedColorBarWithScale_RxHeight_', ...
+            num2str(rxAntH)]);
+        saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurDistMap, [pathToSaveFig, '.png']);
+        saveas(hCurDistMap, [pathToSaveFig, '.fig']);
+
+        close(hCurDistMap);
     end
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByVegDist_RxHeight_', num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-
-    %------ 3-2_extra ------
-    % The version with colorbar adjusted to be the same one.
-    %---------------------
-    caxis([0, maxBlockDistInM]);
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByVegDist_SameColorBar_RxHeight_', num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-
-    %------ 3-2extra_extra ------
-    % The version with colorbar adjusted to be the same one but hidden.
-    %---------------------------
-    hCb = findobj(gcf, 'Type', 'Colorbar');
-    set(hCb, 'Visible', 'off');
-    tightfig(hCurDistMap);
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByVegDist_SameColorBarHidden_RxHeight_', ...
-        num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-
-    %------ 3-2_extra_extra_extra ------
-    % The version with (1) colorbar adjusted to be [0, 1000] and (2) a
-    % distance ruler.
-    %---------------------------------
-    hCb = findobj(gcf, 'Type', 'Colorbar');
-    set(hCb, 'Visible', 'on');
-    caxis([0, 1000]);
-    hLeg = findobj(gcf, 'Type', 'Legend'); set(hLeg, 'AutoUpdate', 'off');
-    h = makescale; largeZValue = 10^6;
-    % The scale will be blocked by the plot if not adjusted along the z
-    % axis.
-    h(1).ZData = ones(4,1).*largeZValue;
-    h(2).ZData = ones(2,1).*largeZValue;
-    curScalePos = get(h(3), 'Position');
-    set(h(3), 'Position', [curScalePos(1:2), largeZValue]);
-    tightfig(hCurDistMap);
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['BlockageByVegDist_FixedColorBarWithScale_RxHeight_', ...
-        num2str(rxAntH)]);
-    saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurDistMap, [pathToSaveFig, '.png']);
-    saveas(hCurDistMap, [pathToSaveFig, '.fig']);
-
-    close(hCurDistMap);
 
     %------ 4 ------
     % For coverage path loss maps.
@@ -558,92 +563,94 @@ for idxH = 1:numOfRxHeightToInspect
 
     close(hCurPLMap);
 
-    %------ 5 ------
-    % For coverage path loss maps considering propogation loss through
-    % vegetation.
-    %---------------
-    curFlagZoomIn = true;
+    if simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG
+        %------ 5 ------
+        % For coverage path loss maps considering propogation loss through
+        % vegetation.
+        %---------------
+        curFlagZoomIn = true;
 
-    [ hCurPLMap ] ...
-        = plotPathLossMap( ...
-        [mapGridLonLats, simState.pathLossWithVegMaps{idxH}], ...
-        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-        curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
-    hLeg = findobj(gcf, 'Type', 'Legend');
-    switch lower(simConfigs.CURRENT_SIMULATION_TAG)
-        case 'extendedtipp'
-            set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
-        case 'tipp'
-            set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
-        case 'shrinkedin'
-            set(hLeg, 'Location', 'best');
+        [ hCurPLMap ] ...
+            = plotPathLossMap( ...
+            [mapGridLonLats, simState.pathLossWithVegMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
+        hLeg = findobj(gcf, 'Type', 'Legend');
+        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+            case 'extendedtipp'
+                set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
+            case 'tipp'
+                set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
+            case 'shrinkedin'
+                set(hLeg, 'Location', 'best');
+        end
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_WithVeg_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        %------ 5_extra ------
+        % The version with colorbar hidden.
+        %---------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'off');
+        tightfig(hCurPLMap);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_WithVeg_ColorBarHidden_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        %------ 6 ------
+        % For path loss from propogation loss through vegetation only.
+        %---------------
+        curFlagZoomIn = true;
+
+        [ hCurPLMap ] ...
+            = plotPathLossMap( ...
+            [mapGridLonLats, ...
+            simState.pathLossWithVegMaps{idxH} ...
+            - simState.coverageMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
+        hLeg = findobj(gcf, 'Type', 'Legend');
+        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+            case 'extendedtipp'
+                set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
+            case 'tipp'
+                set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
+            case 'shrinkedin'
+                set(hLeg, 'Location', 'best');
+        end
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_ByVeg_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        %------ 6_extra ------
+        % The version with colorbar hidden.
+        %---------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'off');
+        tightfig(hCurPLMap);
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_ByVeg_ColorBarHidden_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        close(hCurPLMap);
     end
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['PathLossMap_WithVeg_RxHeight_', ...
-        strrep(num2str(rxAntH), '.', '_')]);
-    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurPLMap, [pathToSaveFig, '.png']);
-    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-
-    %------ 5_extra ------
-    % The version with colorbar hidden.
-    %---------------------
-    hCb = findobj(gcf, 'Type', 'Colorbar');
-    set(hCb, 'Visible', 'off');
-    tightfig(hCurPLMap);
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['PathLossMap_WithVeg_ColorBarHidden_RxHeight_', ...
-        strrep(num2str(rxAntH), '.', '_')]);
-    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurPLMap, [pathToSaveFig, '.png']);
-    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-
-    %------ 6 ------
-    % For path loss from propogation loss through vegetation only.
-    %---------------
-    curFlagZoomIn = true;
-
-    [ hCurPLMap ] ...
-        = plotPathLossMap( ...
-        [mapGridLonLats, ...
-        simState.pathLossWithVegMaps{idxH} ...
-        - simState.coverageMaps{idxH}], ...
-        effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
-        curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
-    hLeg = findobj(gcf, 'Type', 'Legend');
-    switch lower(simConfigs.CURRENT_SIMULATION_TAG)
-        case 'extendedtipp'
-            set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
-        case 'tipp'
-            set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
-        case 'shrinkedin'
-            set(hLeg, 'Location', 'best');
-    end
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['PathLossMap_ByVeg_RxHeight_', ...
-        strrep(num2str(rxAntH), '.', '_')]);
-    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurPLMap, [pathToSaveFig, '.png']);
-    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-
-    %------ 6_extra ------
-    % The version with colorbar hidden.
-    %---------------------
-    hCb = findobj(gcf, 'Type', 'Colorbar');
-    set(hCb, 'Visible', 'off');
-    tightfig(hCurPLMap);
-
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['PathLossMap_ByVeg_ColorBarHidden_RxHeight_', ...
-        strrep(num2str(rxAntH), '.', '_')]);
-    saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
-    saveas(hCurPLMap, [pathToSaveFig, '.png']);
-    saveas(hCurPLMap, [pathToSaveFig, '.fig']);
-
-    close(hCurPLMap);
 end
 
 disp('    Done!')
@@ -774,10 +781,36 @@ if curFlagGenFigsSilently
     close(curCovRatioGainFig);
 end
 
-% This is not very helpful.
-if false
-    % For excess path loss maps by vegetation.
-    mapType = 'PathLossByVeg';
+if simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG
+    % This is not very helpful.
+    if false
+        % For excess path loss maps by vegetation.
+        mapType = 'PathLossByVeg'; %#ok<UNRCH> 
+
+        [curEmpCdfFig, simState.coverageMapsCovRatioMeta] ...
+            = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+            mapType, ~curFlagGenFigsSilently);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['EmpiricalCdf_', mapType]);
+        saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+        saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
+        % Coverage ratio gain.
+        [ curCovRatioGainFig ] ...
+            = plotCoverageRatioGain(simState, simConfigs, ...
+            mapType, ~curFlagGenFigsSilently);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['EmpiricalCdf_', mapType, 'CovRatGain']);
+        saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+        saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+
+        if curFlagGenFigsSilently
+            close(curEmpCdfFig);
+            close(curCovRatioGainFig);
+        end
+    end
+
+    % For coverage path loss maps with vegetation.
+    mapType = 'PathLossWithVeg';
 
     [curEmpCdfFig, simState.coverageMapsCovRatioMeta] ...
         = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
@@ -799,30 +832,6 @@ if false
         close(curEmpCdfFig);
         close(curCovRatioGainFig);
     end
-end
-
-% For coverage path loss maps with vegetation.
-mapType = 'PathLossWithVeg';
-
-[curEmpCdfFig, simState.coverageMapsCovRatioMeta] ...
-    = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
-    mapType, ~curFlagGenFigsSilently);
-pathToSaveFig = fullfile(pathToSaveResults, ...
-    ['EmpiricalCdf_', mapType]);
-saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
-saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
-% Coverage ratio gain.
-[ curCovRatioGainFig ] ...
-    = plotCoverageRatioGain(simState, simConfigs, ...
-    mapType, ~curFlagGenFigsSilently);
-pathToSaveFig = fullfile(pathToSaveResults, ...
-    ['EmpiricalCdf_', mapType, 'CovRatGain']);
-saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
-saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
-
-if curFlagGenFigsSilently
-    close(curEmpCdfFig);
-    close(curCovRatioGainFig);
 end
 
 disp('    Done!')

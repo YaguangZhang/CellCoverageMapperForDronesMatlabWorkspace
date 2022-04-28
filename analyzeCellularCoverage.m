@@ -13,10 +13,11 @@
 %     of the viable PRESET below to choose the desired simulation.
 %   - If new simulation is needed, please delete previous result files to
 %     avoid progress recovery.
-%   - Matlab R2020b & R2021a have been used for developing and testing this
-%     simulator.
+%   - Matlab R2021a & R2021b have been used for developing and
+%     testing this simulator. Release R2020b and beyond are recommended for
+%     running the simulator.
 %
-% Yaguang Zhang, Purdue, 05/05/2021
+% Yaguang Zhang, Purdue, 04/28/2022
 
 clearvars -except PRESETS CARRIER_FREQUENCIES_IN_MHZ ...
     PRESET CARRIER_FREQUENCY_IN_MHZ pathToSaveSimManDiary idxFre ...
@@ -112,6 +113,17 @@ simConfigs.UTM_ZONE = '16 T';
 % For GPS and UTM conversions.
 [deg2utm_speZone, utm2deg_speZone] ...
     = genUtmConvertersForFixedZone(simConfigs.UTM_ZONE);
+
+%   - By default, do not consider the vegetation simulation (which requires
+%   blockage dist results based on ground elevation).
+if any(strcmpi({'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
+        'ACRE_LORA_HALF_MILE_R', 'ACRE_LORA_TRAILER', ...
+        'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY', ...
+        'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}, PRESET))
+    simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = true;
+else
+    simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = false;
+end
 
 %   - The UTM (x, y) polygon boundary vertices representing the area of
 %   interest for generating the coverage maps.
