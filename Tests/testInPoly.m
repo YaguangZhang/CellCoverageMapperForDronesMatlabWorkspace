@@ -4,7 +4,15 @@
 % data will not be pushed to GitHub. However, the resultant .log file will
 % be pushed there for future reference.
 %
-% Yaguang Zhang, Purdue, 04/19/2022
+% Three alternatives to the built-in inpolygon functions are considered:
+%   (1) InPolygon MEX implemenation
+%       https://www.mathworks.com/matlabcentral/fileexchange/20754-fast-inpolygon-detection-mex
+%   (2) INPOLY: A fast points-in-polygon test (inpoly2)
+%       https://www.mathworks.com/matlabcentral/fileexchange/10391-inpoly-a-fast-points-in-polygon-test
+%   (3) A custom wrapper named "InPolygon" for inpoly2
+%       ./InPolyLibs/InPolygonReplacer/InPolygon.m
+%
+% Yaguang Zhang, Purdue, 04/28/2022
 
 clear; clc; close all; dbstop if error;
 
@@ -100,11 +108,18 @@ disp(['[', datestr(now, datetimeFormat), ...
 % of inpolygon agrees with inpoly2 when there is a disagreement between
 % InPolygon and inpoly2.
 
+disp('=========')
+disp(' Summary ')
+
+whos gpsLonLatCoors inBoundaryLatLons;
+
 disp(['Num of misclassified pts - InPolygon: ', num2str(sum( ...
     boolsGpsLonLatCoorsOutOfIn1~=boolsGpsLonLatCoorsOutOfIn))]);
 disp(['Num of misclassified pts - inpoly2: ', num2str(sum( ...
     boolsGpsLonLatCoorsOutOfIn2~=boolsGpsLonLatCoorsOutOfIn))]);
 disp(['Num of misclassified pts - InPolygon replacer: ', num2str(sum( ...
     boolsGpsLonLatCoorsOutOfIn3~=boolsGpsLonLatCoorsOutOfIn))]);
+
+disp('=========')
 
 % EOF
