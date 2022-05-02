@@ -546,7 +546,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
 
     % Cache the results.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
-        'locIndicesForAllWorkersForAllCellsEff', 'proMon', '-v7.3');
+        'locIndicesForAllWorkersForAllCellsEff', 'proMon');
 
     disp('        Done!')
 end
@@ -875,7 +875,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     % We will update simState for each tower.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
         'locIndicesForAllWorkersForAllCellsEff', 'proMon', ...
-        'nextIdxEffeCellAnt', '-v7.3');
+        'nextIdxEffeCellAnt');
 end
 
 disp('    Done!')
