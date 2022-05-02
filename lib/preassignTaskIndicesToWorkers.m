@@ -1,5 +1,6 @@
 function [ locIndicesForAllWorkers ] ...
-    = preassignTaskIndicesToWorkers(numOfTasks, numOfAvailableWorkers)
+    = preassignTaskIndicesToWorkers(numOfTasks, numOfAvailableWorkers, ...
+    FLAG_RANDOMIZE_TASK)
 %PREASSIGNTASKINDICESTOWORKERS Preassign 1:numOfTasks to available workers.
 %
 % Input:
@@ -10,6 +11,9 @@ function [ locIndicesForAllWorkers ] ...
 %     Optional. The number of available workers. If not specified, a local
 %     parallel computing pool will be started and the number of workers
 %     available there will be used.
+%   - FLAG_RANDOMIZE_TASK
+%     Optional. Default to true. Set FLAG_RANDOMIZE_TASK to false to stop
+%     randomizing the output indices.
 %
 % Output:
 %   - locIndicesForAllWorkers
@@ -18,6 +22,10 @@ function [ locIndicesForAllWorkers ] ...
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
+if ~exist('FLAG_RANDOMIZE_TASK', 'var')
+    FLAG_RANDOMIZE_TASK = true;
+end
+
 if ~exist('numOfAvailableWorkers', 'var')
     localCluster = gcp;
     numOfAvailableWorkers = localCluster.NumWorkers;
@@ -25,22 +33,26 @@ end
 
 locIndicesForAllWorkers = cell(numOfAvailableWorkers, 1);
 
+if FLAG_RANDOMIZE_TASK
+    rng(1);
+    randIntegerTaskIds = randperm(numOfTasks);
+end
+
 % Pre-allocate the indices to workers. We will use a worker-based approach
 % to avoid frequently changing cell size.
 for idxWorker = 1:numOfAvailableWorkers
-    % Essentially, we need numbers within the range 1:numOfTasks that have
-    % a remainder of idxWorker after being divided by
-    % numOfAvailableWorkers.
-    locIndicesForAllWorkers{idxWorker} ...
-        = idxWorker:numOfAvailableWorkers:numOfTasks;
+    if FLAG_RANDOMIZE_TASK
+        locIndicesForAllWorkers{idxWorker} ...
+            = randIntegerTaskIds( ...
+            idxWorker:numOfAvailableWorkers:numOfTasks);
+    else
+        % Essentially, we need numbers within the range 1:numOfTasks that
+        % have a remainder of idxWorker after being divided by
+        % numOfAvailableWorkers.
+        locIndicesForAllWorkers{idxWorker} ...
+            = idxWorker:numOfAvailableWorkers:numOfTasks;
+    end
 end
-
-% % An index-based approach, which acheives the same goal but is slower.
-% for idxLoc = 1:numOfTasks
-%     idxWorkerToAssign = mod(idxLoc-1, numOfAvailableWorkers)+1;
-%     locIndicesForAllWorkers{idxWorkerToAssign} = ...
-%         [locIndicesForAllWorkers{idxWorkerToAssign}, idxLoc];
-% end
 
 end
 % EOF
