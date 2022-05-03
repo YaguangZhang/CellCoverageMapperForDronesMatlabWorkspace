@@ -3,6 +3,8 @@
 %
 % Yaguang Zhang, Purdue, 05/02/2022
 
+clear; close all; clc; dbstop if error;
+
 cd(fileparts(mfilename('fullpath')));
 
 addpath('.'); addpath(fullfile('..', 'lib'));

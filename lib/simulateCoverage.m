@@ -144,6 +144,8 @@ function [ simState ] ...
 
 %% Before Processing the Data
 
+FLAG_DEBUG = false;
+
 % Close the pool if it exists to make sure all resource/workers are
 % available for the simulation.
 previousPool = gcp('nocreate');
@@ -523,9 +525,10 @@ if ~isfield(simState, 'blockageMapsForEachCell')
         curNumOfTasks = length(curIndicesRxLocsToConsider);
         locIndicesForAllWorkers ...
             = preassignTaskIndicesToWorkers(curNumOfTasks, nan, ...
-            'tile', gridInfo);
+            'randomized', gridInfo);
 
-        % Double check the assignment results, just to be safe.
+        % Double check the assignment results, just to be safe. All integer
+        % task ID should have been listed once and only once.
         curAllLocIndices = [locIndicesForAllWorkers{:}];
         curUniqueAllLocIndices = unique(curAllLocIndices);
         assert(length(curAllLocIndices)==length(curUniqueAllLocIndices) ...
@@ -536,6 +539,18 @@ if ~isfield(simState, 'blockageMapsForEachCell')
             = cellfun(@(indices) ...
             curIndicesRxLocsToConsider(indices)', ...
             locIndicesForAllWorkers, 'UniformOutput', false);
+
+        if FLAG_DEBUG && curNumOfTasks>0
+            curLocIndicesForAllWorkers ...
+                = locIndicesForAllWorkersForAllCellsEff{idxEffeCellAnt};
+
+            figure; hold on;
+            for idxW = 1:length(curLocIndicesForAllWorkers)
+                curLocIndices = curLocIndicesForAllWorkers{idxW};
+                plot(simState.mapGridXYPts(curLocIndices,1), ...
+                    simState.mapGridXYPts(curLocIndices,2), 'x');
+            end
+        end
 
         % Initialize results.
         for idxDroneHeightInM = 1:numOfRxHeightToInspect
@@ -722,13 +737,13 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             [curTerrainProfile, curLidarProfile] ...
                 = fetchTerrainAndLidarProfiles( ...
                 absPathToCacheMatFile, ...
-                curCellXYH(:,1:2), ...
+                curCellXYH(1:2), ...
                 curDroneXY, simConfigs, ...
                 lidarFileXYCentroids, ...
                 lidarFileXYCoveragePolyshapes, ...
                 lidarMatFileAbsDirs); %#ok<PFBNS>
 
-            % Fill NaN elements to the minimum value in that profile.
+            % Fill NaN elements with the minimum value in that profile.
             numOfNanProfEles ...
                 = sum(isnan([curTerrainProfile; curLidarProfile]));
             if numOfNanProfEles>0

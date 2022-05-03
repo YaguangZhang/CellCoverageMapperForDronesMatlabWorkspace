@@ -52,7 +52,7 @@ if ~exist('PRESET', 'var')
     %   {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
     % Note: 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY' can be carried out by
     % runMultipleCellCovSims.m or after idxT is manually set.
-    PRESET = 'ACRE_EXACT';
+    PRESET = 'ShrinkedIN';
 end
 
 % Suppress selected warnings to reduce messages.
