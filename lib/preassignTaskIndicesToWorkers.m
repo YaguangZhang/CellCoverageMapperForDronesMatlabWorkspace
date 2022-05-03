@@ -21,8 +21,10 @@ function [ locIndicesForAllWorkers ] ...
 %         divided into continous chunks (almost) evenly.
 %       - 'rectangle'
 %         The locations will be grouped as rectangle chunks, each with
-%         almost the same number of elements. This option will require the
-%         input gridInfo for more details about the input locations:
+%         almost the same number of elements. This option requires (i)
+%         numOfTasks > numOfAvailableWorkers (otherwise 'normal' will be
+%         used) and (ii) the input gridInfo for more details about the
+%         input locations:
 %           - gridInfo.xys
 %             A matrix of the locations of interest, each row being (x, y)
 %             coordinates of one location, cooresponding to one task. Note
@@ -50,13 +52,13 @@ if numOfTasks == 0
     return;
 end
 
-if ~exist('CHUNK_STYLE', 'var')
-    CHUNK_STYLE = 'normal';
-end
-
 if (~exist('numOfAvailableWorkers', 'var')) || isnan(numOfAvailableWorkers)
     localCluster = gcp;
     numOfAvailableWorkers = localCluster.NumWorkers;
+end
+
+if (~exist('CHUNK_STYLE', 'var')) || (numOfTasks<=numOfAvailableWorkers)
+    CHUNK_STYLE = 'normal';
 end
 
 locIndicesForAllWorkers = cell(numOfAvailableWorkers, 1);

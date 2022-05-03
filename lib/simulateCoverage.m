@@ -517,7 +517,8 @@ if ~isfield(simState, 'blockageMapsForEachCell')
         % transfer, here we pre-assign the pixels to be processed by each
         % worker to avoid unnecessary data copying during worker
         % initialization.
-        gridInfo.xys = simState.mapGridXYPts;
+        gridInfo.xys = simState.mapGridXYPts( ...
+            curIndicesRxLocsToConsider, :);
         gridInfo.resolution = simState.mapGridResolutionInM;
         locIndicesForAllWorkers ...
             = preassignTaskIndicesToWorkers( ...
