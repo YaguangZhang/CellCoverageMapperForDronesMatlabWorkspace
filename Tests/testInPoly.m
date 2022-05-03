@@ -38,7 +38,7 @@ disp(['[', datestr(now, datetimeFormat), ...
     '] Loading test dataset ...'])
 
 tic;
-load(fullfile(pathToSaveResults, 'inpolyTestData.mat'));
+load(fullfile(pathToSaveResults, 'testInPoly.mat'));
 toc;
 
 % Attach the boundary vertices to the test dataset.
