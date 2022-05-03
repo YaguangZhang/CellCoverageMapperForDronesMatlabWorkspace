@@ -52,7 +52,7 @@ if ~exist('PRESET', 'var')
     %   {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
     % Note: 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY' can be carried out by
     % runMultipleCellCovSims.m or after idxT is manually set.
-    PRESET = 'ACRE_LORA_TRAILER';
+    PRESET = 'ACRE_EXACT';
 end
 
 % Suppress selected warnings to reduce messages.
@@ -351,7 +351,7 @@ simConfigs.deg2utm_speZone = deg2utm_speZone;
 simConfigs.utm2deg_speZone = utm2deg_speZone;
 
 %   - For adjusting the feedback frequency in parfor workers.
-simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.2;
+simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT = 0.25;
 
 %   - For plotting, we need an expected value for the maximum allowed path
 %   loss. With 20 MHz bandwidth, 9 dB RX noise figure, and 100 W TX power,

@@ -200,7 +200,7 @@ end
 % with any pixels to process, normal for loop (instead of parfor) will be
 % used. For example, set it to be 0 to always use for; set it to 1 to
 % always use parfor.
-MIN_RATIO_OF_EMPTY_WORKERS_TO_AVOID_PAR = 1;
+MIN_RATIO_OF_EMPTY_WORKERS_TO_AVOID_PAR = 0.9;
 
 % Define the ITU obstruction by woodland model.
 defineModelItuObsByWoodland;
