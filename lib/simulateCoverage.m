@@ -523,7 +523,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
         curNumOfTasks = length(curIndicesRxLocsToConsider);
         locIndicesForAllWorkers ...
             = preassignTaskIndicesToWorkers(curNumOfTasks, nan, ...
-            'rectangle', gridInfo);
+            'tile', gridInfo);
 
         % Double check the assignment results, just to be safe.
         curAllLocIndices = [locIndicesForAllWorkers{:}];
