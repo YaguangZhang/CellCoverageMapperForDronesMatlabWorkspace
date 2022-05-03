@@ -20,17 +20,22 @@ function [ locIndicesForAllWorkers ] ...
 %         1:numOfTasks will be permutated randomly first before being
 %         divided into continous chunks (almost) evenly.
 %       - 'rectangle'
-%         The locations will be grouped as rectangle chunks, each with
-%         almost the same number of elements. This option requires (i)
-%         numOfTasks > numOfAvailableWorkers (otherwise 'normal' will be
-%         used) and (ii) the input gridInfo for more details about the
-%         input locations:
+%         The locations will be grouped as rectangle chunks from the
+%         center, each with almost the same number of elements. This option
+%         requires (i) numOfTasks > numOfAvailableWorkers (otherwise
+%         'normal' will be used) and (ii) the input gridInfo for more
+%         details about the input locations:
 %           - gridInfo.xys
 %             A matrix of the locations of interest, each row being (x, y)
 %             coordinates of one location, cooresponding to one task. Note
 %             that the grid could have an arbitrary shape/outline.
 %           - gridInfo.resolution
 %             The spatial resoltuion of the grid.
+%       - 'tile'
+%         The locations will be grouped as square chunks from the bottom
+%         left corner, each with almost the same number of elements. This
+%         option also requires the input gridInfo as listed above for
+%         assignment pattern 'rectangle'.
 %
 % Output:
 %   - locIndicesForAllWorkers
@@ -231,16 +236,19 @@ switch lower(CHUNK_STYLE)
                     & remainingXys(:,2)>=leftChunkBoundBottomY))) = true;
             end
 
-            locIndicesForAllWorkers{curWorkerCnt} ...
-                = integerTaskIds(boolsLocsInChunk);
-            curWorkerCnt = curWorkerCnt+1;
+            if any(boolsLocsInChunk)
+                locIndicesForAllWorkers{curWorkerCnt} ...
+                    = integerTaskIds(boolsLocsInChunk);
+                curWorkerCnt = curWorkerCnt+1;
 
-            assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
-                'Loc index/indices got assigned more than once!');
-            boolsAllTasksAssigned = ...
-                boolsAllTasksAssigned | boolsLocsInChunk;
-            remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
-            remainingLocsIndices = integerTaskIds(~boolsAllTasksAssigned);
+                assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
+                    'Loc index/indices got assigned more than once!');
+                boolsAllTasksAssigned = ...
+                    boolsAllTasksAssigned | boolsLocsInChunk;
+                remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
+                remainingLocsIndices ...
+                    = integerTaskIds(~boolsAllTasksAssigned);
+            end
 
             leftChunkBoundRightX = leftChunkBoundLeftX;
             leftChunkBoundLeftX = leftChunkBoundRightX ...
@@ -281,16 +289,19 @@ switch lower(CHUNK_STYLE)
                     & remainingXys(:,2)>=rightChunkBoundBottomY))) = true;
             end
 
-            locIndicesForAllWorkers{curWorkerCnt} ...
-                = integerTaskIds(boolsLocsInChunk);
-            curWorkerCnt = curWorkerCnt+1;
+            if any(boolsLocsInChunk)
+                locIndicesForAllWorkers{curWorkerCnt} ...
+                    = integerTaskIds(boolsLocsInChunk);
+                curWorkerCnt = curWorkerCnt+1;
 
-            assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
-                'Loc index/indices got assigned more than once!');
-            boolsAllTasksAssigned = ...
-                boolsAllTasksAssigned | boolsLocsInChunk;
-            remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
-            remainingLocsIndices = integerTaskIds(~boolsAllTasksAssigned);
+                assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
+                    'Loc index/indices got assigned more than once!');
+                boolsAllTasksAssigned = ...
+                    boolsAllTasksAssigned | boolsLocsInChunk;
+                remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
+                remainingLocsIndices ...
+                    = integerTaskIds(~boolsAllTasksAssigned);
+            end
 
             rightChunkBoundLeftX = rightChunkBoundRightX;
             rightChunkBoundRightX = rightChunkBoundLeftX ...
@@ -330,16 +341,19 @@ switch lower(CHUNK_STYLE)
                     & remainingXys(:,2)>=topChunkBoundBottomY))) = true;
             end
 
-            locIndicesForAllWorkers{curWorkerCnt} ...
-                = integerTaskIds(boolsLocsInChunk);
-            curWorkerCnt = curWorkerCnt+1;
+            if any(boolsLocsInChunk)
+                locIndicesForAllWorkers{curWorkerCnt} ...
+                    = integerTaskIds(boolsLocsInChunk);
+                curWorkerCnt = curWorkerCnt+1;
 
-            assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
-                'Loc index/indices got assigned more than once!');
-            boolsAllTasksAssigned = ...
-                boolsAllTasksAssigned | boolsLocsInChunk;
-            remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
-            remainingLocsIndices = integerTaskIds(~boolsAllTasksAssigned);
+                assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
+                    'Loc index/indices got assigned more than once!');
+                boolsAllTasksAssigned = ...
+                    boolsAllTasksAssigned | boolsLocsInChunk;
+                remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
+                remainingLocsIndices ...
+                    = integerTaskIds(~boolsAllTasksAssigned);
+            end
 
             topChunkBoundBottomY = topChunkBoundTopY;
             topChunkBoundTopY = topChunkBoundBottomY ...
@@ -380,16 +394,19 @@ switch lower(CHUNK_STYLE)
                     & remainingXys(:,2)>=bottomChunkBoundBottomY))) = true;
             end
 
-            locIndicesForAllWorkers{curWorkerCnt} ...
-                = integerTaskIds(boolsLocsInChunk);
-            curWorkerCnt = curWorkerCnt+1;
+            if any(boolsLocsInChunk)
+                locIndicesForAllWorkers{curWorkerCnt} ...
+                    = integerTaskIds(boolsLocsInChunk);
+                curWorkerCnt = curWorkerCnt+1;
 
-            assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
-                'Loc index/indices got assigned more than once!');
-            boolsAllTasksAssigned = ...
-                boolsAllTasksAssigned | boolsLocsInChunk;
-            remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
-            remainingLocsIndices = integerTaskIds(~boolsAllTasksAssigned);
+                assert(~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
+                    'Loc index/indices got assigned more than once!');
+                boolsAllTasksAssigned = ...
+                    boolsAllTasksAssigned | boolsLocsInChunk;
+                remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
+                remainingLocsIndices ...
+                    = integerTaskIds(~boolsAllTasksAssigned);
+            end
 
             bottomChunkBoundTopY = bottomChunkBoundBottomY;
             bottomChunkBoundBottomY = bottomChunkBoundTopY ...
@@ -407,7 +424,7 @@ switch lower(CHUNK_STYLE)
             return;
         end
 
-        % Recursived find the remaining chunks.
+        % Recursively find the remaining chunks.
         boolsRemainingTopLeft = false(1, numOfTasks);
         boolsRemainingTopLeft(remainingLocsIndices( ...
             (remainingXys(:,1) < centerChunkBoundLeftX) ...
@@ -482,6 +499,160 @@ switch lower(CHUNK_STYLE)
 
         assert(sum(boolsAllTasksAssigned)==numOfTasks, ...
             'Not all locations are assigned!');
+    case 'tile'
+        assert(exist('gridInfo', 'var'), ...
+            ['Input gridInfo is required for task assignment pattern ', ...
+            '"tile"!']);
+        assert(numOfTasks==size(gridInfo.xys,1), ...
+            ['Input numOfTasks does not agree with ', ...
+            'the row number of gridInfo.xys!']);
+
+        numOfTasksPerWorker = ceil(numOfTasks/numOfAvailableWorkers);
+        integerTaskIds = 1:numOfTasks;
+
+        % Find the bottom left corner chunk.
+        rectSide = sqrt(numOfTasksPerWorker)*gridInfo.resolution;
+        bottomLeftChunkBoundLeftX = min(gridInfo.xys(:,1)) ...
+            - gridInfo.resolution/2;
+        bottomLeftChunkBoundRightX = bottomLeftChunkBoundLeftX + rectSide;
+        bottomLeftChunkBoundBottomY = min(gridInfo.xys(:,2)) ...
+            - gridInfo.resolution/2;
+        bottomLeftChunkBoundTopY = bottomLeftChunkBoundBottomY + rectSide;
+
+        boolsLocsInChunk = ...
+            ( gridInfo.xys(:,1)>=bottomLeftChunkBoundLeftX ...
+            & gridInfo.xys(:,1)<=bottomLeftChunkBoundRightX ...
+            & gridInfo.xys(:,2)>=bottomLeftChunkBoundBottomY ...
+            & gridInfo.xys(:,2)<=bottomLeftChunkBoundTopY )';
+        extensionCnt = 0;
+        while sum(boolsLocsInChunk)<numOfTasksPerWorker
+            % Extend toward top or right to enclose more pts.
+            switch mod(extensionCnt, 2)
+                case 0
+                    bottomLeftChunkBoundTopY ...
+                        = bottomLeftChunkBoundTopY + gridInfo.resolution;
+                case 1
+                    bottomLeftChunkBoundRightX ...
+                        = bottomLeftChunkBoundRightX + gridInfo.resolution;
+            end
+
+            extensionCnt = extensionCnt+1;
+
+            boolsLocsInChunk = ...
+                ( gridInfo.xys(:,1)>=bottomLeftChunkBoundLeftX ...
+                & gridInfo.xys(:,1)<=bottomLeftChunkBoundRightX ...
+                & gridInfo.xys(:,2)>=bottomLeftChunkBoundBottomY ...
+                & gridInfo.xys(:,2)<=bottomLeftChunkBoundTopY )';
+
+            if all(boolsLocsInChunk)
+                break;
+            end
+        end
+
+        boolsAllTasksAssigned = boolsLocsInChunk;
+        locIndicesForAllWorkers{1} = integerTaskIds(boolsLocsInChunk);
+
+        if all(boolsAllTasksAssigned)
+            return;
+        else
+            % Extend up to find more chunks.
+            curWorkerCnt = 2;
+            remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
+            remainingLocsIndices = integerTaskIds(~boolsAllTasksAssigned);
+
+            % Top.
+            topChunkBoundLeftX = bottomLeftChunkBoundLeftX;
+            topChunkBoundRightX = bottomLeftChunkBoundRightX;
+            topChunkBoundBottomY = bottomLeftChunkBoundTopY;
+            topChunkBoundTopY = topChunkBoundBottomY + gridInfo.resolution;
+
+            boolsLocsInChunk = false(1, numOfTasks);
+            boolsLocsInChunk(integerTaskIds(remainingLocsIndices( ...
+                remainingXys(:,1)>=topChunkBoundLeftX ...
+                & remainingXys(:,1)<=topChunkBoundRightX ...
+                & remainingXys(:,2)<=topChunkBoundTopY ...
+                & remainingXys(:,2)>=topChunkBoundBottomY))) = true;
+            while any(remainingXys(:,2)>=topChunkBoundBottomY ...
+                    & remainingXys(:,1)>=topChunkBoundLeftX ...
+                    & remainingXys(:,1)<=topChunkBoundRightX)
+                while (sum(boolsLocsInChunk)<numOfTasksPerWorker) ...
+                        && any( ...
+                        remainingXys(:,2)>topChunkBoundTopY ...
+                        & remainingXys(:,1)>=topChunkBoundLeftX ...
+                        & remainingXys(:,1)<=topChunkBoundRightX)
+                    topChunkBoundTopY = topChunkBoundTopY ...
+                        + gridInfo.resolution;
+
+                    boolsLocsInChunk = false(1, numOfTasks);
+                    boolsLocsInChunk(integerTaskIds( ...
+                        remainingLocsIndices( ...
+                        remainingXys(:,1)>=topChunkBoundLeftX ...
+                        & remainingXys(:,1)<=topChunkBoundRightX ...
+                        & remainingXys(:,2)<=topChunkBoundTopY ...
+                        & remainingXys(:,2)>=topChunkBoundBottomY ...
+                        ))) = true;
+                end
+
+                if any(boolsLocsInChunk)
+                    locIndicesForAllWorkers{curWorkerCnt} ...
+                        = integerTaskIds(boolsLocsInChunk);
+                    curWorkerCnt = curWorkerCnt+1;
+
+                    assert( ...
+                        ~any(boolsAllTasksAssigned & boolsLocsInChunk), ...
+                        'Loc index/indices got assigned more than once!');
+                    boolsAllTasksAssigned = ...
+                        boolsAllTasksAssigned | boolsLocsInChunk;
+                    remainingXys = gridInfo.xys(~boolsAllTasksAssigned, :);
+                    remainingLocsIndices ...
+                        = integerTaskIds(~boolsAllTasksAssigned);
+                end
+
+                topChunkBoundBottomY = topChunkBoundTopY;
+                topChunkBoundTopY = topChunkBoundBottomY ...
+                    + gridInfo.resolution;
+
+                boolsLocsInChunk = false(1, numOfTasks);
+                boolsLocsInChunk(integerTaskIds( ...
+                    remainingLocsIndices( ...
+                    remainingXys(:,1)>=topChunkBoundLeftX ...
+                    & remainingXys(:,1)<=topChunkBoundRightX ...
+                    & remainingXys(:,2)<=topChunkBoundTopY ...
+                    & remainingXys(:,2)>=topChunkBoundBottomY ...
+                    ))) = true;
+            end
+
+            if ~isempty(remainingXys)
+                % Recursively assign remaining locations.
+                curGridInfo.xys = remainingXys;
+                curGridInfo.resolution = gridInfo.resolution;
+                curIndicesForWorkers = preassignTaskIndicesToWorkers( ...
+                    numOfTasks - sum(boolsAllTasksAssigned), ...
+                    numOfAvailableWorkers + 1 - curWorkerCnt, ...
+                    CHUNK_STYLE, curGridInfo);
+
+                % Convert the indices in the new grid to the bigger/old
+                % one.
+                curIndicesForWorkers = cellfun( ...
+                    @(indices) remainingLocsIndices(indices), ...
+                    curIndicesForWorkers, 'UniformOutput', false);
+
+                locIndicesForAllWorkers(curWorkerCnt:end) ...
+                    = curIndicesForWorkers;
+
+                % Make sure the assignment is valid.
+                boolsLocsInRegion = false(1, numOfTasks);
+                boolsLocsInRegion([curIndicesForWorkers{:}]) = true;
+                assert(sum(any( ...
+                    boolsAllTasksAssigned & boolsLocsInRegion)) ==0, ...
+                    'Loc index/indices got assigned more than once!');
+                boolsAllTasksAssigned = ...
+                    boolsAllTasksAssigned | boolsLocsInRegion;
+            end
+
+            assert(sum(boolsAllTasksAssigned)==numOfTasks, ...
+                'Not all locations are assigned!');
+        end
     otherwise
         error(['Unsupported task assignment pattern: ', CHUNK_STYLE, '!']);
 end
