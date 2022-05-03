@@ -47,21 +47,20 @@ function [ locIndicesForAllWorkers ] ...
 %
 % Yaguang Zhang, Purdue, 05/02/2022
 
-if numOfTasks == 0
-    locIndicesForAllWorkers = {};
-    return;
-end
-
 if (~exist('numOfAvailableWorkers', 'var')) || isnan(numOfAvailableWorkers)
     localCluster = gcp;
     numOfAvailableWorkers = localCluster.NumWorkers;
 end
 
+locIndicesForAllWorkers = cell(numOfAvailableWorkers, 1);
+
+if numOfTasks == 0
+    return;
+end
+
 if (~exist('CHUNK_STYLE', 'var')) || (numOfTasks<=numOfAvailableWorkers)
     CHUNK_STYLE = 'normal';
 end
-
-locIndicesForAllWorkers = cell(numOfAvailableWorkers, 1);
 
 switch lower(CHUNK_STYLE)
     case {'normal', 'randomized'}
