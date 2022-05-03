@@ -694,6 +694,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         py_addpath(fullfile(pwd, 'lib', 'python'));
 
         curWorkerPixCnt = 0;
+        curProgressPixCnt = 0;
         curDroneLocIndices = locIndicesForAllWorkers{idxWorker};
         curWorkerNumPixs = length(curDroneLocIndices);
         curWorkerNumPixsToReportProgress = ceil(curWorkerNumPixs ...
@@ -702,10 +703,8 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         % Make sure curDroneLocIndices is a row vector.
         curDroneLocIndices = curDroneLocIndices(:)';
         for idxDroneLoc = curDroneLocIndices
-
             % Report progress when necessary.
-            if mod(curWorkerPixCnt, ...
-                    curWorkerNumPixsToReportProgress)==0
+            if curProgressPixCnt==0
                 disp(['        [', datestr(now, 'yyyy/mm/dd HH:MM:ss'), ...
                     '] Worker #', num2str(idxWorker), ...
                     '/', num2str(numOfWorkers), ' (', ...
@@ -790,6 +789,11 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
                     = pathsToOverheadTimeInSecStarts{curTaskId};
                 parsave(curPathToSaveOverheadTimeInSecStart, ...
                     curExecTimeStartTic);
+            end
+
+            curProgressPixCnt = curProgressPixCnt+numOfRxHeightToInspect;
+            if curProgressPixCnt>=curWorkerNumPixsToReportProgress
+                curProgressPixCnt = 0;
             end
         end
 
