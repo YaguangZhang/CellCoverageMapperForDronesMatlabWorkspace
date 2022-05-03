@@ -697,7 +697,8 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
         curDroneLocIndices = locIndicesForAllWorkers{idxWorker};
         curWorkerNumPixs = length(curDroneLocIndices);
         curWorkerNumPixsToReportProgress = ceil(curWorkerNumPixs ...
-            .*simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT); %#ok<PFBNS>
+            .* simConfigs.WORKER_MIN_PROGRESS_RATIO_TO_REPORT ...
+            .* numOfRxHeightToInspect); %#ok<PFBNS>
         % Make sure curDroneLocIndices is a row vector.
         curDroneLocIndices = curDroneLocIndices(:)';
         for idxDroneLoc = curDroneLocIndices
