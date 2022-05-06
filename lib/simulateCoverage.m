@@ -146,6 +146,16 @@ function [ simState ] ...
 
 FLAG_DEBUG = false;
 
+% By default, disable the interruption recovery function, which may slow
+% down large-scale simulations a lot. This can be overriden by
+% simConfigs.FLAG_DISABLE_INTERRUPTION_RECOVERY.
+if ~isfield(simConfigs, 'FLAG_DISABLE_INTERRUPTION_RECOVERY')
+    FLAG_DISABLE_INTERRUPTION_RECOVERY = true;
+else
+    FLAG_DISABLE_INTERRUPTION_RECOVERY ...
+        = simConfigs.FLAG_DISABLE_INTERRUPTION_RECOVERY;
+end
+
 % Close the pool if it exists to make sure all resource/workers are
 % available for the simulation.
 previousPool = gcp('nocreate');
@@ -446,6 +456,7 @@ disp('    Initializing simulation ...')
 % Cache file for recording the computation process.
 [~, hostname] = system('hostname');
 hostname = strtrim(hostname);
+
 pathToCache = fullfile(pathToSaveResults, ...
     ['CovAnalysisCache_Task_', ...
     simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -576,7 +587,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
             + length(curIndicesRxLocsToConsider);
     end
 
-    % Cache the results.
+    % Always cache the initial results.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
         'locIndicesForAllWorkersForAllCellsEff', 'proMon');
 
@@ -909,10 +920,20 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     disp(' ');
 
     nextIdxEffeCellAnt = idxEffeCellAnt+1;
-    % We will update simState for each tower.
-    save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
-        'locIndicesForAllWorkersForAllCellsEff', 'proMon', ...
-        'nextIdxEffeCellAnt', '-v7.3');
+
+    if ~FLAG_DISABLE_INTERRUPTION_RECOVERY
+        % We will update the cached simState for each tower.
+        curSimStateProps = whos('simState');
+        if curSimStateProps.bytes < 2^31
+            save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
+                'locIndicesForAllWorkersForAllCellsEff', 'proMon', ...
+                'nextIdxEffeCellAnt');
+        else
+            save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
+                'locIndicesForAllWorkersForAllCellsEff', 'proMon', ...
+                'nextIdxEffeCellAnt', '-v7.3');
+        end
+    end
 end
 
 disp('    Done!')
