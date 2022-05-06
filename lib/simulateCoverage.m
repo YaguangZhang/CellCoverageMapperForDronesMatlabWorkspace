@@ -912,7 +912,7 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
     % We will update simState for each tower.
     save(pathToCache, 'simState', 'locIndicesForAllWorkers', ...
         'locIndicesForAllWorkersForAllCellsEff', 'proMon', ...
-        'nextIdxEffeCellAnt');
+        'nextIdxEffeCellAnt', '-v7.3');
 end
 
 disp('    Done!')
