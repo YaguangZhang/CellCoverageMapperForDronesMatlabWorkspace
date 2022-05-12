@@ -85,11 +85,12 @@ customHotLong = hot(256); customHotLong = customHotLong(192:-1:1, :);
 
 % For scale legend adjustment.
 largeZValue = 10^7;
-tippScalePos = [-86.7638, 40.235, largeZValue];
+tippScalePos = [-86.7638, 40.233484, largeZValue];
 tippScaleFontS = 9;
-whinScalePos = [-86.3616, 39.945, largeZValue];
+whinScalePos = [-86.354223, 39.945, largeZValue];
 whinScaleFontS = 9;
-inScalePos = [-85.5442, 38.3774, largeZValue];
+inScalePos = [-85.543844, 38.3774, largeZValue];
+inScalePos2 = [-85.572868, 38.388565, largeZValue];
 inScaleFontS = 9;
 
 % FSPL calculated for clear LoS links at 50 m as the best performance
@@ -202,19 +203,19 @@ for idxPreset = 1:numOfPresets
                 'Cell tower to consider', ...
                 'Ineffective cell tower', ...
                 'defaultLegendAutoUpdate','off');
-            set(hLeg, 'Position', [0.1375, 0.7417, 0.4718, 0.1839]);
+            set(hLeg, 'Position', [0.137556, 0.744218, 0.4539, 0.1839]);
         case 'ShrinkedWHIN'
             h = makescale(3.7, 'se', 'units', 'si');
             hPolyWhin = plot(whinBoundaryLons, whinBoundaryLats, ...
                 ':', 'LineWidth', 2.3, 'Color', 'k');
             hLeg = legend(hPolyWhin, 'WHIN boundary');
-            set(hLeg, 'Position', [0.1686, 0.8792, 0.4669, 0.0476]);
+            set(hLeg, 'Position', [0.165091, 0.8792, 0.4669, 0.0476]);
         case 'ShrinkedIN'
-            h = makescale(3.15, 'se', 'units', 'si');
+            h = makescale(3.1, 'se', 'units', 'si');
             hPolyIn = plot(inBoundaryLons, inBoundaryLats, ...
                 '-.', 'LineWidth', 2.3, 'Color', 'k');
             hLeg = legend(hPolyIn, 'Indiana boundary');
-            set(hLeg, 'Position', [0.1969, 0.8792, 0.5934, 0.0476]);
+            set(hLeg, 'Position', [0.201073, 0.8792, 0.5934, 0.0476]);
     end
 
     curDirToSave = fullfile(pathToSaveResults, ...
@@ -239,12 +240,12 @@ for idxPreset = 1:numOfPresets
         'Area of interest', 'User location');
     xlabel('UTM x (m)'); ylabel('UTM y (m)'); box on;
     % Tighten the figure twice.
-    %   tightfig(hFigAreaOfInterest); tightfig(hFigAreaOfInterest);
+    tightfig(hFigAreaOfInterest);
     % Adjust legend and the exponent label for y axis.
     switch simConfigs.CURRENT_SIMULATION_TAG
         case 'Tipp'
-            set(hLeg, 'Position', ... [4.9648, 8.0972, 3.5719, 0.9128]);
-                [0.5125, 0.8057, 0.3922, 0.0966]);
+            set(hLeg, 'Position', ...
+                [5.0314, 8.1367, 3.5719, 0.9129]);
         case 'ShrinkedWHIN'
             set(hLeg, 'Location', 'northwest');
             transparentizeCurLegends;
@@ -825,14 +826,19 @@ for idxPreset = 1:numOfPresets
             ['BlockageDistMap_SameCBHiddenTighten_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
-        % We may need to re-adjust the scale.
+        % Somehow for IN figs, the text in scale changes. Let us reset it.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            hMS = findobj('Tag', 'MapScale');
+            hMS(1).FontSize = inScaleFontS;
+        end
+        % We may need to re-adjust the scale for Tipp, too.
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
             set(h(3), 'Position', tippScalePos);
             h(3).FontSize = tippScaleFontS;
         end
         set(hCurDistMap, 'PaperPositionMode', 'auto');
         pause(1);
-        export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
+        % export_fig([pathToSaveFig, '_export_fig.eps'], '-eps');
         saveas(hCurDistMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurDistMap, [pathToSaveFig, '.png']);
         saveas(hCurDistMap, [pathToSaveFig, '.fig']);
@@ -853,7 +859,12 @@ for idxPreset = 1:numOfPresets
             ['BlockageDistMap_SameCBHiddenTightenVert_', ...
             simConfigs.CURRENT_SIMULATION_TAG, ...
             '_RxHeight_', strrep(num2str(rxAntH), '.', '_')]);
-        % We may need to re-adjust the scale.
+        % Somehow for IN figs, the text in scale changes. Let us reset it.
+        if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+            hMS = findobj('Tag', 'MapScale');
+            hMS(1).FontSize = inScaleFontS;
+        end
+        % We may need to re-adjust the scale, too.
         if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
             set(h(3), 'Position', tippScalePos);
             h(3).FontSize = tippScaleFontS;
@@ -991,7 +1002,7 @@ for idxF = 1:numOfFs
                         if ~txLegendsShown(1)
                             hLeg = findobj(hCurPLMap, 'Type', 'Legend');
                             set(hLeg, 'Position', ...
-                                [2.8254, 6.11, 2.8840, 0.4762], ...
+                                [2.848358, 6.136458, 2.8840, 0.4762], ...
                                 'AutoUpdate', 'off');
 
                             txLegendsShown(1) = true;
@@ -1003,7 +1014,7 @@ for idxF = 1:numOfFs
                         if ~txLegendsShown(2)
                             hLeg = findobj(hCurPLMap, 'Type', 'Legend');
                             set(hLeg, 'Position', ...
-                                [0.1486, 7.7788, 2.8045, 0.4762], ...
+                                [0.165 ,7.8, 2.8045, 0.4762], ...
                                 'AutoUpdate', 'off');
 
                             txLegendsShown(2) = true;
@@ -1053,8 +1064,8 @@ for idxF = 1:numOfFs
                     % along the z axis.
                     h(1).ZData = ones(4,1).*largeZValue;
                     h(2).ZData = ones(2,1).*(largeZValue+1);
-                    set(h(3), 'Position', inScalePos);
-                    h(3).FontSize = whinScaleFontS;
+                    set(h(3), 'Position', inScalePos2);
+                    h(3).FontSize = inScaleFontS;
                 end
 
                 pathToSaveFig = fullfile(pathToSaveResults, ...
@@ -1092,7 +1103,13 @@ for idxF = 1:numOfFs
                 set(gca, 'Unit', 'pixel'); set(gcf, 'Unit', 'pixel');
                 curAxesPos = get(gca, 'Position');
                 set(gcf, 'Position', [0,0, curAxesPos(3:4)+10]);
-                % We may need to re-adjust the scale.
+                % Somehow for IN figs, the text in scale changes. Let us
+                % reset it.
+                if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'shrinkedin')
+                    hMS = findobj('Tag', 'MapScale');
+                    hMS(1).FontSize = inScaleFontS;
+                end
+                % We may need to re-adjust the scale, too.
                 if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, 'tipp')
                     set(h(3), 'Position', tippScalePos);
                     h(3).FontSize = tippScaleFontS;
@@ -1313,6 +1330,7 @@ legend([hLegs{:}], 'Tippecanoe', 'WHIN', 'IN', 'Location', 'se');
 pathToSaveFig = fullfile(pathToSaveResults, ...
     'CoverageRatioVsDroneHeight_Blockage');
 saveEpsFigForPaper(hLosCovRatOverHFig,  pathToSaveFig);
+saveas(hLosCovRatOverHFig, [pathToSaveFig, '.fig']);
 close(hLosCovRatOverHFig);
 
 disp(['    [', datestr(now, datetimeFormat), ...
@@ -1472,6 +1490,9 @@ hInM = 1.5;
 assert(simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M(idxH) == hInM, ...
     'Unexpected RX height!');
 
+%----------
+% Plotting
+%----------
 % There is an issue with overlaying the surf results with Google Maps
 % (random cracks show up), so we will save the background layer and the
 % overlaid layer separately.
