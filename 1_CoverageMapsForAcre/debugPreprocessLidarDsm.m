@@ -63,6 +63,8 @@ assert(all(isnan(elesTestMatlab)==isnan(elesTestPy)) ...
 
 absPathToSaveProjCrs = fullfile(pwd, 'lib', 'lidar', ...
     'anomalyTileNameWithProjCRS.mat');
+absPathToSaveProjCrs_Debug = fullfile(pwd, 'lib', 'lidar', ...
+    'anomalyTileNameWithProjCRS_Debug.mat');
 if ~exist(absPathToSaveProjCrs, 'file')
     diary(dirToDiary);
     disp('------------------')
@@ -80,13 +82,15 @@ if ~exist(absPathToSaveProjCrs, 'file')
     % Extract number IDs and sort the file name list accordingly.
     regexpPat = ['\/(\d+)_dsm.tif|MC_(\d+)_dsm.tif', ...
         '|in\d+_(\d+)_\d+_dsm.tif|IN\d+_(\d+)_\d+_dsm.tif'];
-    tileIdTokens = cellfun(@(relDir) regexp(relDir, regexpPat, 'tokens'), ...
+    tileIdTokens = cellfun( ...
+        @(relDir) regexp(relDir, regexpPat, 'tokens'), ...
         lidarFileRelDirs);
     % Note that some files will have same IDs.
     [allTileIdNums, indicesNewOrder] = sort(cellfun( ...
         @(token) str2double(token{1}), tileIdTokens));
 
-    allTileAbsDirs = cellfun(@(relDir) fullfile(dirToLidarFiles, relDir), ...
+    allTileAbsDirs = cellfun( ...
+        @(relDir) fullfile(dirToLidarFiles, relDir), ...
         lidarFileRelDirs, 'UniformOutput', false);
     allTileAbsDirs = allTileAbsDirs(indicesNewOrder);
 
@@ -121,9 +125,10 @@ if ~exist(absPathToSaveProjCrs, 'file')
 
     numOfAnomalyTiles = length(anomalyTileAbsDirs);
     anomalyTileNameWithProjCRS = cell(numOfAnomalyTiles, 2);
-
+    anomalyTileNameWithProjCRS_Debug = cell(numOfAnomalyTiles, 2);
     for idxAnomalyT = 1:numOfAnomalyTiles
-        [curLidarImg, curR] = readgeoraster(anomalyTileAbsDirs{idxAnomalyT});
+        [curLidarImg, curR] ...
+            = readgeoraster(anomalyTileAbsDirs{idxAnomalyT});
         curTileIdNum = anomalyTileIdNums(idxAnomalyT);
 
         [idDiff, idxValidTile] = min(abs(validTileIdNums-curTileIdNum));
@@ -140,7 +145,8 @@ if ~exist(absPathToSaveProjCrs, 'file')
         lidarZs = distdim(curLidarImg(:), 'ft', 'm');
 
         [~, anomalyTileName] = fileparts(anomalyTileAbsDirs{idxAnomalyT});
-        [~, tentativeRefTileName] = fileparts(validTileAbsDirs{idxValidTile});
+        [~, tentativeRefTileName] ...
+            = fileparts(validTileAbsDirs{idxValidTile});
 
         figure; plot3k([lidarLons, lidarLats, lidarZs]); view(2);
         plot_google_map('MapType', 'satellite'); zlim([0, max(lidarZs)]);
@@ -151,10 +157,16 @@ if ~exist(absPathToSaveProjCrs, 'file')
         close(gcf);
 
         anomalyTileNameWithProjCRS{idxAnomalyT, 1} = anomalyTileName;
-        anomalyTileNameWithProjCRS{idxAnomalyT, 2} = tentativeR.ProjectedCRS;
+        anomalyTileNameWithProjCRS{idxAnomalyT, 2} ...
+            = tentativeR.ProjectedCRS;
+
+        anomalyTileNameWithProjCRS_Debug{idxAnomalyT, 1} ...
+            = tentativeRefTileName;
+        anomalyTileNameWithProjCRS_Debug{idxAnomalyT, 2} = tentativeR;
     end
 
     save(absPathToSaveProjCrs, 'anomalyTileNameWithProjCRS');
+    save(absPathToSaveProjCrs_Debug, 'anomalyTileNameWithProjCRS_Debug');
     diary off;
 end
 
