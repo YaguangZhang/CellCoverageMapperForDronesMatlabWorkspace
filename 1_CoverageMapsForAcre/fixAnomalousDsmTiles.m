@@ -1,0 +1,131 @@
+%FIXANOMALOUSDSMTILES Add projection information to the anomalous DSM tiles
+%listed in lib/lidar/anomalyTileNameWithProjCRS.mat.
+%
+% Yaguang Zhang, Purdue, 05/12/2022
+
+clear; clc; close all; dbstop if error;
+
+% Locate the Matlab workspace and save the current filename.
+cd(fileparts(mfilename('fullpath')));
+addpath('.'); cd('..'); addpath('lib');
+curFileName = mfilename;
+
+prepareSimulationEnv;
+
+% Path to save results.
+pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'PostProcessingResults', 'RepairedDsmTiles');
+% Create directories if necessary.
+if exist(pathToSaveResults, 'dir')~=7
+    mkdir(pathToSaveResults);
+end
+
+% Path to anomalous tile list.
+dirToAnomalousTileList = fullfile(pwd, 'lib', 'lidar', ...
+    'anomalyTileNameWithProjCRS.mat');
+
+% Path to DSM LiDAR tiles.
+dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'Lidar_2019', 'IN', 'DSM');
+
+% Turn the diary logging function on.
+dirToDiaryFile = fullfile(pathToSaveResults, 'diary.txt');
+% Get rid of the old diary if it exists.
+if exist(dirToDiaryFile, 'file')
+    delete(dirToDiaryFile);
+end
+diary(dirToDiaryFile);
+
+%% Fix the Tiles One by One
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Reparing anomalous tiles ...'])
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Loading the list of anomalous tiles ...'])
+
+load(dirToAnomalousTileList, 'anomalyTileNameWithProjCRS');
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Loading Indiana LiDAR meta data ...'])
+
+% For GPS and UTM conversions.
+[inBoundaryLatLons, inBoundaryXYs, inBoundaryUtmZone] = loadInBoundary;
+[deg2utm_speZone, utm2deg_speZone] ...
+    = genUtmConvertersForFixedZone(inBoundaryUtmZone);
+
+% Preprocess .img/.tif LiDAR data. To make Matlab R2019b work, we need to
+% remove preprocessIndianaLidarDataSet from path after things are done.
+addpath(fullfile(pwd, 'lib', 'lidar'));
+[lidarFileRelDirs, lidarFileXYCoveragePolyshapes, ~] ...
+    = preprocessLidarDataSetDsm(dirToLidarFiles, ...
+    deg2utm_speZone, utm2deg_speZone);
+rmpath(fullfile(pwd, 'lib', 'lidar'));
+lidarFileAbsDirs = cellfun(@(d) ...
+    [dirToLidarFiles, strrep(d, '\', filesep)], ...
+    lidarFileRelDirs, 'UniformOutput', false);
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Reading and rewriting LiDAR data ...'])
+
+numOfAnomalousTiles = size(anomalyTileNameWithProjCRS, 1);
+for idxT = 1:numOfAnomalousTiles
+    curAnomalousTileName = anomalyTileNameWithProjCRS{idxT, 1};
+    curIdxTileDir = find(contains(lidarFileAbsDirs, curAnomalousTileName));
+
+    assert(length(curIdxTileDir)==1, ...
+        ['Exactly one raw .tif LiDAR file is expected for tile "' ...
+        curAnomalousTileName, '"! ', ...
+        num2str(length(curIdxTileDir)), ' found, instead.'])
+
+    tileContent = readgeoraster(lidarFileAbsDirs{curIdxTileDir});
+    curProjRef = anomalyTileNameWithProjCRS{idxT, 2};
+
+    writegeoraster(fullfile(pathToSaveResults, ...
+        [curAnomalousTileName, '.tif']), tileContent, curProjRef);
+end
+
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
+%% Debug Figs
+
+for idxT = 1:numOfAnomalousTiles
+    curAnomalousTileName = anomalyTileNameWithProjCRS{idxT, 1};
+
+    % Load the repaired tile.
+    [lidarDataImg, spatialRef] ...
+        = readgeoraster(fullfile(pathToSaveResults, ...
+        [curAnomalousTileName, '.tif']));
+    lidarDataImg(abs( ...
+        lidarDataImg(:))>maxAllowedAbsLidarZ) = nan;
+    % Essentailly meshgrid matrices.
+    [lidarRasterXs, lidarRasterYs] = worldGrid(spatialRef);
+    % Column vectors.
+    [lidarLats, lidarLons] = projinv( ...
+        spatialRef.ProjectedCRS, ...
+        lidarRasterXs(:), lidarRasterYs(:));
+    % Convert survery feet to meter.
+    lidarZs = distdim(lidarDataImg, 'ft', 'm');
+
+    % Plot.
+    figure('Visible', false); hold on;
+    plot3([lidarLons, lidarLats, zeros(size(lidarLons))]);
+    plot_google_map('MapType', 'hybrid'); axis manual;
+    plot3k([lidarLons, lidarLats, lidarZs], ...
+        'Labels', {'', 'Longitude (degree)', 'Latitude (degree)', ...
+        '', 'DSM LiDAR z (m)'}); view(2);
+    zlim([0, max(lidarZs)]);
+    title(['Repaired Anomalous Tile ', curAnomalousTileName], ...
+        'Interpreter', 'none');
+    saveas(gcf, fullfile(pathToSaveResults, [curAnomalousTileName, '.jpg']));
+    close(gcf);
+end
+
+%% Cleanup
+
+close all;
+diary off;
+
+% EOF
