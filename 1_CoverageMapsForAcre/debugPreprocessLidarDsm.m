@@ -3,6 +3,8 @@
 % Please make sure to run this before doing the simulation to make sure the
 % environment is set up correctly.
 %
+% Note: the anomalous tile list generation is set up for Matlab R2022a.
+%
 % Yaguang Zhang, Purdue, 03/25/2022
 
 clear; clc; close all; dbstop if error;
@@ -98,8 +100,7 @@ if ~exist(absPathToSaveProjCrs, 'file')
     anomalyTileIdNums = [];
     for idxLidarF = 1:length(allTileAbsDirs)
         [~, R] = readgeoraster(allTileAbsDirs{idxLidarF});
-        if (~isa(R.ProjectedCRS, 'projcrs')) ...
-                || strcmpi(R.ProjectedCRS.Name, 'unknown')
+        if ~isa(R.ProjectedCRS, 'projcrs')
             warning('Empty ProjectedCRS!')
             disp('    Available R:')
             disp(R)
