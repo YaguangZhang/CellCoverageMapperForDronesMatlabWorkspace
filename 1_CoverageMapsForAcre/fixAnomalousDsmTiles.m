@@ -1,6 +1,8 @@
 %FIXANOMALOUSDSMTILES Add projection information to the anomalous DSM tiles
 %listed in lib/lidar/anomalyTileNameWithProjCRS.mat.
 %
+% Note: this script needs to be run with a complete local LiDAR data cache.
+%
 % Yaguang Zhang, Purdue, 05/12/2022
 
 clear; clc; close all; dbstop if error;
@@ -23,6 +25,8 @@ end
 % Path to anomalous tile list.
 dirToAnomalousTileList = fullfile(pwd, 'lib', 'lidar', ...
     'anomalyTileNameWithProjCRS.mat');
+dirToAnomalousTileList_Debug = fullfile(pwd, 'lib', 'lidar', ...
+    'anomalyTileNameWithProjCRS_Debug.mat');
 
 % Path to DSM LiDAR tiles.
 dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
@@ -46,6 +50,7 @@ disp(['    [', datestr(now, datetimeFormat), ...
     '] Loading the list of anomalous tiles ...'])
 
 load(dirToAnomalousTileList, 'anomalyTileNameWithProjCRS');
+load(dirToAnomalousTileList_Debug, 'anomalyTileNameWithProjCRS_Debug');
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Loading Indiana LiDAR meta data ...'])
@@ -80,9 +85,9 @@ for idxT = 1:numOfAnomalousTiles
         num2str(length(curIdxTileDir)), ' found, instead.'])
 
     tileContent = readgeoraster(lidarFileAbsDirs{curIdxTileDir});
-    curProjRef = anomalyTileNameWithProjCRS{idxT, 2};
+    curProjRef = anomalyTileNameWithProjCRS_Debug{idxT, 2};
 
-    writegeoraster(fullfile(pathToSaveResults, ...
+    geotiffwrite(fullfile(pathToSaveResults, ...
         [curAnomalousTileName, '.tif']), tileContent, curProjRef);
 end
 
@@ -93,6 +98,7 @@ disp(['[', datestr(now, datetimeFormat), ...
 
 for idxT = 1:numOfAnomalousTiles
     curAnomalousTileName = anomalyTileNameWithProjCRS{idxT, 1};
+    curRefTileName = anomalyTileNameWithProjCRS_Debug{idxT, 1};
 
     % Load the repaired tile.
     [lidarDataImg, spatialRef] ...
@@ -117,9 +123,11 @@ for idxT = 1:numOfAnomalousTiles
         'Labels', {'', 'Longitude (degree)', 'Latitude (degree)', ...
         '', 'DSM LiDAR z (m)'}); view(2);
     zlim([0, max(lidarZs)]);
-    title(['Repaired Anomalous Tile ', curAnomalousTileName], ...
+    title({['Repaired Anomalous Tile ', curAnomalousTileName], ...
+        ['(Based on Tile ', curRefTileName, ')']}, ...
         'Interpreter', 'none');
-    saveas(gcf, fullfile(pathToSaveResults, [curAnomalousTileName, '.jpg']));
+    saveas(gcf, fullfile(pathToSaveResults, ...
+        [curAnomalousTileName, '.jpg']));
     close(gcf);
 end
 
