@@ -1,3 +1,6 @@
+# VS code config
+*.vscode
+
 # Google Maps API key
 *api_key.mat
 
