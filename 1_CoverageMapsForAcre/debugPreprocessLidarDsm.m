@@ -85,7 +85,7 @@ if ~exist(absPathToSaveProjCrs, 'file')
     tileIdTokens = cellfun( ...
         @(relDir) regexp(relDir, regexpPat, 'tokens'), ...
         lidarFileRelDirs);
-    % Note that some files will have same IDs.
+    % Note that some files may have same IDs.
     [allTileIdNums, indicesNewOrder] = sort(cellfun( ...
         @(token) str2double(token{1}), tileIdTokens));
 
@@ -98,7 +98,8 @@ if ~exist(absPathToSaveProjCrs, 'file')
     anomalyTileIdNums = [];
     for idxLidarF = 1:length(allTileAbsDirs)
         [~, R] = readgeoraster(allTileAbsDirs{idxLidarF});
-        if ~isa(R.ProjectedCRS, 'projcrs')
+        if (~isa(R.ProjectedCRS, 'projcrs')) ...
+                || strcmpi(R.ProjectedCRS.Name, 'unknown')
             warning('Empty ProjectedCRS!')
             disp('    Available R:')
             disp(R)
