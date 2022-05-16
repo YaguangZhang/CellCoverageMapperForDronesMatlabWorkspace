@@ -1,7 +1,8 @@
 %PLOTFIGSFORTWC2021 Generate some plots for publication after the
 %simulation is done.
 %
-% This helper script is for the IEEE TWC paper prepared in 2021.
+% This helper script is for the IEEE TWC paper prepared in 2021. One should
+% be able to run each section separately as needed.
 %
 % Yaguang Zhang, Purdue, 10/29/2021
 
@@ -976,6 +977,10 @@ for idxF = 1:numOfFs
                 xlabel(''); ylabel('');
                 tightfig(hCurPLMap);
                 pause(3);
+
+                % Add symbols ≤ and ≥ to color bar.
+                hCb.TickLabels{1} = ['≤', hCb.TickLabels{1}];
+                hCb.TickLabels{end} = ['≥', hCb.TickLabels{end}];
 
                 if strcmpi(simConfigs.CURRENT_SIMULATION_TAG, ...
                         'shrinkedwhin')
