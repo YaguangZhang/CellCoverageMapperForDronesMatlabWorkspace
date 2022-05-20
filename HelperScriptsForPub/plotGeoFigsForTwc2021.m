@@ -100,24 +100,32 @@ lidarZs(isinf(lidarZs)) = nan;
 
 curFigSize = [400, 500];
 curFigAxis = [-88.331812, -84.544638, 37.641598, 41.887921];
+curColormap = turbo;
+curColorRange = [85, 705];
 
-figure('Position', [0, 0, curFigSize]);
+% Ground elevation.
+figure('Position', [0, 0, curFigSize]); colormap(curColormap);
 plot3k([indianaGridLatLonPts(:,[2,1]), terrainEles], ...
     'Labels', {'', 'Longitude (degree)', 'Latitude (degree)', '', ...
-    'Ground Elevation (m)'});
-view(2); zlim([0, max(terrainEles)]); axis(curFigAxis);
-plot_google_map('MapType', 'roadmap');
-
-saveas(gcf, fullfile(pathToSaveResults, 'IndianaGroundEle_plot3k.jpg'));
-
-figure('Position', [0, 0, curFigSize]);
-plot3k([indianaGridLatLonPts(:,[2,1]), lidarZs], ...
-    'Labels', {'', 'Longitude (degree)', 'Latitude (degree)', '', ...
-    'LiDAR z (m)'});
+    'Ground Elevation (m)'}, 'ColorRange',curColorRange);
 view(2); zlim([0, max(terrainEles)]); axis(curFigAxis);
 plot_google_map('MapType', 'roadmap');
 
 saveas(gcf, fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k.jpg'));
+% saveEpsFigForPaper(gcf, ...
+%     fullfile(pathToSaveResults, 'IndianaGroundEle_plot3k'));
+
+% LiDAR.
+figure('Position', [0, 0, curFigSize]); colormap(curColormap);
+plot3k([indianaGridLatLonPts(:,[2,1]), lidarZs], ...
+    'Labels', {'', 'Longitude (degree)', 'Latitude (degree)', '', ...
+    'LiDAR z (m)'}, 'ColorRange',curColorRange);
+view(2); zlim([0, max(lidarZs)]); axis(curFigAxis);
+plot_google_map('MapType', 'roadmap');
+
+saveas(gcf, fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k.jpg'));
+% saveEpsFigForPaper(gcf, ...
+%     fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k'));
 
 %% Cleanup
 
