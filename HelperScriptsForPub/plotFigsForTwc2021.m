@@ -1217,7 +1217,14 @@ curShowFSPL = true;
 
 hLosCovRatOverHFig= figure('Position', [0, 0, 500, 180]);
 hold on; set(gca, 'fontWeight', 'bold');
-xlabel('Relay Height (m)'); ylabel('LoS Coverage Ratio');
+xlabel('Relay Height{\it h_R} (m)');
+ylabel({'LoS Coverage', 'Ratio (%)'});
+grid on; grid minor;
+
+hLosCovRatGainOverHFig= figure('Position', [0, 0, 500, 180]);
+hold on; set(gca, 'fontWeight', 'bold');
+xlabel('Relay Height{\it h_R} (m)');
+ylabel({'LoS Coverage', 'Ratio Gain (%)'});
 grid on; grid minor;
 
 idxF = 1;
@@ -1230,7 +1237,7 @@ disp(['        [', datestr(now, datetimeFormat), ...
     '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
 
 % For debugging, cache the intermediate results.
-[hLegs, covRatios, ...
+[hLegs1, hLegs2, covRatios, ...
     coverageMapsCovRatioMetas, blockageDistMapsCovRatioMetas] ...
     = deal(cell(numOfPresets, 1));
 for idxPreset = 1:numOfPresets
@@ -1272,10 +1279,16 @@ for idxPreset = 1:numOfPresets
     close(curCovRatioVsHFig);
 
     figure(hLosCovRatOverHFig);
-    hLegs{idxPreset} = plot( ...
+    hLegs1{idxPreset} = plot( ...
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ...
-        covRatios{idxPreset}, lineStyles{idxPreset}, ...
+        covRatios{idxPreset}.*100, lineStyles{idxPreset}, ...
         'MarkerSize', 6, 'LineWidth', 1);
+
+    figure(hLosCovRatGainOverHFig);
+    hLegs2{idxPreset} = plot( ...
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M, ...
+        (covRatios{idxPreset}-covRatios{idxPreset}(1)).*100, ...
+        lineStyles{idxPreset},  'MarkerSize', 6, 'LineWidth', 1);
 
     %---------------
     % Coverage ratio over max allowed block dist.
@@ -1332,14 +1345,25 @@ for idxPreset = 1:numOfPresets
     close(curDistCovRatioGainFig);
 end
 
-figure(hLosCovRatOverHFig);
-xlim([0, 50]); ylim([0, 1]);
-legend([hLegs{:}], 'Tippecanoe', 'WHIN', 'IN', 'Location', 'se');
+figure(hLosCovRatOverHFig); ylim([0, 100]);
+legend([hLegs1{:}], 'Tippecanoe', 'WHIN', 'IN', 'Location', 'se');
 pathToSaveFig = fullfile(pathToSaveResults, ...
     'CoverageRatioVsDroneHeight_Blockage');
+% Adjust x axis range to start with 1.5 m. Update labels accordingly.
+xlim([1.5, 100]); xticks([1.5, 10:10:100]);
 saveEpsFigForPaper(hLosCovRatOverHFig,  pathToSaveFig);
 saveas(hLosCovRatOverHFig, [pathToSaveFig, '.fig']);
 close(hLosCovRatOverHFig);
+
+figure(hLosCovRatGainOverHFig); ylim([0, 100]);
+legend([hLegs2{:}], 'Tippecanoe', 'WHIN', 'IN', 'Location', 'se');
+pathToSaveFig = fullfile(pathToSaveResults, ...
+    'CoverageRatioGainVsDroneHeight_Blockage');
+% Adjust x axis range to start with 1.5 m. Update labels accordingly.
+xlim([1.5, 100]); xticks([1.5, 10:10:100]);
+saveEpsFigForPaper(hLosCovRatGainOverHFig,  pathToSaveFig);
+saveas(hLosCovRatGainOverHFig, [pathToSaveFig, '.fig']);
+close(hLosCovRatGainOverHFig);
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
