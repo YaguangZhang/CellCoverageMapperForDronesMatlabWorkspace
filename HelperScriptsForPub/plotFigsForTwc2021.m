@@ -99,6 +99,9 @@ inScaleFontS = 9;
 refClearPathFsplMapIdx = 9;
 refClearPathFsplMapRxHInM = 50;
 
+% Font size in the comparison figures with OpenSignal.
+openSigFigFontSize = 15;
+
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
 disp(' ')
@@ -1521,6 +1524,12 @@ for maxBlockDist = [1000, 750, 500, 200, 100, 50]
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['compWithOpenSig_BlockDist_ShrinkedIN_1900MHz_hR_1_5_MaxBD_', ...
         num2str(maxBlockDist)]);
+    % Set font size.
+    hCb = get( ancestor(gca, 'axes'), 'Colorbar');
+    hCb.FontSize = openSigFigFontSize;
+    % Hide axis ticks.
+    axis off;
+
     export_fig([pathToSaveFig, '.png'], '-m3', '-transparent');
     saveas(gcf, [pathToSaveFig, '.svg']);
     delete(hSurfBlockDist); delete(hCurCb);
@@ -1539,6 +1548,11 @@ for idxRange = 1:length(pathLossRangesToShow)
     set(get(hCurCb, 'Title'), 'String', {'Path Loss (dB)', ' '}, ...
         'HorizontalAlignment', 'left');
     hCurCb.TickLabels{1} = ['≤', hCurCb.TickLabels{1}];
+    % Set font size.
+    hCb = get( ancestor(gca, 'axes'), 'Colorbar');
+    hCb.FontSize = openSigFigFontSize;
+    % Hide axis ticks.
+    axis off;
 
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['compWithOpenSig_PathLoss_ShrinkedIN_1900MHz_hR_1_5_PLRange_', ...
