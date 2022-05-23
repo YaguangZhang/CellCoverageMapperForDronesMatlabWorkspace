@@ -25,13 +25,15 @@ end
 % For the grid covering IN.
 NUM_OF_PIXELS_FOR_LONGER_SIDE = 1000;
 
+% IN boundary.
+[inBoundaryLatLons, inBoundaryXYs, inBoundaryUtmZone] = loadInBoundary;
+
 %% LiDAR Data Info
 
 disp(' ')
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Loading Indiana LiDAR meta data ...'])
 
-[inBoundaryLatLons, inBoundaryXYs, inBoundaryUtmZone] = loadInBoundary;
 % For GPS and UTM conversions.
 [deg2utm_speZone, utm2deg_speZone] ...
     = genUtmConvertersForFixedZone(inBoundaryUtmZone);
@@ -93,7 +95,14 @@ else
         'terrainEles', 'lidarZs', 'curEleForNanPts');
 end
 
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
 %% Plots
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating overview plots ...'])
 
 % Replace -inf LiDAR z values with NaN for plotting.
 lidarZs(isinf(lidarZs)) = nan;
@@ -111,9 +120,7 @@ plot3k([indianaGridLatLonPts(:,[2,1]), terrainEles], ...
 view(2); zlim([0, max(terrainEles)]); axis(curFigAxis);
 plot_google_map('MapType', 'roadmap');
 
-saveas(gcf, fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k.jpg'));
-% saveEpsFigForPaper(gcf, ...
-%     fullfile(pathToSaveResults, 'IndianaGroundEle_plot3k'));
+saveas(gcf, fullfile(pathToSaveResults, 'IndianaGroundEle_plot3k.jpg'));
 
 % LiDAR.
 figure('Position', [0, 0, curFigSize]); colormap(curColormap);
@@ -124,8 +131,74 @@ view(2); zlim([0, max(lidarZs)]); axis(curFigAxis);
 plot_google_map('MapType', 'roadmap');
 
 saveas(gcf, fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k.jpg'));
-% saveEpsFigForPaper(gcf, ...
-%     fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k'));
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
+%% Plots for Publication
+
+disp(' ')
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Generating figures for publication ...'])
+
+curFigSize = [270, 300];
+curFigAxis = [-88.331812, -84.544638, 37.584357, 41.945162];
+curColormap = turbo;
+curColorRange = [85, 705];
+curCbTitlePos = [-9.52501, 189.15002, 0];
+epsResolutionDpi = 300;
+
+[simConfigs.deg2utm_speZone, simConfigs.utm2deg_speZone] ...
+    = genUtmConvertersForFixedZone(inBoundaryUtmZone);
+
+% Ground elevation.
+figure('Position', [0, 0, curFigSize]); hold on; colormap(curColormap);
+xticks([]); yticks([]);
+plot3(inBoundaryLatLons(:, 2), inBoundaryLatLons(:, 1), ...
+    ones(size(inBoundaryLatLons(:, 2))).*curColorRange(2), ...
+    '-.', 'LineWidth', 2.3, 'Color', 'k');
+axis(curFigAxis);
+plot_google_map('MapType', 'roadmap'); axis manual;
+[~, ~, hCb] = plot3k([indianaGridLatLonPts(:,[2,1]), terrainEles], ...
+    'Labels', {'', '', '', '', ...
+    'Ground Elevation (m)'}, 'ColorRange', curColorRange, ...
+    'Marker', {'.', 1}, 'CBLabels', 6);
+hCb.Title.Position = curCbTitlePos;
+view(2); zlim([0, curColorRange(2)]); axis(curFigAxis);
+
+curFigName = fullfile(pathToSaveResults, 'IndianaGroundEle_plot3k');
+% saveEpsFigForPaper(gcf, curFigName);
+curFigNameExpGraph = [curFigName, '_expGraph'];
+exportgraphics(gca, [curFigNameExpGraph, '.png'], ...
+    'Resolution', epsResolutionDpi);
+exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
+    'Resolution', epsResolutionDpi);
+
+% LiDAR.
+figure('Position', [0, 0, curFigSize]); hold on; colormap(curColormap);
+xticks([]); yticks([]);
+plot3(inBoundaryLatLons(:, 2), inBoundaryLatLons(:, 1), ...
+    ones(size(inBoundaryLatLons(:, 2))).*curColorRange(2), ...
+    '-.', 'LineWidth', 2.3, 'Color', 'k');
+axis(curFigAxis);
+plot_google_map('MapType', 'roadmap'); axis manual;
+[~, ~, hCb] = plot3k([indianaGridLatLonPts(:,[2,1]), lidarZs], ...
+    'Labels', {'', '', '', '', ...
+    'LiDAR z (m)'}, 'ColorRange', curColorRange, ...
+    'Marker', {'.', 1}, 'CBLabels', 6);
+hCb.Title.Position = curCbTitlePos;
+view(2); zlim([0, curColorRange(2)]); axis(curFigAxis);
+
+curFigName = fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k');
+% saveEpsFigForPaper(gcf, curFigName);
+curFigNameExpGraph = [curFigName, '_expGraph'];
+exportgraphics(gca, [curFigNameExpGraph, '.png'], ...
+    'Resolution', epsResolutionDpi);
+exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
+    'Resolution', epsResolutionDpi);
+
+disp(['    [', datestr(now, datetimeFormat), ...
+    '] Done!'])
 
 %% Cleanup
 
