@@ -28,6 +28,11 @@ NUM_OF_PIXELS_FOR_LONGER_SIDE = 1000;
 % IN boundary.
 [inBoundaryLatLons, inBoundaryXYs, inBoundaryUtmZone] = loadInBoundary;
 
+% For plotting: black - blue - light green.
+customTurbo1 = turbo(256); % customTurbo1 = customTurbo1(141:-1:1, :);
+% Light green - red - black.
+customTurbo2 = turbo(256); % customTurbo2 = customTurbo2(142:end, :);
+
 %% LiDAR Data Info
 
 disp(' ')
@@ -143,7 +148,7 @@ disp(['    [', datestr(now, datetimeFormat), ...
 
 curFigSize = [270, 300];
 curFigAxis = [-88.331812, -84.544638, 37.584357, 41.945162];
-curColormap = turbo;
+curColormap = customTurbo1;
 curColorRange = [85, 705];
 curCbTitlePos = [-9.52501, 189.15002, 0];
 epsResolutionDpi = 300;
@@ -154,7 +159,7 @@ epsResolutionDpi = 300;
 % Ground elevation.
 figure('Position', [0, 0, curFigSize]); hold on; colormap(curColormap);
 xticks([]); yticks([]);
-plot3(inBoundaryLatLons(:, 2), inBoundaryLatLons(:, 1), ...
+hPolyIn = plot3(inBoundaryLatLons(:, 2), inBoundaryLatLons(:, 1), ...
     ones(size(inBoundaryLatLons(:, 2))).*curColorRange(2), ...
     '-.', 'LineWidth', 2.3, 'Color', 'k');
 axis(curFigAxis);
@@ -164,12 +169,18 @@ plot_google_map('MapType', 'roadmap'); axis manual;
     'Ground Elevation (m)'}, 'ColorRange', curColorRange, ...
     'Marker', {'.', 1}, 'CBLabels', 6);
 hCb.Title.Position = curCbTitlePos;
+hLeg = legend(hPolyIn, 'Indiana', 'Location', 'southeast');
 view(2); zlim([0, curColorRange(2)]); axis(curFigAxis);
 
-curFigName = fullfile(pathToSaveResults, 'IndianaGroundEle_plot3k');
+curFigName = fullfile(pathToSaveResults, ...
+    'IndianaGroundEle_plot3k_fixedCR');
 % saveEpsFigForPaper(gcf, curFigName);
+title(' '); tightfig;
 curFigNameExpGraph = [curFigName, '_expGraph'];
-exportgraphics(gca, [curFigNameExpGraph, '.png'], ...
+
+hLeg.Position = [1.9855, 0.1606, 2.4871, 0.5027];
+
+exportgraphics(gca, [curFigNameExpGraph, '.jpg'], ...
     'Resolution', epsResolutionDpi);
 exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
     'Resolution', epsResolutionDpi);
@@ -189,13 +200,86 @@ plot_google_map('MapType', 'roadmap'); axis manual;
 hCb.Title.Position = curCbTitlePos;
 view(2); zlim([0, curColorRange(2)]); axis(curFigAxis);
 
-curFigName = fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k');
+curFigName = fullfile(pathToSaveResults, 'IndianaLidarZ_plot3k_fixedCR');
 % saveEpsFigForPaper(gcf, curFigName);
+title(' '); tightfig;
 curFigNameExpGraph = [curFigName, '_expGraph'];
-exportgraphics(gca, [curFigNameExpGraph, '.png'], ...
+exportgraphics(gca, [curFigNameExpGraph, '.jpg'], ...
     'Resolution', epsResolutionDpi);
 exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
     'Resolution', epsResolutionDpi);
+
+% Ground elevation - tighter color range.
+curTightColorRange = [105, 365];
+figure('Position', [0, 0, curFigSize]); hold on; colormap(curColormap);
+xticks([]); yticks([]);
+hPolyIn = plot3(inBoundaryLatLons(:, 2), inBoundaryLatLons(:, 1), ...
+    ones(size(inBoundaryLatLons(:, 2))).*curTightColorRange(2), ...
+    '-.', 'LineWidth', 2.3, 'Color', 'k');
+axis(curFigAxis);
+plot_google_map('MapType', 'roadmap'); axis manual;
+[~, ~, hCb] = plot3k([indianaGridLatLonPts(:,[2,1]), terrainEles], ...
+    'Labels', {'', '', '', '', ...
+    'Ground Elevation (m)'}, 'ColorRange', curTightColorRange, ...
+    'Marker', {'.', 1}, 'CBLabels', 6);
+hCb.Title.Position = curCbTitlePos;
+hLeg = legend(hPolyIn, 'Indiana', 'Location', 'southeast');
+view(2); zlim([0, curTightColorRange(2)]); axis(curFigAxis);
+
+curFigName = fullfile(pathToSaveResults, ...
+    'IndianaGroundEle_plot3k');
+% saveEpsFigForPaper(gcf, curFigName);
+title(' '); tightfig;
+curFigNameExpGraph = [curFigName, '_expGraph'];
+
+hLeg.Position = [1.9855, 0.1606, 2.4871, 0.5027];
+
+exportgraphics(gca, [curFigNameExpGraph, '.jpg'], ...
+    'Resolution', epsResolutionDpi);
+exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
+    'Resolution', epsResolutionDpi);
+
+% LiDAR z - ground ele.
+curColormap = customTurbo2;
+figure; ecdf(lidarZs-terrainEles); grid on; grid minor;
+saveas(gcf, fullfile(pathToSaveResults, ...
+    'IndianaDiffLidarZMinusEle_ECDF.jpg'));
+
+curTightestColorRange = [-5, 40];
+curCbTitlePos = [-36.5250, curCbTitlePos(2:3)];
+figure('Position', [0, 0, curFigSize]); hold on; colormap(curColormap);
+hInB = plot3(inBoundaryLatLons(:, 2), inBoundaryLatLons(:, 1), ...
+    ones(size(inBoundaryLatLons(:, 2))).*(curTightestColorRange(2)-1), ...
+    '-.', 'LineWidth', 2.3, 'Color', 'k');
+axis(curFigAxis);
+plot_google_map('MapType', 'roadmap', 'Alpha', 0); axis manual;
+[~, ~, hCb] = plot3k( ...
+    [indianaGridLatLonPts(:,[2,1]), lidarZs-terrainEles], ...
+    'Labels', {'', '', '', '', ...
+    'LiDAR z - Ground Elevation (m)'}, ...
+    'ColorRange', curTightestColorRange, ...
+    'Marker', {'.', 1}, 'CBLabels', 6);
+hCb.Title.Position = curCbTitlePos;
+view(2); zlim(curTightestColorRange); axis(curFigAxis);
+delete(hInB); grid on; grid minor; xticklabels({}); yticklabels({});
+% Add symbols ≤ and ≥ to color bar.
+hCb.TickLabels = strtrim(hCb.TickLabels);
+hCb.TickLabels{1} = ['≤', hCb.TickLabels{1}];
+hCb.TickLabels{end} = ['≥', hCb.TickLabels{end}];
+hCb.TickLabels = pad(hCb.TickLabels, 'left');
+hCb.TickLabels{end} = [hCb.TickLabels{end}, ' '];
+
+curFigName = fullfile(pathToSaveResults, ...
+    'IndianaDiffLidarZMinusEle_plot3k');
+% saveEpsFigForPaper(gcf, curFigName);
+title(' '); tightfig;
+%  curFigNameExpGraph = [curFigName, '_expGraph'];
+% exportgraphics(gca, [curFigNameExpGraph, '.jpg'], ...
+%     'Resolution', epsResolutionDpi);
+% exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
+%     'Resolution', epsResolutionDpi);
+saveas(gcf, [curFigName, '.eps'], 'epsc');
+saveas(gcf, [curFigName, '.jpg']);
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
