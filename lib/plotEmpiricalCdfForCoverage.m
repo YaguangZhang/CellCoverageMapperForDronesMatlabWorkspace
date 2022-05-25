@@ -155,6 +155,8 @@ end
 cdfMeta.numsOfCovPixels = numsOfCovPixels;
 cdfMeta.coverageRatio ...
     = cdfMeta.numsOfCovPixels./cdfMeta.totalNumOfPixelsOnMap;
+cdfMeta.cdfXs = cdfXs;
+cdfMeta.cdfVs = cdfVs;
 
 % Compute the ranges and points to show in the CDF plots.
 xMax = -inf;
