@@ -565,8 +565,10 @@ curFlagZoomIn = true;
 curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqInMhz = 1900;
+
 hightsToInspect = [1.5, 3, 5, 7.5, 10:10:30, 50, 100];
 indicesH = [1:7, 9, 14];
+
 % For legends on maps for Tipp and IN.
 staLegendsShown = [false, false];
 % For distance scales on maps for Tipp, WHIN, and IN.
@@ -904,6 +906,7 @@ defaultCmdToPlotPLMaps = 'surf';
 curPresets = PRESETS;
 numOfPresets = length(curPresets);
 freqsToInspectInMhz = [1900, 4700, 7000, 28000];
+
 hightsToInspect = [1.5, 3, 5, 7.5, 10, 50, 100];
 indicesH = [1:5, 9, 14];
 
@@ -1216,8 +1219,8 @@ flagResizeFigForPublication = true;
 
 % heightsInM = [1.5, 3, 5, 7.5, 10, 30, 50, 100, 125];
 %  heightsIndices = [1:5, 7, 9, 14, 17];
-heightsInM = [1.5, 3, 5, 7.5, 10, 20:20:120, 125];
-heightsIndices = [1:5, 6:2:16, 17];
+heightsInM = [1.5, 3, 5, 7.5, 10:10:50, 70, 125];
+heightsIndices = [1:9, 11, 17];
 
 visibleBlockDistRange = [1, 1000];
 curManualXLim = true;
@@ -1225,14 +1228,14 @@ curShowFSPL = true;
 
 hLosCovRatOverHFig= figure('Position', [0, 0, 500, 180]);
 hold on; set(gca, 'fontWeight', 'bold');
-xlabel('Relay Height{\it h_R} (m)');
-ylabel({'LoS Coverage', 'Ratio (%)'});
+xlabel('Relay Height {\it{h_R}} (m)');
+ylabel({'LoS Coverage Ratio', '{\it{CR_{LoS}}} (%)'});
 grid on; grid minor;
 
 hLosCovRatGainOverHFig= figure('Position', [0, 0, 500, 180]);
 hold on; set(gca, 'fontWeight', 'bold');
-xlabel('Relay Height{\it h_R} (m)');
-ylabel({'LoS Coverage', 'Ratio Gain (%)'});
+xlabel('Relay Height {\it{h_R}} (m)');
+ylabel({'LoS Coverage Ratio', 'Gain {\it{CRG_{LoS}}} (%)'});
 grid on; grid minor;
 
 idxF = 1;
@@ -1245,8 +1248,7 @@ disp(['        [', datestr(now, datetimeFormat), ...
     '/', num2str(numOfFs), ': ', num2str(fcInMHz), ' MHz ...'])
 
 % For debugging, cache the intermediate results.
-[hLegs1, hLegs2, covRatios, ...
-    coverageMapsCovRatioMetas, blockageDistMapsCovRatioMetas] ...
+[hLegs1, hLegs2, covRatios, blockageDistMapsCovRatioMetas] ...
     = deal(cell(numOfPresets, 1));
 for idxPreset = 1:numOfPresets
     preset = curPresets{idxPreset};
@@ -1317,16 +1319,17 @@ for idxPreset = 1:numOfPresets
         = plotEmpiricalCdfForCoverage(tempSimState, tempSimConfigs, ...
         mapType, ~curFlagGenFigsSilently);
     xlim(visibleBlockDistRange); ylim([0, 1]);
+
+    tightfig;
     if idxPreset==1
         hLeg = findobj(curEmpCdfFig, 'Type', 'Legend');
-        % [0.6367, 0.1522, 0.2700, 0.5067]
-        set(hLeg, 'Position', [0.6367, 0.1522, 0.2700, 0.6717]);
+        set(hLeg, 'NumColumns', 2);
+        set(hLeg, 'Position', [7.0580, 1.3819, 4.4450, 3.3999]);
         transparentizeCurLegends;
     else
         legend off;
     end
 
-    tightfig;
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['EmpiricalCdf_', mapType, ...
         simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -1343,16 +1346,17 @@ for idxPreset = 1:numOfPresets
         = plotCoverageRatioGain(tempSimState, tempSimConfigs, ...
         mapType, ~curFlagGenFigsSilently);
     xlim(visibleBlockDistRange); ylim([0, 100]);
+
+    tightfig;
     if idxPreset==1
         hLeg = findobj(curDistCovRatioGainFig, 'Type', 'Legend');
-        % [0.6367, 0.4759, 0.2700, 0.4517]
-        set(hLeg, 'Position', [0.6367, 0.3111, 0.2700, 0.6167]);
-        transparentizeCurLegends;
+        set(hLeg, 'NumColumns', 2);
+        set(hLeg, 'Position', [7.5287, 4.3910, 4.4450, 2.9633]);
+        % transparentizeCurLegends;
     else
         legend off;
     end
 
-    tightfig;
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['EmpiricalCdf_', mapType, 'CovRatGain_', ...
         simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -1390,7 +1394,7 @@ close(hLosCovRatGainOverHFig);
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
 
-% Coverage Ratio Plots - Path Loss
+%% Coverage Ratio Plots - Path Loss
 %   1.Coverage ratio over max allowed path loss.
 %    2. Coverage ratio gain over max allowed path loss.
 
@@ -1403,6 +1407,10 @@ heightsInM = [1.5, 3, 5, 7.5, 10, 50, 100, 125];
 heightsIndices = [1:5, 9, 14, 17];
 
 visiblePathLossRange = [100, 140];
+
+% For plotting extra info.
+[coverageMapsCovRatioMetas, coverageMapsCovRatioGainMetas] ...
+    = deal(cell(numOfPresets, 1));
 
 % FSPL calculated for clear LoS links at 50 m as the best performance
 % limit.
@@ -1469,18 +1477,9 @@ for idxPreset = 1:numOfPresets
         = plotEmpiricalCdfForCoverage(tempSimState, tempSimConfigs, ...
         mapType, ~curFlagGenFigsSilently, curManualXLim, ...
         curShowFSPL, curRefFsplVs); ylim([0, 1]);
-    if idxPreset==1
-        hLeg = findobj(curEmpCdfFig, 'Type', 'Legend');
-        set(hLeg, 'Position', [0.1293, 0.3636, 0.2880, 0.5617]);
-        transparentizeCurLegends;
+    hLeg = findobj(curEmpCdfFig, 'Type', 'Legend');
+    set(hLeg, 'AutoUpdate', 'off');
 
-        % Change the legend label for the reference FSPL item.
-        hLeg.String{end} = [hLeg.String{end}, newline, ...
-            '(Relay at ', num2str(refClearPathFsplMapRxHInM), ' m)'];
-        set(hLeg, 'AutoUpdate', 'off');
-    else
-        legend off;
-    end
     % Gray out results beyond relay height 10 m, because eHata is not valid
     % there.
     idxH10mBound = find( ...
@@ -1488,9 +1487,11 @@ for idxPreset = 1:numOfPresets
     greyOutAreaBottomBoundXYs = [ ...
         coverageMapsCovRatioMetas{idxPreset}.cdfXs{idxH10mBound}, ...
         coverageMapsCovRatioMetas{idxPreset}.cdfVs{idxH10mBound}];
+    boolsNotInfPt = ~(isinf(greyOutAreaBottomBoundXYs(:,1)) ...
+        | isinf(greyOutAreaBottomBoundXYs(:,2)));
     hGreyOutArea = patch( ...
-        [0; greyOutAreaBottomBoundXYs(:,1); 150; 0; 0], ...
-        [0; greyOutAreaBottomBoundXYs(:,2); 1; 1; 0], 'k', ...
+        [0; greyOutAreaBottomBoundXYs(boolsNotInfPt,1); 150; 0; 0], ...
+        [0; greyOutAreaBottomBoundXYs(boolsNotInfPt,2); 1; 1; 0], 'k', ...
         'LineStyle', 'none', 'FaceAlpha', alphaGreyoutArea);
     uistack(hGreyOutArea, 'bottom');
 
@@ -1503,6 +1504,18 @@ for idxPreset = 1:numOfPresets
     uistack(hPatchPoor, 'bottom');
 
     tightfig;
+    if idxPreset==1
+        set(hLeg, 'Position', [1.2508, 2.0710, 3.8100, 5.2917]);
+        transparentizeCurLegends;
+
+        % Change the legend label for the reference FSPL item.
+        hLeg.String{end} = [hLeg.String{end}, newline, ...
+            'with {\it{h_R}} = ', ...
+            num2str(refClearPathFsplMapRxHInM), ' m'];
+    else
+        legend off;
+    end
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['EmpiricalCdf_', mapType, ...
         simConfigs.CURRENT_SIMULATION_TAG, ...
@@ -1510,47 +1523,51 @@ for idxPreset = 1:numOfPresets
     saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
     close(curEmpCdfFig);
 
+    % --------------- Coverage ratio gain over max allowed path loss.
     %---------------
-    % Coverage ratio gain over max allowed path loss.
-    %---------------
-    [ curCovRatioGainFig ] ...
+    [ curCovRatioGainFig, coverageMapsCovRatioGainMetas{idxPreset}] ...
         = plotCoverageRatioGain(tempSimState, tempSimConfigs, ...
         mapType, ~curFlagGenFigsSilently, curManualXLim, ...
         curShowFSPL, curRefFsplVs); ylim([0, 100]);
-    if idxPreset==1
-        hLeg = findobj(curCovRatioGainFig, 'Type', 'Legend');
-        set(hLeg, 'Position', [0.1293, 0.4211, 0.2880, 0.5067]);
-        transparentizeCurLegends;
+    hLeg = findobj(curCovRatioGainFig, 'Type', 'Legend');
+    set(hLeg, 'AutoUpdate', 'off');
 
-        % Change the legend label for the reference FSPL item.
-        hLeg.String{end} = [hLeg.String{end}, newline, ...
-            '(Relay at ', num2str(refClearPathFsplMapRxHInM), ' m)'];
-        set(hLeg, 'AutoUpdate', 'off');
-    else
-        legend off;
-    end
     % Gray out results beyond relay height 10 m, because eHata is not valid
     % there.
     idxH10mBound = find( ...
-        coverageMapsCovRatioMetas{idxPreset}.rxHeightsInM==10);
+        coverageMapsCovRatioGainMetas{idxPreset}.rxHeightsInM==10);
     greyOutAreaBottomBoundXYs = [ ...
-        coverageMapsCovRatioMetas{idxPreset}.cdfXs{idxH10mBound}, ...
-        coverageMapsCovRatioMetas{idxPreset}.cdfVs{idxH10mBound}];
+        coverageMapsCovRatioGainMetas{idxPreset} ...
+        .cdfPlottedXs{idxH10mBound}, ...
+        coverageMapsCovRatioGainMetas{idxPreset} ...
+        .cdfPlottedVs{idxH10mBound}];
     hGreyOutArea = patch( ...
         [0; greyOutAreaBottomBoundXYs(:,1); 150; 0; 0], ...
-        [0; greyOutAreaBottomBoundXYs(:,2); 1; 1; 0], 'k', ...
+        [0; greyOutAreaBottomBoundXYs(:,2); 100; 100; 0], 'k', ...
         'LineStyle', 'none', 'FaceAlpha', alphaGreyoutArea);
     uistack(hGreyOutArea, 'bottom');
 
     % Mark the excellent, good, and poor regions.
-    hPatchExce = patch([90; 90; 120; 120], [0; 1; 1; 0], 'g', ...
+    hPatchExce = patch([90; 90; 120; 120], [0; 100; 100; 0], 'g', ...
         'LineStyle', 'none', 'FaceAlpha', alphaLinkCondition);
     uistack(hPatchExce, 'bottom');
-    hPatchPoor = patch([130; 130; 140; 140], [0; 1; 1; 0], 'r', ...
+    hPatchPoor = patch([130; 130; 140; 140], [0; 100; 100; 0], 'r', ...
         'LineStyle', 'none', 'FaceAlpha', alphaLinkCondition);
     uistack(hPatchPoor, 'bottom');
 
     tightfig;
+    if idxPreset==1
+        set(hLeg, 'Position', [2.1822, 2.4975, 3.8100, 4.8551]);
+        transparentizeCurLegends;
+
+        % Change the legend label for the reference FSPL item.
+        hLeg.String{end} = [hLeg.String{end}, newline, ...
+            'with {\it{h_R}} = ', ...
+            num2str(refClearPathFsplMapRxHInM), ' m'];
+    else
+        legend off;
+    end
+
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['EmpiricalCdf_', mapType, 'CovRatGain_', ...
         simConfigs.CURRENT_SIMULATION_TAG, ...

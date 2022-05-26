@@ -1,4 +1,4 @@
-function [hFigCovRatGain] = plotCoverageRatioGain( ...
+function [hFigCovRatGain, cdfMeta] = plotCoverageRatioGain( ...
     simState, simConfigs, mapType, flagVisible, ...
     flagManualXlim, flagShowFSPL, refFsplVs)
 %PLOTCOVERAGERATIOGAIN Plot the coverage ratio gain according to the the
@@ -208,6 +208,9 @@ end
 % legend with the empirical CDF plots.
 refCdfVs = covRatios{1};
 
+% Store the results for debugging.
+[cdfPlottedXs, cdfPlottedVs] = deal({numMaps, 1});
+
 hFigCovRatGain = figure('Visible', flagVisible, ...
     'Position', [0, 0, desiredFigSizeInPixel]);
 hold on; set(gca, 'fontWeight', 'bold');
@@ -215,7 +218,6 @@ hold on; set(gca, 'fontWeight', 'bold');
 % track.
 extendedGridVs = [gridValues; infinitePathLossInDb];
 for idxMap = 1:numMaps
-    curMarker = markers{mod(idxMap-1, numOfMarkers)+1};
     curCdfVs = covRatios{idxMap}-refCdfVs;
 
     curExtendedCdfVs = [curCdfVs; ...
@@ -232,7 +234,14 @@ for idxMap = 1:numMaps
         extendedGridVs(curBoolsValidPts), ...
         curExtendedCdfVs(curBoolsValidPts).*100, ...
         curMarker, 'LineWidth', lineWidth); %#ok<AGROW>
+
+    cdfPlottedXs{idxMap} = extendedGridVs(curBoolsValidPts);
+    cdfPlottedVs{idxMap} = curExtendedCdfVs(curBoolsValidPts).*100;
 end
+
+cdfMeta.cdfPlottedXs = cdfPlottedXs;
+cdfMeta.cdfPlottedVs = cdfPlottedVs;
+
 axis auto; curAxisAuto = axis; axis tight; curAxisTight = axis;
 curYLimToSet = curAxisTight(3:4) ...
     + (curAxisAuto(3:4)-curAxisTight(3:4)).*0.5;
@@ -240,7 +249,7 @@ curYLimToSet(1) = max(curYLimToSet(1), 0);
 
 switch lower(mapType)
     case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
-        xlabel('Maximum Allowed Path Loss (dB)');
+        xlabel('Maximum Allowed Path Loss {\it{L_p}} (dB)');
         curLoc = 'NorthWest';
 
         if flagManualXlim
@@ -250,27 +259,36 @@ switch lower(mapType)
         end
         axis([xlimToSet curYLimToSet]);
 
+        ylabel(['{\it{L_p}}-Dependent Coverage', newline, ...
+            'Ratio Gain ' ...
+            '{\it{CRG}}({\it{L_p}}, {\it{h_R}}) (%)']);
     case 'blockagedist'
-        xlabel('Maximum Allowed Blockage Distance (m)');
+        xlabel('Maximum Allowed Blockage Distance {\it{D_{blk}}} (m)');
         set(gca, 'XScale', 'log');
         curLoc = 'NorthEast';
         axis([xMinLog xMax curYLimToSet]);
+
+        ylabel(['{\it{D_{blk}}}-Dependent Coverage', newline, ...
+            'Ratio Gain ' ...
+            '{\it{CRG}}({\it{D_{blk}}}, {\it{h_R}}) (%)']);
 end
 grid on; grid minor; box on;
 
-ylabel('Coverage Ratio Gain (%)');
 if flagShowFSPL
     hLeg = legend(hsCdf, ...
-        [arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
+        [arrayfun(@(n) [num2str(n), ' m'], ...
         cdfMeta.rxHeightsInM, 'UniformOutput', false); ...
         'Reference FSPL'], ...
         'Location', curLoc);
 else
     hLeg = legend(hsCdf, ...
-        arrayfun(@(n) ['Relay at ', num2str(n), ' m'], ...
+        arrayfun(@(n) [num2str(n), ' m'], ...
         cdfMeta.rxHeightsInM, 'UniformOutput', false), ...
         'Location', curLoc);
 end
+hLegTitle = get(hLeg, 'Title');
+set(hLegTitle, 'String', 'Relay height {\it{h_R}}');
+
 delete(hsCdf(1));
 set(hLeg, 'AutoUpdate', 'off');
 line(xlim, [0 0], 'Color', 'k');
