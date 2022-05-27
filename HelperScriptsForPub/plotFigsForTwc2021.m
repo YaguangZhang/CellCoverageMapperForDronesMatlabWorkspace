@@ -198,7 +198,7 @@ for idxPreset = 1:numOfPresets
         max(gpsLatsBoundaryToKeepCellTowers)], extensionFactor, simConfigs);
     adjustFigSizeByContent(hFigCellOverview, axisLonLatToSet, ...
         'height', weightForWidth.*0.9);
-    view(2); plot_google_map;
+    view(2); plot_google_map('MapType', 'roadmap', 'Alpha', 1/3);
     % grid on; grid minor;
     xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
     box on; xtickangle(0); xticks('manual');
@@ -209,28 +209,29 @@ for idxPreset = 1:numOfPresets
             hLeg = legend( ...
                 [hAreaOfInterest, hExtendedArea, ...
                 hEffeCells, hIneffeCells], ...
-                'Area of interest', 'Extended area', ...
+                'Area of interest', 'Simulation area', ...
                 'Cell tower to consider', ...
                 'Ineffective cell tower', ...
                 'defaultLegendAutoUpdate','off');
-            set(hLeg, 'Position', [0.137556, 0.744218, 0.4539, 0.1839]);
+            set(hLeg, 'Position', [0.1374, 0.7422, 0.4539, 0.1839]);
         case 'ShrinkedWHIN'
             h = makescale(3.7, 'se', 'units', 'si');
             hPolyWhin = plot(whinBoundaryLons, whinBoundaryLats, ...
                 ':', 'LineWidth', 2.3, 'Color', 'k');
             hLeg = legend(hPolyWhin, 'WHIN boundary');
-            set(hLeg, 'Position', [0.165091, 0.8792, 0.4669, 0.0476]);
+            set(hLeg, 'Position', [0.1630, 0.8775, 0.4669, 0.0476]);
         case 'ShrinkedIN'
             h = makescale(3.1, 'se', 'units', 'si');
             hPolyIn = plot(inBoundaryLons, inBoundaryLats, ...
                 '-.', 'LineWidth', 2.3, 'Color', 'k');
             hLeg = legend(hPolyIn, 'Indiana boundary');
-            set(hLeg, 'Position', [0.201073, 0.8792, 0.5934, 0.0476]);
+            set(hLeg, 'Position', [0.1920, 0.8780, 0.5934, 0.0476]);
     end
 
     curDirToSave = fullfile(pathToSaveResults, ...
         ['Overview_CellularTowersToConsider_RoadMap-', preset]);
     saveEpsFigForPaper(hFigCellOverview, curDirToSave, false);
+    saveas(hFigCellOverview, [curDirToSave, '.fig']);
 
     %% User Location Grid
 
