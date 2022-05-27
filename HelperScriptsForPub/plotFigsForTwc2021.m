@@ -1525,6 +1525,7 @@ for idxPreset = 1:numOfPresets
         simConfigs.CURRENT_SIMULATION_TAG, ...
         '_Fc_', num2str(fcInMHz), 'MHz']);
     saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+    saveas(gcf, [pathToSaveFig, '.fig']);
     close(curEmpCdfFig);
 
     %---------------
@@ -1578,6 +1579,7 @@ for idxPreset = 1:numOfPresets
         simConfigs.CURRENT_SIMULATION_TAG, ...
         '_Fc_', num2str(fcInMHz), 'MHz']);
     saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+    saveas(gcf, [pathToSaveFig, '.fig']);
     close(curCovRatioGainFig);
 
     %---------------
@@ -1625,6 +1627,7 @@ for idxPreset = 1:numOfPresets
         simConfigs.CURRENT_SIMULATION_TAG, ...
         '_Fc_', num2str(fcInMHz), 'MHz']);
     saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+    saveas(gcf, [pathToSaveFig, '.fig']);
     close(curCovRatioGainFig);
 end
 
