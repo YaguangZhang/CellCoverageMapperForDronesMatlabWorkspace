@@ -197,8 +197,11 @@ for idxPreset = 1:numOfPresets
         min(gpsLatsBoundaryToKeepCellTowers), ...
         max(gpsLatsBoundaryToKeepCellTowers)], extensionFactor, simConfigs);
     adjustFigSizeByContent(hFigCellOverview, axisLonLatToSet, ...
-        'height', weightForWidth.*0.9);
-    view(2); plot_google_map('MapType', 'roadmap', 'Alpha', 1/3);
+        'height', weightForWidth.*0.9); view(2);
+    % Transparentize the map background. Enlarge the Google Maps font size
+    % by adjusting the resolution of the image to download.
+    plot_google_map('MapType', 'roadmap', 'Alpha', 1/3, ...
+        'Height', 400, 'Width', 400);
     % grid on; grid minor;
     xlabel('Longitude (degrees)'); ylabel('Latitude (degrees)');
     box on; xtickangle(0); xticks('manual');
