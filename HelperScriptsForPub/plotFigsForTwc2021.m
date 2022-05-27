@@ -1409,8 +1409,8 @@ heightsIndices = [1:5, 9, 14, 17];
 visiblePathLossRange = [100, 140];
 
 % For plotting extra info.
-[coverageMapsCovRatioMetas, coverageMapsCovRatioGainMetas] ...
-    = deal(cell(numOfPresets, 1));
+[coverageMapsCovRatioMetas, coverageMapsCovRatioGainMetas, ...
+    relayGainMetas] = deal(cell(numOfPresets, 1));
 
 % FSPL calculated for clear LoS links at 50 m as the best performance
 % limit.
@@ -1523,7 +1523,8 @@ for idxPreset = 1:numOfPresets
     saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
     close(curEmpCdfFig);
 
-    % --------------- Coverage ratio gain over max allowed path loss.
+    %---------------
+    % Coverage ratio gain over max allowed path loss.
     %---------------
     [ curCovRatioGainFig, coverageMapsCovRatioGainMetas{idxPreset}] ...
         = plotCoverageRatioGain(tempSimState, tempSimConfigs, ...
@@ -1570,6 +1571,53 @@ for idxPreset = 1:numOfPresets
 
     pathToSaveFig = fullfile(pathToSaveResults, ...
         ['EmpiricalCdf_', mapType, 'CovRatGain_', ...
+        simConfigs.CURRENT_SIMULATION_TAG, ...
+        '_Fc_', num2str(fcInMHz), 'MHz']);
+    saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+    close(curCovRatioGainFig);
+
+    %---------------
+    % Relay gain (dB) over target coverage ratio (%).
+    %---------------
+    [ curCovRatioGainFig, relayGainMetas{idxPreset}] ...
+        = plotRelayGain(tempSimState, tempSimConfigs, ...
+        mapType, ~curFlagGenFigsSilently, ...
+        curShowFSPL, curRefFsplVs);
+
+    maxY = 25; ylim([0, maxY]);
+    hLeg = findobj(curCovRatioGainFig, 'Type', 'Legend');
+    set(hLeg, 'AutoUpdate', 'off');
+
+    % Gray out results beyond relay height 10 m, because eHata is not valid
+    % there.
+    idxH10mBound = find( ...
+        relayGainMetas{idxPreset}.rxHeightsInM==10);
+    greyOutAreaBottomBoundXYs = [ ...
+        relayGainMetas{idxPreset}.gridValues.*100, ...
+        relayGainMetas{idxPreset}.relayGains{idxH10mBound}];
+    hGreyOutArea = patch( ...
+        [0; greyOutAreaBottomBoundXYs(:,1); 100; 100; 0; 0], ...
+        [0; greyOutAreaBottomBoundXYs(:,2); 0; maxY; maxY; 0], 'k', ...
+        'LineStyle', 'none', 'FaceAlpha', alphaGreyoutArea);
+    uistack(hGreyOutArea, 'bottom');
+
+    tightfig;
+    if idxPreset==1
+        set(hLeg, 'NumColumns', 2);
+        transparentizeCurLegends;
+
+        % Change the legend label for the reference FSPL item.
+        hLeg.String{end} = [hLeg.String{end}, newline, ...
+            'with {\it{h_R}} = ', ...
+            num2str(refClearPathFsplMapRxHInM), ' m'];
+
+        set(hLeg, 'Position', [5.5729, 3.4119, 5.9796, 3.1089]);
+    else
+        legend off;
+    end
+
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, 'RelayGain_', ...
         simConfigs.CURRENT_SIMULATION_TAG, ...
         '_Fc_', num2str(fcInMHz), 'MHz']);
     saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
