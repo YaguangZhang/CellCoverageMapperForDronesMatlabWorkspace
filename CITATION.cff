@@ -1,0 +1,13 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Cellular Coverage Mapper
+message: Please cite this software using these metadata.
+type: software
+authors:
+  - given-names: Yaguang
+    family-names: Zhang
+    email: ygzhang@purdue.edu
+    affiliation: Purdue University
+    orcid: 'https://orcid.org/0000-0002-5445-0555'
