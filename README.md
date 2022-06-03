@@ -6,6 +6,8 @@ Matlab scripts for investigating system-level coverage for cellular networks, po
 
 ## Notes
 
+Release R2020b and beyond are recommended for running the simulator.
+
 For large simulations which take more than a couple of days to finish, Matlab `parfor` may freeze: the program seems to be running but the CPU usage is extremely low. If this happens, one can simply stop and restart the simulation, since the program is able to resume from progress log files.
 
 ## Contact
