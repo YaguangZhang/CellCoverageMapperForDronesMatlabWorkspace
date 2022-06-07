@@ -523,7 +523,7 @@ if ~isfield(simState, 'blockageMapsForEachCell')
             = vecnorm(simState.mapGridXYPts-curCellXYH(1:2), 2, 2);
         curIndicesRxLocsToConsider ...
             = find(curTxToRxDistsInM ...
-            < simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
+            <= simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
 
         % We will use multiple workers to churn through the drone
         % locations. To avoid repeative environment set up and data
