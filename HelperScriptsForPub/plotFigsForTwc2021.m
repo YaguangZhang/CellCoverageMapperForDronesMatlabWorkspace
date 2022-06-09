@@ -1709,7 +1709,7 @@ end
 
 % Path loss map. We will reuse the background from the blockage distance
 % plots above.
-pathLossRangesToShow = {[110, 150], [120, 140], [120, 150]};
+pathLossRangesToShow = {[110, 150], [120, 140], [120, 150], [125, 145]};
 for idxRange = 1:length(pathLossRangesToShow)
     curPathLossRangeToShow = pathLossRangesToShow{idxRange};
 
