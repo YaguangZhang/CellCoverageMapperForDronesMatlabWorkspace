@@ -108,6 +108,11 @@ refClearPathFsplMapRxHInM = 50;
 % Font size in the comparison figures with OpenSignal.
 openSigFigFontSize = 15;
 
+% The newer version of export_fig is giving us trouble saving
+% half-transparent patches.
+rmpath(genpath(fullfile('lib', 'ext', 'export_fig')));
+addpath(genpath(fullfile('lib_extra', 'altmany-export_fig-3175417')));
+
 %% Cell Towers to Consider on Roadmaps + User Location Grid
 
 disp(' ')
