@@ -72,7 +72,7 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
         PRESET = PRESETS{idxPreset};
         CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
         disp(' ')
-        disp(['    [', datestr(now, datetimeFormat), ...
+        disp(['[', datestr(now, datetimeFormat), ...
             '] Running sim for ', PRESET, ' (', ...
             num2str(CARRIER_FREQUENCY_IN_MHZ), ' MHz) ...'])
 
@@ -91,7 +91,7 @@ for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
             disp(getReport(err))
             rethrow(err);
         end
-        disp(['    [', datestr(now, datetimeFormat), ...
+        disp(['[', datestr(now, datetimeFormat), ...
             '] Done!'])
     end
 end

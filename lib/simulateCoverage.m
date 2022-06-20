@@ -226,10 +226,17 @@ estimateExcessPL = @(dInM) modelItuObsByWoodland.excessLossFormula( ...
 %% Create the Map Grid
 
 switch simConfigs.CURRENT_SIMULATION_TAG
-    case 'WHIN_WEATHER_STATIONS'
-        [mapGridLats, mapGridLons] ...
-            = loadWhinWeatherStationInfo();
-        simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
+    case {'CustomSim', 'WHIN_WEATHER_STATIONS'}
+        if strcmp(simConfigs.CURRENT_SIMULATION_TAG, ...
+                'CustomSim')
+            CustomSimMeta = evalin('base', 'CustomSimMeta');
+            simState.mapGridLatLonPts = CustomSimMeta.mapGridLatLonPts;
+        elseif strcmp(simConfigs.CURRENT_SIMULATION_TAG, ...
+                'WHIN_WEATHER_STATIONS')
+            [mapGridLats, mapGridLons] ...
+                = loadWhinWeatherStationInfo();
+            simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
+        end
 
         % Convert (lat, lon) to UTM (x, y).
         [mapGridXs, mapGridYs] = simConfigs.deg2utm_speZone( ...
@@ -246,7 +253,8 @@ switch simConfigs.CURRENT_SIMULATION_TAG
 
         % Convert UTM (x, y) to (lat, lon).
         [mapGridLats, mapGridLons] = simConfigs.utm2deg_speZone( ...
-            simState.mapGridXYPts(:,1), simState.mapGridXYPts(:,2));
+            simState.mapGridXYPts(:,1), ...
+            simState.mapGridXYPts(:,2));
         simState.mapGridLatLonPts = [mapGridLats, mapGridLons];
 end
 

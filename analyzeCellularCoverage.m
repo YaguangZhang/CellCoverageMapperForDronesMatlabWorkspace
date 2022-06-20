@@ -20,8 +20,9 @@
 % Yaguang Zhang, Purdue, 04/28/2022
 
 clearvars -except PRESETS CARRIER_FREQUENCIES_IN_MHZ ...
-    PRESET CARRIER_FREQUENCY_IN_MHZ pathToSaveSimManDiary idxFre ...
-    idxT;
+    PRESET CARRIER_FREQUENCY_IN_MHZ ...
+    pathToSaveSimManDiary idxFre idxT ...
+    CustomSimMeta idxSim;
 clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
@@ -50,8 +51,16 @@ if ~exist('PRESET', 'var')
     %   {'WHIN_LORAWAN'}
     % For LoRaWAN gateways installed on the mobile trailer:
     %   {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
-    % Note: 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY' can be carried out by
-    % runMultipleCellCovSims.m or after idxT is manually set.
+    % Note:
+    %   'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY' can be carried out by
+    %   runMultipleCellCovSims.m or after idxT is manually set.
+    % For custom simulations with parameters set by the variable
+    % CustomSimMeta (required fields include CARRIER_FREQUENCY_IN_MHZ,
+    % ABS_PATH_TO_CELL_ANTENNAS_CSV, mapGridLatLonPts,
+    % UTM_X_Y_BOUNDARY_OF_INTEREST, and RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
+    % optional fields include FLAG_EVAL_LOSS_THROUGH_VEG and
+    % pathToPostProcessingResultsFolder):
+    %   {'CustomSim'}
     PRESET = 'ShrinkedIN';
 end
 
@@ -87,6 +96,9 @@ switch PRESET
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
             ABS_PATH_TO_SHARED_FOLDER, ...
             'CellTowerInfo', 'PurdueAcreLoraWanTowersOnTrailer.csv');
+    case {'CustomSim'}
+        ABS_PATH_TO_CELL_ANTENNAS_CSV ...
+            = CustomSimMeta.ABS_PATH_TO_CELL_ANTENNAS_CSV;
     otherwise
         % Default to the NTIA+HIFLD cell tower locations.
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
@@ -94,6 +106,7 @@ switch PRESET
             'CellTowerInfo', 'NtiaLayoutPlusHifldCellTs', ...
             'NtiaLayoutMergedWithHifldCellTs_Threshold_1000m_LatLonH.csv');
 end
+
 % The cellular tower height value to use. According to the HIFLD Land
 % Mobile Commercial Transmission Towers data set, the mean tower height is
 % 63.5 m, while the median tower height is 47.2 m.
@@ -123,6 +136,13 @@ if any(strcmpi({'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
     simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = true;
 else
     simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = false;
+end
+
+if strcmp(PRESET, 'CustomSim')
+    if isfield(CustomSimMeta, 'FLAG_EVAL_LOSS_THROUGH_VEG')
+        simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG ...
+            = CustomSimMeta.FLAG_EVAL_LOSS_THROUGH_VEG;
+    end
 end
 
 %   - The UTM (x, y) polygon boundary vertices representing the area of
@@ -194,6 +214,9 @@ switch PRESET
             inBoundary.boundary.UTM_ZONE), 'UTM zone mismatch!');
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = inBoundary.boundary.UTM_X_Y_BOUNDARY_OF_INTEREST;
+    case {'CustomSim'}
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = CustomSimMeta.UTM_X_Y_BOUNDARY_OF_INTEREST;
     otherwise
         error(['Unsupported preset "', PRESET, '"!'])
 end
@@ -216,6 +239,8 @@ if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
             'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'})
         % LoRa simulations.
         CARRIER_FREQUENCY_IN_MHZ = 915;
+    elseif strcmp(PRESET, 'CustomSim')
+        CARRIER_FREQUENCY_IN_MHZ = CustomSimMeta.CARRIER_FREQUENCY_IN_MHZ;
     else
         % The cellular carrier frequency can be specified here.
         CARRIER_FREQUENCY_IN_MHZ = 1900;
@@ -271,6 +296,9 @@ switch PRESET
         %         = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
     case {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = 1.5;
+    case {'CustomSim'}
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
+            = CustomSimMeta.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
     otherwise
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
             = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
@@ -364,11 +392,28 @@ simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 
 % The absolute path to the folder for saving the results.
-pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'PostProcessingResults', ['Simulation_', PRESET, ...
+simResultsFolderName = ['Simulation_', PRESET, ...
     '_Carrier_', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ...
-    'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE]);
-if strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY') ...
+    'MHz_LiDAR_', LIDAR_DATA_SET_TO_USE];
+
+% By default, save results to folder PostProcessingResults.
+pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+    'PostProcessingResults', simResultsFolderName);
+
+if strcmpi(PRESET, 'CustomSim')
+    % Overwrite the dafault pathToSaveResults if necessary.
+    if isfield(CustomSimMeta, 'pathToPostProcessingResultsFolder')
+        pathToSaveResults = fullfile( ...
+            CustomSimMeta.pathToPostProcessingResultsFolder, ...
+            simResultsFolderName);
+    end
+
+    % Append simulation index if it shows up.
+    if exist('idxSim', 'var')
+        pathToSaveResults = [pathToSaveResults, ...
+            '_idxSim_', num2str(idxSim)];
+    end
+elseif strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY') ...
         && exist('idxT', 'var')
     pathToSaveResults = [pathToSaveResults, '_idxT_', num2str(idxT)];
 end
