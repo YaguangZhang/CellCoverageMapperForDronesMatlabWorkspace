@@ -138,7 +138,7 @@ else
     simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = false;
 end
 
-if strcmp(PRESET, 'CustomSim')
+if strcmpi(PRESET, 'CustomSim')
     if isfield(CustomSimMeta, 'FLAG_EVAL_LOSS_THROUGH_VEG')
         simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG ...
             = CustomSimMeta.FLAG_EVAL_LOSS_THROUGH_VEG;
@@ -239,7 +239,7 @@ if ~exist('CARRIER_FREQUENCY_IN_MHZ', 'var')
             'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'})
         % LoRa simulations.
         CARRIER_FREQUENCY_IN_MHZ = 915;
-    elseif strcmp(PRESET, 'CustomSim')
+    elseif strcmpi(PRESET, 'CustomSim')
         CARRIER_FREQUENCY_IN_MHZ = CustomSimMeta.CARRIER_FREQUENCY_IN_MHZ;
     else
         % The cellular carrier frequency can be specified here.
@@ -338,7 +338,7 @@ simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M ...
     DEFAULT_TX_ANT_HEIGHT_IN_M, PEDESTRIAN_HEIGHT_IN_M);
 
 % Shrink the outline for PRESET 'ShrinkedIN'.
-if strcmp(PRESET, 'ShrinkedIN') || strcmp(PRESET, 'ShrinkedWHIN')
+if strcmpi(PRESET, 'ShrinkedIN') || strcmpi(PRESET, 'ShrinkedWHIN')
     utmXYPolyAreaOfInt = polybuffer( ...
         polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST), ...
         -simConfigs.MAX_CELL_COVERAGE_RADIUS_IN_M);
@@ -346,7 +346,7 @@ if strcmp(PRESET, 'ShrinkedIN') || strcmp(PRESET, 'ShrinkedWHIN')
 end
 
 % Refine the outline for PRESET 'ShrinkedWHIN'.
-if strcmp(PRESET, 'ShrinkedWHIN')
+if strcmpi(PRESET, 'ShrinkedWHIN')
     utmXYPolyShrinkedIN = ...
         polyshape(simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST);
 
@@ -429,9 +429,15 @@ end
 diary(dirToSaveDiary);
 
 disp(' ')
-disp(['    [', datestr(now, datetimeFormat), ...
-    '] Configuring the simulation for PRESET ', PRESET, ...
-    ' (', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
+if strcmpi(PRESET, 'CustomSim')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Configuring the simulation for PRESET ', PRESET, ...
+        ' (', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
+else
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Configuring the simulation for PRESET ', PRESET, ...
+        ' (idxSim = ', num2str(idxSim), ')...'])
+end
 
 % Save simConfigs if it is not yet done.
 dirToSaveSimConfigs = fullfile(pathToSaveResults, 'simConfigs_Raw.mat');
@@ -547,7 +553,7 @@ if ~isunix % Adoid generating plots on the headless Linux clusters.
     plotSimulationResults(pathToSaveResults, simState, simConfigs);
 end
 
-if strcmp(PRESET, 'WHIN_WEATHER_STATIONS')
+if strcmpi(PRESET, 'WHIN_WEATHER_STATIONS')
     addpath('10_NetworkPlanner');
     genExtraPlotsForWhinWeatherStations;
 end
