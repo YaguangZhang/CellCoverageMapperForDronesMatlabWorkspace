@@ -73,6 +73,9 @@ CustomSimMetaDefault.FLAG_EVAL_LOSS_THROUGH_VEG = true;
 CustomSimMetaDefault.pathToPostProcessingResultsFolder ...
     = pathToPostProcessingResultsFolder;
 
+% For feedback.
+CustomSimMetaDefault.SIM_GROUP_PRESET = SIM_GROUP_PRESET;
+
 %% Create CustomSimMetas
 
 ABS_PATH_TO_RX_LOCS = fullfile( ...
@@ -96,13 +99,14 @@ end
 %% Run Sims
 
 for idxSim = 1:length(CustomSimMetas)
+    CustomSimMeta = CustomSimMetas{idxSim};
+
     disp(' ')
     disp(['[', datestr(now, datetimeFormat), ...
-        '] Running sim for ', SIM_GROUP_PRESET, ...
+        '] Running sim for ', CustomSimMeta.SIM_GROUP_PRESET, ...
         ' with PRESET ', PRESET, ' (', ...
         num2str(idxSim), ') ...'])
 
-    CustomSimMeta = CustomSimMetas{idxSim};
     try
         diary off;
         analyzeCellularCoverage;
