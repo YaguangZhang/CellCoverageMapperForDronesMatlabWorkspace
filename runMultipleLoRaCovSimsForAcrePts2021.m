@@ -225,6 +225,64 @@ writetable(simResultsTable, ...
 disp(['[', datestr(now, datetimeFormat), ...
     '] Done!'])
 
+%% Debugging Plots
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Aggregating simulation results ...'])
+
+% Path loss.
+curData = ehata_path_loss_db;
+colorRangeToSet = [60, 150];
+
+curDataRange = [min(curData), max(curData)];
+disp(['    Current data value range: ', ...
+    num2str(curDataRange(1)), ', ', num2str(curDataRange(2))]);
+
+assert(colorRangeToSet(1)<=curDataRange(1), ...
+    colorRangeToSet(2)>=curDataRange(2), ...
+    'colorRangeToSet does not cover curDataRange!');
+
+figure;
+plot3k([lon, lat, curData], 'ColorRange', colorRangeToSet, ...
+    'Labels', {'eHata Path Loss Overview', ...
+    'Longitude (degree)', 'Latitude (degree)', '', 'Path Loss (dB)'});
+plot_google_map('MapType', 'hybrid');
+zlim([0, colorRangeToSet(2)]); view(2);
+
+curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
+    'Overview_eHata');
+saveas(gcf, [curPathToSaveFig, '.fig']);
+saveas(gcf, [curPathToSaveFig, '.jpg']);
+
+% LoS blockage.
+curData = accumulate_blockage_dist_m;
+colorRangeToSet = [0, 8000];
+
+curDataRange = [min(curData), max(curData)];
+disp(['    Current data value range: ', ...
+    num2str(curDataRange(1)), ', ', num2str(curDataRange(2))]);
+
+assert(colorRangeToSet(1)<=curDataRange(1), ...
+    colorRangeToSet(2)>=curDataRange(2), ...
+    'colorRangeToSet does not cover curDataRange!');
+
+figure;
+plot3k([lon, lat, curData], 'ColorRange', colorRangeToSet, ...
+    'Labels', {'Accumulate LoS Blockage Distance Overview', ...
+    'Longitude (degree)', 'Latitude (degree)', '', ...
+    'Blockage Distance (m)'}); view(2);
+plot_google_map('MapType', 'hybrid');
+zlim([0, colorRangeToSet(2)]);
+
+curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
+    'Overview_LoSBlockageDist');
+saveas(gcf, [curPathToSaveFig, '.fig']);
+saveas(gcf, [curPathToSaveFig, '.jpg']);
+
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
 diary off;
 
 % EOF
