@@ -16,6 +16,10 @@ prepareSimulationEnv;
 
 %% Initialization
 
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Initializing ...'])
+
 % Predefined simulation group label.
 %   - 'acreLoRaWan2021'
 %     The ACRE LoRaWAN results collected in 2021: one tower gateway +
@@ -31,6 +35,9 @@ end
 pathToSaveSimManDiary = fullfile( ...
     pathToPostProcessingResultsFolder, 'simManDiary.txt');
 diary(pathToSaveSimManDiary);
+
+pathToSaveCustomSimMetas = fullfile( ...
+    pathToPostProcessingResultsFolder, 'CustomSimMetas.mat');
 
 % Preset of interest.
 PRESET = 'CustomSim';
@@ -76,7 +83,14 @@ CustomSimMetaDefault.pathToPostProcessingResultsFolder ...
 % For feedback.
 CustomSimMetaDefault.SIM_GROUP_PRESET = SIM_GROUP_PRESET;
 
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
+
 %% Create CustomSimMetas
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Setting up simulations ...'])
 
 ABS_PATH_TO_RX_LOCS = fullfile( ...
     ABS_PATH_TO_SHARED_FOLDER, ...
@@ -95,6 +109,13 @@ for idxSim = 1:length(CustomSimMetas)
         rxGidLonLatHInMs(:,4)==curRxHInM, [3,2]);
     CustomSimMetas{idxSim}.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = curRxHInM;
 end
+
+save(pathToSaveCustomSimMetas, ...
+    'SIM_GROUP_PRESET', 'PRESET', 'ABS_PATH_TO_RX_LOCS', ...
+    'CustomSimMetas', 'rxGidLonLatHInMs', 'rxHInMsUnique', 'numOfSims');
+
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
 
 %% Run Sims
 
@@ -120,6 +141,89 @@ for idxSim = 1:length(CustomSimMetas)
     disp(['[', datestr(now, datetimeFormat), ...
         '] Done!'])
 end
+
+%% Aggregate Results
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Aggregating simulation results ...'])
+
+% The simulation would clear some of the parameters we need.
+load(pathToSaveCustomSimMetas);
+
+% Retrieve simulation results.
+[rxEHataPLsInDb, rxAccBlkDistsInM, ...
+    rxAccBlkDistsInM_Terrain, rxAccBlkDistsInM_Veg] ...
+    = deal(cell(numOfSims, 1));
+for idxSim = 1:length(CustomSimMetas)
+    CustomSimMeta = CustomSimMetas{idxSim};
+    curRxHInM = rxHInMsUnique(idxSim);
+
+    % Locate the simulation result folder based on the name pattern.
+    curSimResultsFolderName = ['Simulation_', PRESET, ...
+        '_Carrier_', num2str(CustomSimMeta.CARRIER_FREQUENCY_IN_MHZ), ...
+        'MHz_LiDAR_*', '_idxSim_', num2str(idxSim)];
+
+    if ~exist('pathToPostProcessingResultsFolder', 'var')
+        pathToPostProcessingResultsFolder ...
+            = CustomSimMeta.pathToPostProcessingResultsFolder;
+    else
+        assert(strcmp(pathToPostProcessingResultsFolder, ...
+            CustomSimMeta.pathToPostProcessingResultsFolder), ...
+            'Results are expected to be saved in the same folder!');
+    end
+
+    curSimResultFolder = rdir( ...
+        fullfile(pathToPostProcessingResultsFolder, ...
+        curSimResultsFolderName), 'isdir');
+    assert(length(curSimResultFolder)==1, ...
+        'Exactly one sim result folder is expected!');
+
+    dirToSimState = fullfile( ...
+        curSimResultFolder.name, 'simState.mat');
+    curSimState = load(dirToSimState, 'simState');
+
+    assert(length(curSimState.simState.coverageMaps) == 1, ...
+        'Expecting one and only one map!');
+
+    rxEHataPLsInDb{idxSim} = curSimState.simState.coverageMaps{1};
+    rxAccBlkDistsInM{idxSim} = curSimState.simState.blockageDistMaps{1};
+    rxAccBlkDistsInM_Terrain{idxSim} ...
+        = curSimState.simState.blockageByTerrainDistMaps{1};
+    rxAccBlkDistsInM_Veg{idxSim} ...
+        = curSimState.simState.blockageByVegDistMaps{1};
+
+    if length(rxEHataPLsInDb{idxSim}) ...
+            ~= sum(rxGidLonLatHInMs(:,4)==curRxHInM)
+        disp(['Num of pts in current sim results: ', ...
+            num2str(length(rxEHataPLsInDb{idxSim}))]);
+        disp(['Num of pts expected based on RX height:', ...
+            num2str(sum(rxGidLonLatHInMs(:,4)==curRxHInM))])
+        error('Sim results have unexpected number of points!');
+    end
+end
+
+% Arrange results into a table for easy exportation.
+gid = rxGidLonLatHInMs(:,1);
+lon = rxGidLonLatHInMs(:,2);
+lat = rxGidLonLatHInMs(:,3);
+install_height_m = rxGidLonLatHInMs(:,4);
+ehata_path_loss_db = vertcat(rxEHataPLsInDb{:});
+accumulate_blockage_dist_m = vertcat(rxAccBlkDistsInM{:});
+accumulate_blockage_dist_m_terrain = vertcat(rxAccBlkDistsInM_Terrain{:});
+accumulate_blockage_dist_m_vegetation = vertcat(rxAccBlkDistsInM_Veg{:});
+
+simResultsTable = table(gid, lon, lat, install_height_m, ...
+    ehata_path_loss_db, accumulate_blockage_dist_m, ...
+    accumulate_blockage_dist_m_terrain, ...
+    accumulate_blockage_dist_m_vegetation);
+
+writetable(simResultsTable, ...
+    fullfile(pathToPostProcessingResultsFolder, ...
+    ['simResults_', SIM_GROUP_PRESET, '.csv']));
+
+disp(['[', datestr(now, datetimeFormat), ...
+    '] Done!'])
 
 diary off;
 
