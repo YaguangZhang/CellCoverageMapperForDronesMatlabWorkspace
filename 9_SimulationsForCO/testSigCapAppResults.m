@@ -18,11 +18,29 @@ prepareSimulationEnv;
 
 %% Script Parameters
 
-% The absolute path to the folder with the FCC speed test app results.
+% Supported PRESET values:
+%   - SigCapCSV20210406
+%     FCC preliminary measurements in Longmont.
+%   - SigCapCSV20210928_Anderson
+%     Test measurements from Professor Anderson, conducted in USNA.
 %   - SigCap_LongmontCampaign_20211105
-%     Results from the 2021 Longmont measurement campaign.
+%     Results from the 2021 Longmont measurement campaign by Professor
+%     Anderson and his students. This dataset is a copy of the SigCap
+%     output files under folder "Longmont Lab_Raw".
+%       - SigCap_LongmontCampaign_20211105_Longmont
+%        - SigCap_LongmontCampaign_20211105_LongmontExt
+%         Filtered version of SigCap_LongmontCampaign_20211105 to only show
+%         results in/out of Longmont.
+%   - SigCap_LongmontCampaign_AdditionalData_20220708
+%     Extra results from the 2022 Longmont measurement campaign by
+%     Professor Anderson.
+%
+% Note:
+%   If the variable PRESET is already defined out of this script, we will
+%   use that value directly. This provides a way to set PRESET to any
+%   needed value.
 if ~exist('PRESET', 'var')
-    PRESET = 'SigCap_LongmontCampaign_20211105';
+    PRESET = 'SigCap_LongmontCampaign_AdditionalData_20220708';
 end
 if ismember(PRESET, ...
         {'SigCap_LongmontCampaign_20211105_Longmont', ...
@@ -31,6 +49,7 @@ if ismember(PRESET, ...
 else
     folderNameForTestResults = PRESET;
 end
+% The absolute path to the folder with the FCC speed test app results.
 pathToSigCapAppResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
     'FCC Rural Broadband', folderNameForTestResults);
 
@@ -68,13 +87,30 @@ for idxLog = 1:numOfLogs
     % Read logs and extract the information of interest.
     logTable = readtable(logsCsvs(idxLog).name, ...
         'VariableNamingRule', 'preserve');
-    for idxRecord = 1:size(logTable,1)
-        logsStruct(end+1) = struct( ...
-            'carrier', logTable.carrier{idxRecord}, ...
-            'latitude', logTable.latitude(idxRecord), ...
-            'longitude', logTable.longitude(idxRecord), ...
-            'lte_primary_rsrp', logTable.lte_primary_rsrp(idxRecord) ...
-            ); %#ok<SAGROW>
+    if ismember('lte_primary_rsrp', logTable.Properties.VariableNames)
+        % Old version of SigCap has the field lte_primary_rsrp.
+        for idxRecord = 1:size(logTable,1)
+            logsStruct(end+1) = struct( ...
+                'carrier', logTable.carrier{idxRecord}, ...
+                'latitude', logTable.latitude(idxRecord), ...
+                'longitude', logTable.longitude(idxRecord), ...
+                'lte_primary_rsrp', logTable.lte_primary_rsrp(idxRecord) ...
+                ); %#ok<SAGROW>
+        end
+    elseif ismember('primary/other*', logTable.Properties.VariableNames)
+        % New version of SigCap has, instead, the field primary/other*.
+        for idxRecord = 1:size(logTable,1)
+            if strcmpi(logTable.("primary/other*"){idxRecord}, 'primary')
+                logsStruct(end+1) = struct( ...
+                    'carrier', logTable.carrier{idxRecord}, ...
+                    'latitude', logTable.latitude(idxRecord), ...
+                    'longitude', logTable.longitude(idxRecord), ...
+                    'lte_primary_rsrp', logTable.rsrp(idxRecord) ...
+                    ); %#ok<SAGROW>
+            end
+        end
+    else
+        error('Unsupported SigCap log file!');
     end
 end
 
@@ -188,4 +224,11 @@ saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_3D.jpg'));
 view(2);
 saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.jpg'));
 saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.fig'));
+
+%% Cache Results
+
+save(fullfile(pathToSaveResults, 'cache.mat'), ...
+    'allLats', 'allLons', 'allPriRsrps', 'allCarriers', ...
+    'boolsIsAtt', 'boolsIsVer', 'boolsIsTM');
+
 % EOF
