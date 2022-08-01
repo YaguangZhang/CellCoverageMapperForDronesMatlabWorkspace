@@ -3,7 +3,7 @@
 %
 % Yaguang Zhang, Purdue, 11/29/2021
 if exist('testManPresets', 'var')
-    clearvars -except PRESET testManPresets;
+    clearvars -except PRESET testManPresets flagGenKmlOverview;
 else
     clear;
 end
@@ -27,8 +27,8 @@ prepareSimulationEnv;
 %     Results from the 2021 Longmont measurement campaign by Professor
 %     Anderson and his students. This dataset is a copy of the SigCap
 %     output files under folder "Longmont Lab_Raw".
-%       - SigCap_LongmontCampaign_20211105_Longmont
-%        - SigCap_LongmontCampaign_20211105_LongmontExt
+%       - SigCap_LongmontCampaign_20211105_Longmont and
+%       SigCap_LongmontCampaign_20211105_LongmontExt
 %         Filtered version of SigCap_LongmontCampaign_20211105 to only show
 %         results in/out of Longmont.
 %   - SigCap_LongmontCampaign_AdditionalData_20220708
@@ -40,7 +40,7 @@ prepareSimulationEnv;
 %   use that value directly. This provides a way to set PRESET to any
 %   needed value.
 if ~exist('PRESET', 'var')
-    PRESET = 'SigCap_LongmontCampaign_AdditionalData_20220708';
+    PRESET = 'SigCapCSV20210928_Anderson';
 end
 if ismember(PRESET, ...
         {'SigCap_LongmontCampaign_20211105_Longmont', ...
@@ -159,71 +159,98 @@ markerForAtt = ':r.';
 markerForVer = ':b.';
 markerForTM = ':g.';
 
-hRsrpByCar = figure; hold on;
-hMAtt = stem3(allLons(boolsIsAtt), allLats(boolsIsAtt), ...
-    -allPriRsrps(boolsIsAtt), markerForAtt);
-hMVer = stem3(allLons(boolsIsVer), allLats(boolsIsVer), ...
-    -allPriRsrps(boolsIsVer), markerForVer);
-hMTM = stem3(allLons(boolsIsTM), allLats(boolsIsTM), ...
-    -allPriRsrps(boolsIsTM), markerForTM);
-plot_google_map('MapType', 'Hybrid');
-title('Amplitude of LTE Primary RSRP by Carriers');
-zlabel('-RSRP (dBm)');
-xticklabels([]); yticklabels([]); view(3);
-legend([hMAtt, hMVer, hMTM], 'AT&T', 'Verizon', 'T-Mobile', ...
-    'Location','best');
+if any(boolsIsAtt | boolsIsVer | boolsIsTM)
+    hRsrpByCar = figure; hold on;
+    if any(boolsIsAtt)
+        hMAtt = stem3(allLons(boolsIsAtt), allLats(boolsIsAtt), ...
+            -allPriRsrps(boolsIsAtt), markerForAtt);
+    end
+    if any(boolsIsVer)
+        hMVer = stem3(allLons(boolsIsVer), allLats(boolsIsVer), ...
+            -allPriRsrps(boolsIsVer), markerForVer);
+    end
+    if any(boolsIsTM)
+        hMTM = stem3(allLons(boolsIsTM), allLats(boolsIsTM), ...
+            -allPriRsrps(boolsIsTM), markerForTM);
+    end
 
-saveas(hRsrpByCar, ...
-    fullfile(pathToSaveResults, 'primRsrpByCar_3D.jpg'));
-view(2);
-legend([hMAtt, hMVer, hMTM], 'AT&T', 'Verizon', 'T-Mobile', ...
-    'No Service', 'Location','best');
-saveas(hRsrpByCar, ...
-    fullfile(pathToSaveResults, 'primRsrpByCar_2D.jpg'));
-saveas(hRsrpByCar, ...
-    fullfile(pathToSaveResults, 'primRsrpByCar_2D.fig'));
+    plot_google_map('MapType', 'Hybrid');
+    axis manual;
 
-hRsrpAtt = figure; hold on;
-plot3k([allLons(boolsIsAtt), allLats(boolsIsAtt), ...
-    allPriRsrps(boolsIsAtt)], ...
-    'Labels', {'LTE Primary RSRP for ATT', '', '', '', ...
-    'RSRP (dBm)'}, 'ColorRange', [min(allPriRsrps), max(allPriRsrps)], ...
-    'Plottype','stem', 'Marker', {'.', 12});
-xticklabels([]); yticklabels([]); view(3);
-plot_google_map('MapType', 'Hybrid');
+    if ~any(boolsIsAtt)
+        hMAtt = stem3([], [], [], markerForAtt);
+    end
+    if ~any(boolsIsVer)
+        hMVer = stem3([], [], [], markerForVer);
+    end
+    if ~any(boolsIsTM)
+        hMTM = stem3([], [], [], markerForTM);
+    end
 
-saveas(hRsrpAtt, fullfile(pathToSaveResults, 'primRsrp_att_3D.jpg'));
-view(2);
-saveas(hRsrpAtt, fullfile(pathToSaveResults, 'primRsrp_att_2D.jpg'));
-saveas(hRsrpAtt, fullfile(pathToSaveResults, 'primRsrp_att_2D.fig'));
+    title('Amplitude of LTE Primary RSRP by Carriers');
+    zlabel('-RSRP (dBm)');
+    xticklabels([]); yticklabels([]); view(3);
+    legend([hMAtt, hMVer, hMTM], 'AT&T', 'Verizon', 'T-Mobile', ...
+        'Location','best');
 
-hRsrpVer = figure; hold on;
-plot3k([allLons(boolsIsVer), allLats(boolsIsVer), ...
-    allPriRsrps(boolsIsVer)], ...
-    'Labels', {'LTE Primary RSRP for Verizon', '', '', '', ...
-    'RSRP (dBm)'}, 'ColorRange', [min(allPriRsrps), max(allPriRsrps)], ...
-    'Plottype','stem', 'Marker', {'.', 12});
-xticklabels([]); yticklabels([]); view(3);
-plot_google_map('MapType', 'Hybrid');
+    saveas(hRsrpByCar, ...
+        fullfile(pathToSaveResults, 'primRsrpByCar_3D.jpg'));
+    view(2);
+    legend([hMAtt, hMVer, hMTM], 'AT&T', 'Verizon', 'T-Mobile', ...
+        'No Service', 'Location','best');
+    saveas(hRsrpByCar, ...
+        fullfile(pathToSaveResults, 'primRsrpByCar_2D.jpg'));
+    saveas(hRsrpByCar, ...
+        fullfile(pathToSaveResults, 'primRsrpByCar_2D.fig'));
+end
 
-saveas(hRsrpVer, fullfile(pathToSaveResults, 'primRsrp_ver_3D.jpg'));
-view(2);
-saveas(hRsrpVer, fullfile(pathToSaveResults, 'primRsrp_ver_2D.jpg'));
-saveas(hRsrpVer, fullfile(pathToSaveResults, 'primRsrp_ver_2D.fig'));
+if any(boolsIsAtt)
+    hRsrpAtt = figure; hold on;
+    plot3k([allLons(boolsIsAtt), allLats(boolsIsAtt), ...
+        allPriRsrps(boolsIsAtt)], ...
+        'Labels', {'LTE Primary RSRP for ATT', '', '', '', ...
+        'RSRP (dBm)'}, 'ColorRange', [min(allPriRsrps), max(allPriRsrps)], ...
+        'Plottype','stem', 'Marker', {'.', 12});
+    xticklabels([]); yticklabels([]); view(3);
+    plot_google_map('MapType', 'Hybrid');
 
-hRsrpTM = figure; hold on;
-plot3k([allLons(boolsIsTM), allLats(boolsIsTM), ...
-    allPriRsrps(boolsIsTM)], ...
-    'Labels', {'LTE Primary RSRP for T-Mobile', '', '', '', ...
-    'RSRP (dBm)'}, 'ColorRange', [min(allPriRsrps), max(allPriRsrps)], ...
-    'Plottype','stem', 'Marker', {'.', 12});
-xticklabels([]); yticklabels([]); view(3);
-plot_google_map('MapType', 'Hybrid');
+    saveas(hRsrpAtt, fullfile(pathToSaveResults, 'primRsrp_att_3D.jpg'));
+    view(2);
+    saveas(hRsrpAtt, fullfile(pathToSaveResults, 'primRsrp_att_2D.jpg'));
+    saveas(hRsrpAtt, fullfile(pathToSaveResults, 'primRsrp_att_2D.fig'));
+end
 
-saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_3D.jpg'));
-view(2);
-saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.jpg'));
-saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.fig'));
+if any(boolsIsVer)
+    hRsrpVer = figure; hold on;
+    plot3k([allLons(boolsIsVer), allLats(boolsIsVer), ...
+        allPriRsrps(boolsIsVer)], ...
+        'Labels', {'LTE Primary RSRP for Verizon', '', '', '', ...
+        'RSRP (dBm)'}, 'ColorRange', [min(allPriRsrps), max(allPriRsrps)], ...
+        'Plottype','stem', 'Marker', {'.', 12});
+    xticklabels([]); yticklabels([]); view(3);
+    plot_google_map('MapType', 'Hybrid');
+
+    saveas(hRsrpVer, fullfile(pathToSaveResults, 'primRsrp_ver_3D.jpg'));
+    view(2);
+    saveas(hRsrpVer, fullfile(pathToSaveResults, 'primRsrp_ver_2D.jpg'));
+    saveas(hRsrpVer, fullfile(pathToSaveResults, 'primRsrp_ver_2D.fig'));
+end
+
+if any(boolsIsTM)
+    hRsrpTM = figure; hold on;
+    plot3k([allLons(boolsIsTM), allLats(boolsIsTM), ...
+        allPriRsrps(boolsIsTM)], ...
+        'Labels', {'LTE Primary RSRP for T-Mobile', '', '', '', ...
+        'RSRP (dBm)'}, 'ColorRange', [min(allPriRsrps), max(allPriRsrps)], ...
+        'Plottype','stem', 'Marker', {'.', 12});
+    xticklabels([]); yticklabels([]); view(3);
+    plot_google_map('MapType', 'Hybrid');
+
+    saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_3D.jpg'));
+    view(2);
+    saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.jpg'));
+    saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.fig'));
+end
 
 %% Cache Results
 
