@@ -40,7 +40,7 @@ prepareSimulationEnv;
 %   use that value directly. This provides a way to set PRESET to any
 %   needed value.
 if ~exist('PRESET', 'var')
-    PRESET = 'SigCapCSV20210928_Anderson';
+    PRESET = 'SigCap_LongmontCampaign_AdditionalData_20220708';
 end
 if ismember(PRESET, ...
         {'SigCap_LongmontCampaign_20211105_Longmont', ...
@@ -80,40 +80,54 @@ end
 logsCsvs = rdir(fullfile(pathToSigCapAppResults, '**', '*.csv'));
 assert(~isempty(logsCsvs), 'Error! No CSV log files found!')
 
-logsStruct = struct('carrier', {}, ...
+logsStruct = struct('timestamp', {}, 'carrier', {}, ...
     'latitude', {}, 'longitude', {}, 'lte_primary_rsrp', {});
 numOfLogs = length(logsCsvs);
+numbersOfPtsForAllTracks = nan(numOfLogs, 1);
 for idxLog = 1:numOfLogs
     % Read logs and extract the information of interest.
     logTable = readtable(logsCsvs(idxLog).name, ...
         'VariableNamingRule', 'preserve');
+
+    % Note example timestamp: 2022-08-08T09:40:13.642-0600
+    %   This seems to be local time in ISO 8601 format.
     if ismember('lte_primary_rsrp', logTable.Properties.VariableNames)
         % Old version of SigCap has the field lte_primary_rsrp.
         for idxRecord = 1:size(logTable,1)
             logsStruct(end+1) = struct( ...
+                'timestamp', logTable.timestamp{idxRecord}, ...
                 'carrier', logTable.carrier{idxRecord}, ...
                 'latitude', logTable.latitude(idxRecord), ...
                 'longitude', logTable.longitude(idxRecord), ...
                 'lte_primary_rsrp', logTable.lte_primary_rsrp(idxRecord) ...
                 ); %#ok<SAGROW>
         end
+
+        numbersOfPtsForAllTracks(idxLog) = size(logTable.timestamp, 1);
     elseif ismember('primary/other*', logTable.Properties.VariableNames)
         % New version of SigCap has, instead, the field primary/other*.
+        curPrimeRsrpCnt = 0;
         for idxRecord = 1:size(logTable,1)
             if strcmpi(logTable.("primary/other*"){idxRecord}, 'primary')
                 logsStruct(end+1) = struct( ...
+                    'timestamp', logTable.timestamp{idxRecord}, ...
                     'carrier', logTable.carrier{idxRecord}, ...
                     'latitude', logTable.latitude(idxRecord), ...
                     'longitude', logTable.longitude(idxRecord), ...
                     'lte_primary_rsrp', logTable.rsrp(idxRecord) ...
                     ); %#ok<SAGROW>
+                curPrimeRsrpCnt = curPrimeRsrpCnt+1;
             end
         end
+
+        numbersOfPtsForAllTracks(idxLog) = curPrimeRsrpCnt;
     else
         error('Unsupported SigCap log file!');
     end
 end
 
+allTimestampsDatetimeUtc = datetime({logsStruct.timestamp}', ...
+    'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSZ', 'TimeZone', 'UTC');
 allLats = vertcat(logsStruct.latitude);
 allLons = vertcat(logsStruct.longitude);
 allPriRsrps = vertcat(logsStruct.lte_primary_rsrp);
@@ -121,15 +135,33 @@ allCarriers = {logsStruct.carrier}';
 
 % If necessary, remove results out of the area of interest.
 if exist('latLonsForAreaOfInterest', 'var')
+    allTrackLabels = nan(sum(numbersOfPtsForAllTracks), 1);
+    ptCnt = 0;
+    for idxLog = 1:numOfLogs
+        curNumOfPts = numbersOfPtsForAllTracks(idxLog);
+        curPtIndexRange = ptCnt+(1:curNumOfPts);
+        ptCnt = ptCnt + curNumOfPts;
+
+        allTrackLabels(curPtIndexRange) = idxLog;
+    end
+
     boolsToKeep = inpolygon(allLats, allLons, ...
         latLonsForAreaOfInterest(:,1), latLonsForAreaOfInterest(:,2));
     logsStruct = logsStruct(boolsToKeep);
     clearvars latLonsForAreaOfInterest;
 
+    allTimestampsDatetimeUtc = datetime({logsStruct.timestamp}', ...
+        'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSZ', 'TimeZone', 'UTC');
     allLats = vertcat(logsStruct.latitude);
     allLons = vertcat(logsStruct.longitude);
     allPriRsrps = vertcat(logsStruct.lte_primary_rsrp);
     allCarriers = {logsStruct.carrier}';
+
+    allTrackLabels(~boolsToKeep) = [];
+    for idxLog = 1:numOfLogs
+        numbersOfPtsForAllTracks(idxLog) = sum(allTrackLabels==idxLog);
+    end
+    numbersOfPtsForAllTracks(numbersOfPtsForAllTracks==0) = [];
 end
 
 %% Plots
@@ -252,9 +284,12 @@ if any(boolsIsTM)
     saveas(hRsrpTM, fullfile(pathToSaveResults, 'primRsrp_tm_2D.fig'));
 end
 
+close all;
+
 %% Cache Results
 
 save(fullfile(pathToSaveResults, 'cache.mat'), ...
+    'numbersOfPtsForAllTracks', 'allTimestampsDatetimeUtc', ...
     'allLats', 'allLons', 'allPriRsrps', 'allCarriers', ...
     'boolsIsAtt', 'boolsIsVer', 'boolsIsTM');
 
