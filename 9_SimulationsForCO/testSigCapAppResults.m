@@ -89,6 +89,13 @@ for idxLog = 1:numOfLogs
     logTable = readtable(logsCsvs(idxLog).name, ...
         'VariableNamingRule', 'preserve');
 
+    % Sort the table by device ID and time.
+    if(ismember('device_id', logTable.Properties.VariableNames))
+        logTable = sortrows(logTable, {'device_id', 'timestamp'});
+    else
+        logTable = sortrows(logTable, 'timestamp');
+    end
+
     % Note example timestamp: 2022-08-08T09:40:13.642-0600
     %   This seems to be local time in ISO 8601 format.
     if ismember('lte_primary_rsrp', logTable.Properties.VariableNames)
