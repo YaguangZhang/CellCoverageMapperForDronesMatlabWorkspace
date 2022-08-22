@@ -75,6 +75,9 @@ switch PRESET
             40.40409728561462, -104.68631223445952]);
 end
 
+% Break GPS tracks with too long time gaps into smaller ones.
+MAX_ALLOWED_TIME_GAP_IN_S = 60;
+
 %% Read All the Data
 
 logsCsvs = rdir(fullfile(pathToSigCapAppResults, '**', '*.csv'));
@@ -146,10 +149,10 @@ if exist('latLonsForAreaOfInterest', 'var')
     ptCnt = 0;
     for idxLog = 1:numOfLogs
         curNumOfPts = numbersOfPtsForAllTracks(idxLog);
-        curPtIndexRange = ptCnt+(1:curNumOfPts);
+        curPtIndices = ptCnt+(1:curNumOfPts);
         ptCnt = ptCnt + curNumOfPts;
 
-        allTrackLabels(curPtIndexRange) = idxLog;
+        allTrackLabels(curPtIndices) = idxLog;
     end
 
     boolsToKeep = inpolygon(allLats, allLons, ...
@@ -170,6 +173,55 @@ if exist('latLonsForAreaOfInterest', 'var')
     end
     numbersOfPtsForAllTracks(numbersOfPtsForAllTracks==0) = [];
 end
+
+% Break long tracks into smaller ones based on the time gaps between
+% consecutive GPS samples.
+maxAllowedTimeGapInS = MAX_ALLOWED_TIME_GAP_IN_S;
+numOfTracks = length(numbersOfPtsForAllTracks);
+
+ptCnt = 0;
+newNumbersOfPtsForAllTracks = cell(numOfTracks, 1);
+for idxT = 1:numOfTracks
+    curNumOfPts = numbersOfPtsForAllTracks(idxT);
+    curPtIndexRange = ptCnt + [1, curNumOfPts];
+    curPtIndices = curPtIndexRange(1):curPtIndexRange(2);
+    ptCnt = ptCnt + curNumOfPts;
+
+    if length(curPtIndexRange)>=2
+        curTimeGapsInS = seconds(allTimestampsDatetimeUtc( ...
+            curPtIndices(2:end)) ...
+            - allTimestampsDatetimeUtc(curPtIndices(1:(end-1))));
+        curIndicesToBreakTrack = curPtIndices(2:end);
+        curIndicesToBreakTrack = curIndicesToBreakTrack( ...
+            curTimeGapsInS>maxAllowedTimeGapInS);
+        if isempty(curIndicesToBreakTrack)
+            newNumbersOfPtsForAllTracks{idxT} = curNumOfPts;
+        else
+            curNumbersOfPtsForNewTracks = ...
+                [curIndicesToBreakTrack(1)-curPtIndexRange(1); ...
+                curPtIndexRange(end)-curIndicesToBreakTrack(end)+1];
+            if length(curIndicesToBreakTrack)>1
+                curNumbersOfPtsForNewTracks = ...
+                    [curNumbersOfPtsForNewTracks(1); ...
+                    (curIndicesToBreakTrack(2:end) ...
+                    - curIndicesToBreakTrack(1:(end-1)))';
+                    curNumbersOfPtsForNewTracks(2)];
+            end
+
+            assert(sum(curNumbersOfPtsForNewTracks) == curNumOfPts, ...
+                'Unexpected total number of points in new tracks!');
+
+            newNumbersOfPtsForAllTracks{idxT} ...
+                = curNumbersOfPtsForNewTracks;
+        end
+    end
+end
+
+newNumbersOfPtsForAllTracks = vertcat(newNumbersOfPtsForAllTracks{:});
+assert(sum(newNumbersOfPtsForAllTracks) ...
+    == sum(numbersOfPtsForAllTracks), ...
+    'Unexpected total number of points!');
+numbersOfPtsForAllTracks = newNumbersOfPtsForAllTracks;
 
 %% Plots
 
