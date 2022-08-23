@@ -42,7 +42,7 @@ if ~exist('PRESET', 'var')
     %   {'Tipp', 'ShrinkedIN'}.
     % For LoRaWAN on ACRE:
     %   {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R',
-    %    'ACRE_LORA_HALF_MILE_R'}.
+    %    'ACRE_LORA_HALF_MILE_R', 'ACRE_LORAWAN_2021'}.
     % For WHIN weather stations (ExtendedTipp as area of interest with
     % weather station locs as the grid):
     %   {'WHIN_WEATHER_STATIONS'}
@@ -61,7 +61,7 @@ if ~exist('PRESET', 'var')
     % optional fields include FLAG_EVAL_LOSS_THROUGH_VEG and
     % pathToPostProcessingResultsFolder):
     %   {'CustomSim'}
-    PRESET = 'ShrinkedIN';
+    PRESET = 'ACRE_LORAWAN_2021';
 end
 
 % Suppress selected warnings to reduce messages.
@@ -80,7 +80,7 @@ LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
 
 switch PRESET
     case {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
-            'ACRE_LORA_HALF_MILE_R'}
+            'ACRE_LORA_HALF_MILE_R', 'ACRE_LORAWAN_2021'}
         % We only have one tower for LoRaWAN on ACRE.
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
             ABS_PATH_TO_SHARED_FOLDER, ...
@@ -176,6 +176,13 @@ switch PRESET
             = constructUtmRectanglePolyMat(...
             [40.467907, -87.001530; ...
             40.482402, -86.982589]);
+    case 'ACRE_LORAWAN_2021'
+        % Based on the RX locations stored in
+        % AcreRxInfo/2021/oyster_data_for_sim.csv.
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = constructUtmRectanglePolyMat(...
+            [40.33261869, -87.2002767; ...
+            40.5264963, -86.9038917]);
     case {'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'}
         % Use a square area that covers the whole WHIN region.
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
@@ -432,11 +439,11 @@ disp(' ')
 if strcmpi(PRESET, 'CustomSim')
     disp(['    [', datestr(now, datetimeFormat), ...
         '] Configuring the simulation for PRESET ', PRESET, ...
-        ' (', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
+        ' (idxSim = ', num2str(idxSim), ')...'])
 else
     disp(['    [', datestr(now, datetimeFormat), ...
         '] Configuring the simulation for PRESET ', PRESET, ...
-        ' (idxSim = ', num2str(idxSim), ')...'])
+        ' (', num2str(simConfigs.CARRIER_FREQUENCY_IN_MHZ), ' MHz)...'])
 end
 
 % Save simConfigs if it is not yet done.
