@@ -21,14 +21,14 @@ disp(['[', datestr(now, datetimeFormat), ...
     '] Initializing ...'])
 
 % Predefined simulation group label.
-%   - 'acreLoRaWan2021'
+%   - 'AcreLoRaWan2021'
 %     The ACRE LoRaWAN results collected in 2021: one tower gateway +
 %     multiple vechiles. Based on ThingsBoard records.
-%   - 'acreLoRaWan2021AgIT'
+%   - 'AcreLoRaWan2021AgIT'
 %     Same as 'acreLoRaWan2021', except that the data source is Purdue Ag
 %     IT, which powers ThingsBoard and is in fact more complete (with less
 %     missing points).
-SIM_GROUP_PRESET = 'acreLoRaWan2021AgIT';
+SIM_GROUP_PRESET = 'AcreLoRaWan2021AgIT';
 
 pathToPostProcessingResultsFolder ...
     = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
