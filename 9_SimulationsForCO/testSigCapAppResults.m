@@ -40,7 +40,7 @@ prepareSimulationEnv;
 %   use that value directly. This provides a way to set PRESET to any
 %   needed value.
 if ~exist('PRESET', 'var')
-    PRESET = 'SigCap_LongmontCampaign_AdditionalData_20220708';
+    PRESET = 'SigCap_LongmontCampaign_20211105_LongmontExt';
 end
 if ismember(PRESET, ...
         {'SigCap_LongmontCampaign_20211105_Longmont', ...
@@ -75,8 +75,13 @@ switch PRESET
             40.40409728561462, -104.68631223445952]);
 end
 
-% Break GPS tracks with too long time gaps into smaller ones.
+% Break GPS tracks with too long time gaps into smaller ones. This is
+% needed to avoid connecting different GPS tracks in the overview .kml
+% file.
 MAX_ALLOWED_TIME_GAP_IN_S = 60;
+% TODO: this is not yet necessary.
+%   A car can move about 402.3 m in half a minute at 30 mph (13.41 m/s).
+% maxDistGapAllowedInOneSegInM = 500;
 
 %% Read All the Data
 
@@ -193,7 +198,7 @@ for idxT = 1:numOfTracks
             - allTimestampsDatetimeUtc(curPtIndices(1:(end-1))));
         curIndicesToBreakTrack = curPtIndices(2:end);
         curIndicesToBreakTrack = curIndicesToBreakTrack( ...
-            curTimeGapsInS>maxAllowedTimeGapInS);
+            abs(curTimeGapsInS)>maxAllowedTimeGapInS);
         if isempty(curIndicesToBreakTrack)
             newNumbersOfPtsForAllTracks{idxT} = curNumOfPts;
         else
@@ -350,6 +355,6 @@ close all;
 save(fullfile(pathToSaveResults, 'cache.mat'), ...
     'numbersOfPtsForAllTracks', 'allTimestampsDatetimeUtc', ...
     'allLats', 'allLons', 'allPriRsrps', 'allCarriers', ...
-    'boolsIsAtt', 'boolsIsVer', 'boolsIsTM');
+    'boolsIsAtt', 'boolsIsVer', 'boolsIsTM', 'MAX_ALLOWED_TIME_GAP_IN_S');
 
 % EOF
