@@ -351,11 +351,12 @@ curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
 saveas(gcf, [curPathToSaveFig, '.fig']);
 saveas(gcf, [curPathToSaveFig, '.jpg']);
 
-curHFig = figure;
-hSca = scatter([dist_2d_m, accumulate_blockage_dist_m], ...
+curPointAlpha = 0.1;
+figure;
+hSca = scatter(dist_2d_m, accumulate_blockage_dist_m, ...
     'MarkerFaceColor','b','MarkerEdgeColor','b');
-alpha(hSca, 0.1);
-set(curHFig, 'xscale', 'log', 'yscale', 'log');
+alpha(hSca, curPointAlpha);
+set(gca, 'XScale', 'log', 'YScale', 'log');
 title('Accumulate LoS Blockage Distance Over 2D Distance');
 xlabel('2D distance (m)');
 ylabel('Accumulate LoS blockage distance (m)');
@@ -365,11 +366,11 @@ curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
 saveas(gcf, [curPathToSaveFig, '.fig']);
 saveas(gcf, [curPathToSaveFig, '.jpg']);
 
-curHFig = figure;
-hSca = scatter([dist_3d_m, accumulate_blockage_dist_m], ...
+figure;
+hSca = scatter(dist_3d_m, accumulate_blockage_dist_m, ...
     'MarkerFaceColor','b','MarkerEdgeColor','b');
-alpha(hSca, 0.1);
-set(curHFig, 'xscale', 'log', 'yscale', 'log');
+alpha(hSca, curPointAlpha);
+set(gca, 'XScale', 'log', 'YScale', 'log');
 title('Accumulate LoS Blockage Distance Over 3D Distance');
 xlabel('3D distance (m)');
 ylabel('Accumulate LoS blockage distance (m)');
