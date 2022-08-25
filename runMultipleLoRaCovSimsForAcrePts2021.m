@@ -362,6 +362,7 @@ set(gca, 'XScale', 'log', 'YScale', 'log');
 title('Accumulate LoS Blockage Distance Over 2D Distance');
 xlabel('2D distance (m)');
 ylabel('Accumulate LoS blockage distance (m)');
+grid on;
 
 curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
     'Overview_LoSBlockageDistOver2DDist');
@@ -376,6 +377,7 @@ set(gca, 'XScale', 'log', 'YScale', 'log');
 title('Accumulate LoS Blockage Distance Over 3D Distance');
 xlabel('3D distance (m)');
 ylabel('Accumulate LoS blockage distance (m)');
+grid on;
 
 curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
     'Overview_LoSBlockageDistOver3DDist');
