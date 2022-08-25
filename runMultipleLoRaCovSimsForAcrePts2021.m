@@ -110,6 +110,8 @@ switch lower(SIM_GROUP_PRESET)
 end
 
 rxGidLonLatHInMs = readmatrix(ABS_PATH_TO_RX_LOCS);
+% Make sure the records loaded from the RX loc file are sorted by heights.
+rxGidLonLatHInMs = sortrows(rxGidLonLatHInMs, 4);
 
 rxHInMsUnique = unique(rxGidLonLatHInMs(:,4));
 numOfSims = length(rxHInMsUnique);
