@@ -378,7 +378,7 @@ xlabel('3D distance (m)');
 ylabel('Accumulate LoS blockage distance (m)');
 
 curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
-    'Overview_LoSBlockageDistOver2DDist');
+    'Overview_LoSBlockageDistOver3DDist');
 saveas(gcf, [curPathToSaveFig, '.fig']);
 saveas(gcf, [curPathToSaveFig, '.jpg']);
 disp(['[', datestr(now, datetimeFormat), ...
