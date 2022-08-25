@@ -32,6 +32,27 @@ for curIdxH = 1
             curPathToSaveCsv);
     end
 end
+
+% More records for ACRE LoRaWAN simulations: lon, lat, install_height_m,
+% ehata_path_loss_db, accumulate_blockage_dist_m.
+for curIdxH = 1:length(rxAntHs)
+    rxAntH = rxAntHs(curIdxH);
+    curPathToSaveCsv = fullfile(folderToSaveCsvs, ...
+        ['latLonHPathLossBlockDist_RxHeight_', num2str(rxAntH), '.csv']);
+
+    if ~exist(curPathToSaveCsv, 'file')
+        lat = simState.mapGridLatLonPts(:,1);
+        lon = simState.mapGridLatLonPts(:,2);
+        install_height_m = ones(size(lat)).*rxAntH;
+        ehata_path_loss_db = simState.coverageMaps{curIdxH};
+        accumulate_blockage_dist_m = simState.blockageDistMaps{curIdxH};
+        
+        writetable(table(lon, lat, install_height_m, ...
+            ehata_path_loss_db, accumulate_blockage_dist_m), ...
+            curPathToSaveCsv);
+    end
+end
+
 flagSuccess = true;
 
 disp('    Done!')
