@@ -34,13 +34,18 @@ prepareSimulationEnv;
 %   - SigCap_LongmontCampaign_AdditionalData_20220708
 %     Extra results from the 2022 Longmont measurement campaign by
 %     Professor Anderson.
+%   - SigCap_LongmontCampaign_AdditionalData_20220812
+%     Extra results from the 2022 Longmont measurement campaign by
+%     Professor Anderson. Another folder:
+%       SigCap_LongmontCampaign_AdditionalData_20220812_Raw
+%     contains the raw logs from SigCap.
 %
 % Note:
 %   If the variable PRESET is already defined out of this script, we will
 %   use that value directly. This provides a way to set PRESET to any
 %   needed value.
 if ~exist('PRESET', 'var')
-    PRESET = 'SigCap_LongmontCampaign_20211105_LongmontExt';
+    PRESET = 'SigCap_LongmontCampaign_AdditionalData_20220812';
 end
 if ismember(PRESET, ...
         {'SigCap_LongmontCampaign_20211105_Longmont', ...
@@ -78,7 +83,7 @@ end
 % Break GPS tracks with too long time gaps into smaller ones. This is
 % needed to avoid connecting different GPS tracks in the overview .kml
 % file.
-MAX_ALLOWED_TIME_GAP_IN_S = 60;
+MAX_ALLOWED_TIME_GAP_IN_S = 300;
 % TODO: this is not yet necessary.
 %   A car can move about 402.3 m in half a minute at 30 mph (13.41 m/s).
 % maxDistGapAllowedInOneSegInM = 500;
