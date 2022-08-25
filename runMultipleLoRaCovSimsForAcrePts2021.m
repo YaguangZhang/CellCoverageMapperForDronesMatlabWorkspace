@@ -273,14 +273,14 @@ towerUtmXYH = simState.CellAntsXyhEffective(1,:);
 
 dist_2d_squared = (utm_x - towerUtmXYH(1)).^2 ...
     + (utm_y - towerUtmXYH(2)).^2;
-dist_2d = sqrt(dist_2d_squared);
-dist_3d = sqrt(dist_2d_squared + (install_height_m - towerUtmXYH(3)).^2);
+dist_2d_m = sqrt(dist_2d_squared);
+dist_3d_m = sqrt(dist_2d_squared + (install_height_m - towerUtmXYH(3)).^2);
 
 simResultsTable = table(gid, lon, lat, install_height_m, ...
     ehata_path_loss_db, accumulate_blockage_dist_m, ...
     accumulate_blockage_dist_m_terrain, ...
     accumulate_blockage_dist_m_vegetation, ...
-    utm_x, utm_y, utm_zone, dist_2d, ele_usgs_m, dist_3d);
+    utm_x, utm_y, utm_zone, dist_2d_m, ele_usgs_m, dist_3d_m);
 
 writetable(simResultsTable, ...
     fullfile(pathToPostProcessingResultsFolder, ...
@@ -344,6 +344,33 @@ curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
 saveas(gcf, [curPathToSaveFig, '.fig']);
 saveas(gcf, [curPathToSaveFig, '.jpg']);
 
+curHFig = figure;
+hSca = scatter([dist_2d_m, accumulate_blockage_dist_m], ...
+    'MarkerFaceColor','b','MarkerEdgeColor','b');
+alpha(hSca, 0.1);
+set(curHFig, 'xscale', 'log', 'yscale', 'log');
+title('Accumulate LoS Blockage Distance Over 2D Distance');
+xlabel('2D distance (m)');
+ylabel('Accumulate LoS blockage distance (m)');
+
+curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
+    'Overview_LoSBlockageDistOver2DDist');
+saveas(gcf, [curPathToSaveFig, '.fig']);
+saveas(gcf, [curPathToSaveFig, '.jpg']);
+
+curHFig = figure;
+hSca = scatter([dist_3d_m, accumulate_blockage_dist_m], ...
+    'MarkerFaceColor','b','MarkerEdgeColor','b');
+alpha(hSca, 0.1);
+set(curHFig, 'xscale', 'log', 'yscale', 'log');
+title('Accumulate LoS Blockage Distance Over 3D Distance');
+xlabel('3D distance (m)');
+ylabel('Accumulate LoS blockage distance (m)');
+
+curPathToSaveFig = fullfile(pathToPostProcessingResultsFolder, ...
+    'Overview_LoSBlockageDistOver2DDist');
+saveas(gcf, [curPathToSaveFig, '.fig']);
+saveas(gcf, [curPathToSaveFig, '.jpg']);
 disp(['[', datestr(now, datetimeFormat), ...
     '] Done!'])
 
