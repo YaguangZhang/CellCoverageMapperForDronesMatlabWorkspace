@@ -858,6 +858,10 @@ end
 CoverageRatio = curCovRatios;
 UavHeight = simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
 
+if isrow(UavHeight)
+    UavHeight = UavHeight';
+end
+
 curCovRatioTable = table(UavHeight, CoverageRatio);
 disp(curCovRatioTable);
 
