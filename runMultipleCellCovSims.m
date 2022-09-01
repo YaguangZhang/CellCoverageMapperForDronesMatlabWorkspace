@@ -27,6 +27,9 @@ diary(pathToSaveSimManDiary);
 % Shortcuts for predefined simulation groups.
 %   - 'cellularCov'
 %     Large-scale cellular coverage simulations.
+%   - 'cellularCovExt'
+%     Extensive large-scale cellular coverage simulations covering
+%     different carrier frequencies with different channel models.
 %   - 'whinLoRaWan'
 %     The WHIN LoRaWAN + WHIN weather stations.
 %   - 'acreLoRaWan'
@@ -34,24 +37,37 @@ diary(pathToSaveSimManDiary);
 %   - 'acreLoRaTrailer
 %     The ACRE LoRa gateways installed on the mobile trailer, simulated (1)
 %     individually and (2) together.
-SIM_GROUP_PRESET = 'cellularCov';
+SIM_GROUP_PRESET = 'cellularCovExt';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
         % Presets of interest.
         PRESETS = {'Tipp', 'ShrinkedWHIN', 'ShrinkedIN'};
 
-        % Carrier frequencies.
+        % Carrier frequency:
         %	- 1900 MHz
         %     For cellular 4G LTE
+        CARRIER_FREQUENCIES_IN_MHZ = {1900};
+    case 'cellularCovExt'
+        % Presets of interest.
+        PRESETS = {'Tipp', 'ShrinkedWHIN', 'ShrinkedIN'};
+
+        % Carrier frequencies.
+        %	- 1900 MHz
+        %     For cellular 4G LTE.
         %   - C-Band: 3700 MHz (band n77) and 4700 MHz (band n79)
-        %     For cellular 5G sub 6G
+        %     For cellular 5G sub 6G.
         %   - 7000 MHz (7 GHz) and 13000 MHz (13GHz)
         %     For broadband wireless backhaul.
+        %   - 20000 MHz (20 GHz)
+        %     Max frequency supported by ITM.
         %   - mmWave 28000 MHz (28 GHz)
-        %     For cellular 5G millimeter wave
+        %     For cellular 5G millimeter wave.
         CARRIER_FREQUENCIES_IN_MHZ ...
-            = {1900}; % {1900, 3700, 4700, 7000, 13000, 28000};
+            = {1900, 3700, 4700, 7000, 13000, 20000, 28000};
+
+        % Enable vegetation blockage evaluation.
+        simConfigFieldsToOverride.FLAG_EVAL_LOSS_THROUGH_VEG = true;
     case 'whinLoRaWan'
         PRESETS = {'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'};
         CARRIER_FREQUENCIES_IN_MHZ = {915};

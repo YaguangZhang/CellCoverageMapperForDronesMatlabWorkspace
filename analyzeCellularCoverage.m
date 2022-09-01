@@ -22,7 +22,8 @@
 clearvars -except PRESETS CARRIER_FREQUENCIES_IN_MHZ ...
     PRESET CARRIER_FREQUENCY_IN_MHZ ...
     pathToSaveSimManDiary idxFre idxT ...
-    CustomSimMetas idxSim CustomSimMeta pathToSaveCustomSimMetas;
+    CustomSimMetas idxSim CustomSimMeta pathToSaveCustomSimMetas ...
+    simConfigFieldsToOverride;
 clc; close all; dbstop if error;
 
 % Locate the Matlab workspace and save the current filename.
@@ -119,6 +120,14 @@ PEDESTRIAN_HEIGHT_IN_M = 1.5;
 % We will organize all the necessary configurations into a structure called
 % simConfigs.
 %   - A string label to identify this simulation.
+% Note that if simConfigFieldsToOverride is defined, the fields in it will
+% override the corresponding ones in simConfigs. However, one needs to make
+% sure the overridden fields do not affect/depend on other simConfigs
+% fields. Otherwise, the simulation may be configured inconsistently.
+
+% ------------------------------------
+%  Start of Simulation Configurations
+% ------------------------------------
 simConfigs.CURRENT_SIMULATION_TAG = PRESET;
 
 %   - The zone label to use in the UTM (x, y) system.
@@ -407,6 +416,45 @@ simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB = [0, 150];
 %   publication. If this is set to be true, figures will be generated with
 %   a smaller size for papers.
 simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
+
+% Enable ITM point-to-point path loss evaluation. If the field
+% itmParameters is not define, the simulator will skip the ITM computation.
+%
+% Default values:
+%   climate                  5            [Continental Temperate]
+%    N_0                     301.00       (N-Units) pol
+%    1            [Vertical]
+%   epsilon                  15           [Average Ground]
+%    sigma                   0.005        [Average Ground]
+%   mdvar                    2            [Mobile Mode]
+%    time                    95
+%   location                 95
+%    situation               95
+% Other parameters needed for the NTIA point-to-point ITM function includ:
+% h_tx__meter, h_rx__meter, f__mhz, and terrian profile pfl.
+simConfigs.itmParameters = struct( ...
+    'climate', 5, 'N_0', 301.00, 'pol', 1, ...
+    'epsilon', 15, 'sigma', 0.005, ...
+    'mdvar', 2, ...
+    'time', 95, 'location', 95, 'situation', 95);
+% Set this to be 'DEM' to use bare-earth ground elevation data, or 'DSM' to
+% use LiDAR z data, in the terrain profile generation for the ITM model.
+simConfigs.itmParameters.terrainProfileSource = 'DEM';
+%   TODO: 'DSM' for Colorado campus case.
+
+% Override simConfigs fields defined in simConfigFieldsToOverride.
+if exist('simConfigFieldsToOverride', 'var')
+    fieldsToOverride = fieldnames(simConfigFieldsToOverride);
+    numOfFieldsToOverride = length(fieldsToOverride);
+    for idxFToOverride = 1:numOfFieldsToOverride
+        curFieldName = fieldsToOverride{idxFToOverride};
+        simConfigs.(curFieldName) ...
+            = simConfigFieldsToOverride.(curFieldName);
+    end
+end
+% ----------------------------------
+%  End of Simulation Configurations
+% ----------------------------------
 
 % The absolute path to the folder for saving the results.
 simResultsFolderName = ['Simulation_', PRESET, ...
