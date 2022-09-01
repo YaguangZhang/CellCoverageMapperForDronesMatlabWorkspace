@@ -46,11 +46,31 @@ for curIdxH = 1:length(rxAntHs)
         install_height_m = ones(size(lat)).*rxAntH;
         ehata_path_loss_db = simState.coverageMaps{curIdxH};
         accumulate_blockage_dist_m = simState.blockageDistMaps{curIdxH};
-        
-        writetable(table(lon, lat, install_height_m, ...
-            ehata_path_loss_db, accumulate_blockage_dist_m), ...
-            curPathToSaveCsv);
+
+        if isfield(simState, 'coverageMapsItm')
+            itm_path_loss_db = simState.coverageMapsItm{curIdxH};
+
+            writetable(table(lon, lat, install_height_m, ...
+                ehata_path_loss_db, itm_path_loss_db, ...
+                accumulate_blockage_dist_m), ...
+                curPathToSaveCsv);
+        else
+            writetable(table(lon, lat, install_height_m, ...
+                ehata_path_loss_db, accumulate_blockage_dist_m), ...
+                curPathToSaveCsv);
+        end
     end
+end
+
+% Export the geo info for the grid if that is available.
+if isfield(simState, 'mapGridGroundEleInM')
+    curPathToSaveCsv = fullfile(folderToSaveCsvs, ...
+        'mapGridGeoInfo.csv');
+
+    ele_usgs_m = simState.mapGridGroundEleInM;
+    lidar_z_m = simState.mapGridLiarZInM;
+
+    writetable(table(lon, lat, ele_usgs_m, lidar_z_m), curPathToSaveCsv);
 end
 
 flagSuccess = true;

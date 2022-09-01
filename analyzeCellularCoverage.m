@@ -62,7 +62,9 @@ if ~exist('PRESET', 'var')
     % optional fields include FLAG_EVAL_LOSS_THROUGH_VEG and
     % pathToPostProcessingResultsFolder):
     %   {'CustomSim'}
-    PRESET = 'ACRE_LORA_20KM_R';
+    % For University of Colorado Boulder campus simulation.
+    %   {'UniOfCoBoulderCampus'}
+    PRESET = 'UniOfCoBoulderCampus';
 end
 
 % Suppress selected warnings to reduce messages.
@@ -101,6 +103,10 @@ switch PRESET
     case {'CustomSim'}
         ABS_PATH_TO_CELL_ANTENNAS_CSV ...
             = CustomSimMeta.ABS_PATH_TO_CELL_ANTENNAS_CSV;
+    case {'UniOfCoBoulderCampus'}
+        ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
+            ABS_PATH_TO_SHARED_FOLDER, ...
+            'CellTowerInfo', 'UniOfCoBoulderTower.csv');
     otherwise
         % Default to the NTIA+HIFLD cell tower locations.
         ABS_PATH_TO_CELL_ANTENNAS_CSV = fullfile( ...
@@ -422,14 +428,14 @@ simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 %
 % Default values:
 %   climate                  5            [Continental Temperate]
-%    N_0                     301.00       (N-Units) pol
-%    1            [Vertical]
-%   epsilon                  15           [Average Ground]
-%    sigma                   0.005        [Average Ground]
-%   mdvar                    2            [Mobile Mode]
-%    time                    95
-%   location                 95
-%    situation               95
+%    N_0                     301.00       (N-Units)
+%   pol                      1            [Vertical]
+%    epsilon                 15           [Average Ground]
+%   sigma                    0.005        [Average Ground]
+%    mdvar                   2            [Mobile Mode]
+%   time                     95
+%    location                95
+%   situation                95
 % Other parameters needed for the NTIA point-to-point ITM function includ:
 % h_tx__meter, h_rx__meter, f__mhz, and terrian profile pfl.
 simConfigs.itmParameters = struct( ...
@@ -615,17 +621,59 @@ disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 
 % Plot results.
 if ~isunix % Adoid generating plots on the headless Linux clusters.
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Generating plots ...'])
+
     plotSimulationResults(pathToSaveResults, simState, simConfigs);
+
+    if strcmpi(PRESET, 'WHIN_WEATHER_STATIONS')
+        addpath('10_NetworkPlanner');
+        genExtraPlotsForWhinWeatherStations;
+    end
+    disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 end
 
-if strcmpi(PRESET, 'WHIN_WEATHER_STATIONS')
-    addpath('10_NetworkPlanner');
-    genExtraPlotsForWhinWeatherStations;
-end
+% For easier cooperation,  export into .csv files the raw data of path loss
+% maps for selected scenarios, e.g., ACRE LoRaWAN.
+if startsWith(PRESET, {'ACRE_LORA_', 'UniOfCoBoulderCampus'})
+    disp(' ')
+    disp(['    [', datestr(now, datetimeFormat), ...
+        '] Exporting results to .csv files ...'])
 
-% Export the raw data for the path loss with veg map for ACRE LoRaWAN.
-if startsWith(PRESET, 'ACRE_LORA_')
+    % Extra information on the LiDAR data set.
+    %   - Overall boundries for the area covered by the LiDAR data set in
+    %   UTM.
+    % lidarFilesXYCoveragePolyshape ...
+    %     = mergePolygonsForAreaOfInterest(lidarFileXYCoveragePolyshapes,
+    %     1);
+    %   - Centroids for the LiDAR files in UTM.
+    lidarFileXYCentroids ...
+        = extractCentroidsFrom2DPolyCell(lidarFileXYCoveragePolyshapes);
+    %   - The .mat copies for the LiDAR data. For the 2019 dataset, they
+    %   are stored in a cache folder.
+    lidarMatFileAbsDirs = lidarFileAbsDirs;
+    for idxMatF = 1:length(lidarMatFileAbsDirs)
+        [lidarMatFPath, lidarMatFName, ~] ...
+            = fileparts(lidarMatFileAbsDirs{idxMatF});
+        lidarMatFileAbsDirs{idxMatF} = fullfile(lidarMatFPath, '..', ...
+            'MatlabCache', [lidarMatFName, '.mat']);
+    end
+
+    % Also, append the terrain elevation and LiDAR z values for the grid.
+    [ele_usgs_m, lidar_z_m] = generateProfileSamps( ...
+        simState.mapGridXYPts, utm2deg_speZone, ...
+        lidarFileXYCentroids, lidarFileXYCoveragePolyshapes, ...
+        lidarMatFileAbsDirs, 'both');
+    simState.mapGridGroundEleInM = ele_usgs_m;
+    simState.mapGridLiarZInM = lidar_z_m;
+    
+    % Update the cached simState.
+    save(pathToSaveSimResults, 'simState', '-v7.3');
+
     exportMaps(pathToSaveResults, simConfigs, simState);
+
+    disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 end
 
 % Close the parallel pool if necessary.
