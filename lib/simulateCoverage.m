@@ -1,7 +1,7 @@
 function [ simState ] ...
     = simulateCoverage(pathToSaveResults, ...
-    lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
-    cellAntsXYH, simConfigs)
+    dirToLidarFiles, lidarFileAbsDirs, ...
+    lidarFileXYCoveragePolyshapes, cellAntsXYH, simConfigs)
 %SIMULATECOVERAGE Generate coverage and blockage maps via channel
 %simulations.
 %
@@ -22,6 +22,9 @@ function [ simState ] ...
 % Inputs:
 %   - pathToSaveResults
 %     The absolute directory to save resulting .mat files and plots.
+%   - dirToLidarFiles
+%     The directory to the LiDAR files. This should be the same directory
+%     fed into the preprocessLidarDataSet function.  
 %   - lidarFileAbsDirs, lidarFileXYCoveragePolyshapes
 %     The outputs of the function preprocessIndianaLidarDataSet, which are
 %     two cell arrays holding the absolute directories to all the LiDAR
@@ -179,10 +182,12 @@ lidarFileXYCentroids ...
 %   stored in a cache folder.
 lidarMatFileAbsDirs = lidarFileAbsDirs;
 for idxMatF = 1:length(lidarMatFileAbsDirs)
-    [lidarMatFPath, lidarMatFName, ~] ...
+    [~, lidarMatFName, ~] ...
         = fileparts(lidarMatFileAbsDirs{idxMatF});
-    lidarMatFileAbsDirs{idxMatF} = fullfile(lidarMatFPath, '..', ...
+    lidarMatFileAbsDirs{idxMatF} = fullfile(dirToLidarFiles, ...
         'MatlabCache', [lidarMatFName, '.mat']);
+
+    assert(exist(lidarMatFileAbsDirs{idxMatF}, 'file'));
 end
 
 % We have not yet worked with any area of interest with multiple regions.

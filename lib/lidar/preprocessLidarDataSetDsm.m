@@ -88,6 +88,21 @@ else
     tifFileHandles = rdir(fullfile( ...
         ABS_PATH_TO_LOAD_LIDAR, '**', '*.tif'), ...
         '', ABS_PATH_TO_LOAD_LIDAR);
+    % Try other LiDAR tile format if .tif does not work.
+    lidarTileFormatsToScan = {'tif', 'tiff'};
+    for idxTileFormat = 1:length(lidarTileFormatsToScan)
+        lidarTileExt = lidarTileFormatsToScan{idxTileFormat};
+        tifFileHandles = rdir(fullfile( ...
+        ABS_PATH_TO_LOAD_LIDAR, '**', ['*.', lidarTileExt]), ...
+        '', ABS_PATH_TO_LOAD_LIDAR);
+
+        if ~isempty(tifFileHandles)
+            break;
+        end
+    end
+
+    assert(~isempty(tifFileHandles), 'No supported LiDAR tiles found!')
+
     % Randomize the file list to balance the work load for each parfor
     % chunk. This can be done because when ordered by name, files close to
     % each other tend to require similar amount of resource such as RAM and

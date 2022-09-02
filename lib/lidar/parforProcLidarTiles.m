@@ -21,8 +21,8 @@ disp(['    Current curNumOfWorkersToUse = ', ...
 disp(fileNameHintRuler)
 
 % For debugging:
-%   for idxPar = chunkStart:chunkEnd
-parfor (idxPar = chunkStart:chunkEnd, curNumOfWorkersToUse)
+for idxPar = chunkStart:chunkEnd
+%   parfor (idxPar = chunkStart:chunkEnd, curNumOfWorkersToUse)
     tic;
 
     idxF = indicesFilesToProcess(idxPar);
@@ -71,7 +71,7 @@ parfor (idxPar = chunkStart:chunkEnd, curNumOfWorkersToUse)
             curLidarFileAbsDir = fullfile( ...
                 ABS_PATH_TO_LOAD_LIDAR, ...
                 curLidarFileParentRelDir, ...
-                [curLidarFileName, '.tif']);
+                [curLidarFileName, '.', lidarTileExt]);
             [lidarDataImg, spatialRef] ...
                 = readgeoraster(curLidarFileAbsDir);
             lidarDataImg(abs( ...

@@ -79,7 +79,11 @@ warning('off', 'export_fig:transparency');
 % Set this to "IN_DSM_2019"/"IN_DSM_2019_DEMO" for the complete/a demo data
 % set. Please refer to the Preprocessing LiDAR Data section for a complete
 % list of supported LiDAR data sets.
-LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
+if any(strcmpi({'UniOfCoBoulderCampus'}, PRESET))
+    LIDAR_DATA_SET_TO_USE = 'CO_DRCOG_2020'; 
+else
+    LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
+end
 
 switch PRESET
     case {'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
@@ -137,7 +141,11 @@ PEDESTRIAN_HEIGHT_IN_M = 1.5;
 simConfigs.CURRENT_SIMULATION_TAG = PRESET;
 
 %   - The zone label to use in the UTM (x, y) system.
-simConfigs.UTM_ZONE = '16 T';
+if any(strcmpi({'UniOfCoBoulderCampus'}, PRESET))
+    simConfigs.UTM_ZONE = '13 T';
+else
+    simConfigs.UTM_ZONE = '16 T';
+end
 
 % For GPS and UTM conversions.
 [deg2utm_speZone, utm2deg_speZone] ...
@@ -149,7 +157,8 @@ if any(strcmpi({'ACRE_LORA_5MILE_R', 'ACRE_LORA_1MILE_R', ...
         'ACRE_LORA_HALF_MILE_R', 'ACRE_LORA_20KM_R', ...
         'ACRE_LORAWAN_2021', ...
         'ACRE_LORA_TRAILER', 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY', ...
-        'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'}, PRESET))
+        'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN', ...
+        'UniOfCoBoulderCampus'}, PRESET))
     simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = true;
 else
     simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG = false;
@@ -247,6 +256,11 @@ switch PRESET
     case {'CustomSim'}
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = CustomSimMeta.UTM_X_Y_BOUNDARY_OF_INTEREST;
+    case {'UniOfCoBoulderCampus'}
+        simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
+            = constructUtmRectanglePolyMat(...
+            [39.9986, -105.2801; ...
+            40.0138, -105.2532], deg2utm_speZone);
     otherwise
         error(['Unsupported preset "', PRESET, '"!'])
 end
@@ -550,6 +564,9 @@ switch simConfigs.LIDAR_DATA_SET_TO_USE
     case 'IN_DSM_2019'
         dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'Lidar_2019', 'IN', 'DSM');
+    case 'CO_DRCOG_2020'
+        dirToLidarFiles = fullfile(ABS_PATH_TO_SHARED_FOLDER, 'Lidar', ...
+            'CO', 'USGS_CO DRCOG 1 2020', 'TilesTif');
     otherwise
         error(['Unkown LiDAR data set ', ...
             simConfigs.LIDAR_DATA_SET_TO_USE, '!'])
@@ -613,8 +630,8 @@ if exist(pathToSaveSimResults, 'file')
 else
     % Computing coverage and blockage maps.
     simState = simulateCoverage(pathToSaveResults, ...
-        lidarFileAbsDirs, lidarFileXYCoveragePolyshapes, ...
-        cellAntsXYH, simConfigs);
+        dirToLidarFiles, lidarFileAbsDirs, ...
+        lidarFileXYCoveragePolyshapes, cellAntsXYH, simConfigs);
     save(pathToSaveSimResults, 'simState', '-v7.3');
 end
 disp(['    [', datestr(now, datetimeFormat), '] Done!'])
