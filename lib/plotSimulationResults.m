@@ -166,6 +166,35 @@ for idxWorker = 1:numOfWorkers
             close(hCurPLMap);
         end
 
+        if isfield(simConfigs, 'itmParameters')
+            % Coverage map for path loss predictions from the ITM model.
+            [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
+                = fetchPathlossResultsFromSimState(simState, ...
+                idxEffeCell, idxH, 'CoverageItm', simConfigs, locType);
+            pathToSaveCovFig = fullfile(dirToSaveMapsForSingleCellTowers, ...
+                ['CellTowerPathLoss_Type_', 'CoverageItm', ...
+                '_RxHeight_', num2str(rxAntH), ...
+                '_EffeCellId_', num2str(idxEffeCell), '.png']);
+            if ~exist(pathToSaveCovFig, 'file')
+                try
+                    [ hCurPLMap ] ...
+                        = plotPathLossMap(matRxLonLatWithPathloss, ...
+                        cellAntLonLat, simConfigs, ~curFlagGenFigsSilently);
+                catch
+                    if isvalid(hCurPLMap)
+                        close(hCurPLMap);
+                    end
+                    [ hCurPLMap ] ...
+                        = plotPathLossMap(matRxLonLatWithPathloss, ...
+                        cellAntLonLat, simConfigs, ~curFlagGenFigsSilently, ...
+                        false, 'plot3k');
+                end
+
+                saveas(hCurPLMap,  pathToSaveCovFig);
+                close(hCurPLMap);
+            end
+        end
+
         if simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG
             % Coverage path loss map considering vegetation.
             [matRxLonLatWithPathloss, rxAntH, cellAntLonLat, ~] ...
@@ -654,6 +683,35 @@ for idxH = 1:numOfRxHeightToInspect
 
         close(hCurPLMap);
     end
+
+    if isfield(simConfigs, 'itmParameters')
+        %------ 7 ------
+        % For coverage path loss maps for the ITM model.
+        %---------------
+        curFlagZoomIn = true;
+
+        [ hCurPLMap ] ...
+            = plotPathLossMap( ...
+            [mapGridLonLats, simState.coverageItmMaps{idxH}], ...
+            effeCellAntLonLats, simConfigs, ~curFlagGenFigsSilently, ...
+            curFlagZoomIn, defaultCmdToPlotPLMaps, customFigSize);
+        hLeg = findobj(gcf, 'Type', 'Legend');
+        switch lower(simConfigs.CURRENT_SIMULATION_TAG)
+            case 'extendedtipp'
+                set(hLeg, 'Position', [0.1075, 0.8640, 0.3745, 0.0590]);
+            case 'tipp'
+                set(hLeg, 'Position', [0.4053, 0.1144, 0.3389, 0.0629]);
+            case 'shrinkedin'
+                set(hLeg, 'Location', 'best');
+        end
+
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_CoverageItm_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+    end
 end
 
 disp('    Done!')
@@ -758,6 +816,33 @@ saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
 if curFlagGenFigsSilently
     close(curEmpCdfFig);
     close(curCovRatioGainFig);
+end
+
+if isfield(simConfigs, 'itmParameters')
+    % For coverage maps with path loss predictions from the ITM model.
+    mapType = 'CoverageItm';
+
+    flagManualXlim = true;
+    [curEmpCdfFig, simState.coverageItmMapsCovRatioMeta] ...
+        = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+        mapType, ~curFlagGenFigsSilently, flagManualXlim);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType]);
+    saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+    saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
+    % Coverage ratio gain.
+    [ curCovRatioGainFig ] ...
+        = plotCoverageRatioGain(simState, simConfigs, ...
+        mapType, ~curFlagGenFigsSilently);
+    pathToSaveFig = fullfile(pathToSaveResults, ...
+        ['EmpiricalCdf_', mapType, 'CovRatGain']);
+    saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+    saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+
+    if curFlagGenFigsSilently
+        close(curEmpCdfFig);
+        close(curCovRatioGainFig);
+    end
 end
 
 % For blockage distance maps.

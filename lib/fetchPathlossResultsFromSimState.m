@@ -17,11 +17,29 @@ function [matRxLocWithPathloss, rxAntH, cellAntLoc, cellAntH] ...
 %     The indices for the effective cellular antenna and inspected RX
 %     height of interest.
 %   - mapType
-%     String. 'Blockage', 'Coverage', or 'BlockageDist'. The first two
-%     correspond to the pathloss results stored in fields
-%     blockageMapsForEachCell and coverageMapsForEachCell of simState,
-%     respectively. And the third one corresponds to the blockage distance
-%     results stored in the field blockageDistMapsForEachCell of simState.
+%     String. Originally supported:
+%       - 'Blockage', 'Coverage', or 'BlockageDist'
+%         The first two correspond to the pathloss results stored in fields
+%         blockageMapsForEachCell and coverageMapsForEachCell of simState,
+%         respectively. And the third one corresponds to the blockage
+%         distance results stored in the field blockageDistMapsForEachCell
+%         of simState.
+%     Extended to support:
+%       - 'CoverageItm'
+%         Similar to 'Coverage', but for the ITM (instead of eHata) model
+%         predictions.
+%       - 'BlockageByTerrainDist'
+%         Similar to 'BlockageDist', but computed with the DEM models
+%         (bear-earth ground elevation data) instead of the DSM models
+%         (LiDAR z data).
+%       - 'BlockageByVegDist'
+%         The blockage distance  difference between BlockageDist and
+%         BlockageByTerrainDist.
+%       - 'PathlossWithVeg'
+%         Path loss predictions from a preliminary excess vegetation path
+%         loss model:
+%           curPathLossWithVeg =
+%               curCoveragePL + estimateExcessPL(curBlockageByVegDistInM);
 %   - simConfigs
 %     The configuration struct for the simulation. We need fields:
 %       - RX_ANT_HEIGHTS_TO_INSPECT_IN_M
@@ -54,6 +72,9 @@ switch lower(mapType)
             {idxEffeCell}{idxRxHeight}';
     case('coverage')
         values = simState.coverageMapsForEachCell ...
+            {idxEffeCell}{idxRxHeight}';
+    case('coverageitm')
+        values = simState.coverageItmMapsForEachCell ...
             {idxEffeCell}{idxRxHeight}';
     case('blockagedist')
         values = simState.blockageDistMapsForEachCell ...

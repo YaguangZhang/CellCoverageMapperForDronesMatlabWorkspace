@@ -81,7 +81,14 @@ for idxPar = chunkStart:chunkEnd
             lidarDataImg(lidarDataImg(:)==0) = -inf;
 
             % Convert survery feet to meter.
-            lidarDataImg = distdim(lidarDataImg, 'ft', 'm');
+            switch lower(LIDAR_Z_UNIT)
+                case 'ft'
+                    lidarDataImg = distdim(lidarDataImg, 'ft', 'm');
+                case 'm'
+                    % There is no conversion needed in this case. 
+                otherwise
+                    error(['Unsupported LIDAR_Z_UNIT ', LIDAR_Z_UNIT, '!'])
+            end
 
             % Convert raster (row, col) to (lat, lon).
             try

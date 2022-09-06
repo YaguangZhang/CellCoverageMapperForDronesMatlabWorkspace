@@ -70,6 +70,7 @@ end
 % Suppress selected warnings to reduce messages.
 warning('off', 'MATLAB:polyshape:repairedBySimplify');
 warning('off', 'export_fig:transparency');
+warning('off', 'MATLAB:loadlibrary:parsewarnings');
 
 %% Script Parameters
 
@@ -80,7 +81,7 @@ warning('off', 'export_fig:transparency');
 % set. Please refer to the Preprocessing LiDAR Data section for a complete
 % list of supported LiDAR data sets.
 if any(strcmpi({'UniOfCoBoulderCampus'}, PRESET))
-    LIDAR_DATA_SET_TO_USE = 'CO_DRCOG_2020'; 
+    LIDAR_DATA_SET_TO_USE = 'CO_DRCOG_2020';
 else
     LIDAR_DATA_SET_TO_USE = 'IN_DSM_2019';
 end
@@ -345,6 +346,8 @@ switch PRESET
     case {'CustomSim'}
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
             = CustomSimMeta.RX_ANT_HEIGHTS_TO_INSPECT_IN_M;
+    case {'UniOfCoBoulderCampus'}
+        simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M = 1.5;
     otherwise
         simConfigs.RX_ANT_HEIGHTS_TO_INSPECT_IN_M ...
             = [1.5; 3; 5; 7.5; (10:10:120)'; 125];
@@ -415,7 +418,7 @@ simConfigs.LOS_FIRST_FRES_CLEAR_RATIO = 0.6;
 
 %   - For the NTIA eHata library: the quantile percent not exceeded of the
 %   signal. Limits: 0 < reliability < 1.
-simConfigs.NTIA_EHATA_RELIABILITY = 0.95;
+simConfigs.NTIA_EHATA_RELIABILITY = 0.95; % 0.5;
 %   - For the NTIA eHata library: the NLCD environment code.
 simConfigs.NTIA_EHATA_ENVIRO_CODE = 82; % Cultivated Crops.
 
@@ -453,14 +456,20 @@ simConfigs.RESIZE_FIG_FOR_PUBLICATION = false;
 % Other parameters needed for the NTIA point-to-point ITM function includ:
 % h_tx__meter, h_rx__meter, f__mhz, and terrian profile pfl.
 simConfigs.itmParameters = struct( ...
-    'climate', 5, 'N_0', 301.00, 'pol', 1, ...
+    'climate', 5, 'n_0', 301.00, 'pol', 1, ...
     'epsilon', 15, 'sigma', 0.005, ...
-    'mdvar', 2, ...
+    'mdvar', 2, ... 'time', 50, 'location', 50, 'situation', 50
     'time', 95, 'location', 95, 'situation', 95);
 % Set this to be 'DEM' to use bare-earth ground elevation data, or 'DSM' to
 % use LiDAR z data, in the terrain profile generation for the ITM model.
-simConfigs.itmParameters.terrainProfileSource = 'DEM';
-%   TODO: 'DSM' for Colorado campus case.
+if ismember(PRESET, {'UniOfCoBoulderCampus'})
+    % 'DSM' for Colorado campus case to consider buildings.
+    simConfigs.itmParameters.terrainProfileSource = 'DSM';
+else
+    % For rural cases, use 'DEM' instead because most of obstacles will be
+    % vegetation.
+    simConfigs.itmParameters.terrainProfileSource = 'DEM';
+end
 
 % Override simConfigs fields defined in simConfigFieldsToOverride.
 if exist('simConfigFieldsToOverride', 'var')
@@ -648,9 +657,14 @@ if ~isunix % Adoid generating plots on the headless Linux clusters.
         addpath('10_NetworkPlanner');
         genExtraPlotsForWhinWeatherStations;
     end
+
+    % Update the cached simState.
+    save(pathToSaveSimResults, 'simState', '-v7.3');
+
     disp(['    [', datestr(now, datetimeFormat), '] Done!'])
 end
 
+%% Export Results to .csv Files
 % For easier cooperation,  export into .csv files the raw data of path loss
 % maps for selected scenarios, e.g., ACRE LoRaWAN.
 if startsWith(PRESET, {'ACRE_LORA_', 'UniOfCoBoulderCampus'})
@@ -671,10 +685,12 @@ if startsWith(PRESET, {'ACRE_LORA_', 'UniOfCoBoulderCampus'})
     %   are stored in a cache folder.
     lidarMatFileAbsDirs = lidarFileAbsDirs;
     for idxMatF = 1:length(lidarMatFileAbsDirs)
-        [lidarMatFPath, lidarMatFName, ~] ...
+        [~, lidarMatFName, ~] ...
             = fileparts(lidarMatFileAbsDirs{idxMatF});
-        lidarMatFileAbsDirs{idxMatF} = fullfile(lidarMatFPath, '..', ...
+        lidarMatFileAbsDirs{idxMatF} = fullfile(dirToLidarFiles, ...
             'MatlabCache', [lidarMatFName, '.mat']);
+
+        assert(exist(lidarMatFileAbsDirs{idxMatF}, 'file'));
     end
 
     % Also, append the terrain elevation and LiDAR z values for the grid.
@@ -684,7 +700,7 @@ if startsWith(PRESET, {'ACRE_LORA_', 'UniOfCoBoulderCampus'})
         lidarMatFileAbsDirs, 'both');
     simState.mapGridGroundEleInM = ele_usgs_m;
     simState.mapGridLiarZInM = lidar_z_m;
-    
+
     % Update the cached simState.
     save(pathToSaveSimResults, 'simState', '-v7.3');
 

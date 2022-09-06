@@ -1,6 +1,7 @@
 function [lidarFileRelDirs, xYBoundryPolygons, lonLatBoundryPolygons] ...
     = preprocessLidarDataSetDsm(ABS_PATH_TO_LOAD_LIDAR, ...
-    DEG2UTM_FCT, UTM2DEG_FCT, FLAG_FORCE_REPROCESSING_DATA) %#ok<INUSL>
+    DEG2UTM_FCT, UTM2DEG_FCT, FLAG_FORCE_REPROCESSING_DATA, ...
+    LIDAR_Z_UNIT) %#ok<INUSD,INUSL>
 %PREPROCESSLIDARDATASETDSM Preprocess the digital surface model (DSM) LiDAR
 %data set located at ABS_PATH_TO_LOAD_LIDAR.
 %
@@ -25,6 +26,9 @@ function [lidarFileRelDirs, xYBoundryPolygons, lonLatBoundryPolygons] ...
 %     The functions to use to convert (lat, lon) to UTM (x, y) and back,
 %     respectively, i.e.: (x, y) = DEG2UTM_FCT(lat, lon); (lat, lon) =
 %     UTM2DEG_FCT(x, y).
+%   - LIDAR_Z_UNIT
+%     Optional. 'ft' for U.S. Survey Feet or 'm' for meter. Default to 'ft'
+%     escept for the 'USGS_CO DRCOG 1 2020' dataset.
 %
 % Outputs:
 %   - lidarFileRelDirs
@@ -49,6 +53,17 @@ flagDatasetProcessed = exist(ABS_DIR_TO_SAVE_RESULTS, 'file');
 % Set this to be false to reuse history processing results.
 if ~exist('FLAG_FORCE_REPROCESSING_DATA', 'var')
     FLAG_FORCE_REPROCESSING_DATA = false;
+end
+
+% Default LiDAR z unit to U.S. Survey Feet (2016-2020 Indiana Statewise
+% LiDAR Dataset).
+if ~exist('LIDAR_Z_UNIT', 'var')
+    % Set LIDAR_Z_UNIT to 'm' for the "USGS_CO DRCOG 1 2020" dataset.
+    if contains(ABS_PATH_TO_LOAD_LIDAR, 'USGS_CO DRCOG 1 2020')
+        LIDAR_Z_UNIT = 'm'; %#ok<NASGU> 
+    else
+        LIDAR_Z_UNIT = 'ft'; %#ok<NASGU> 
+    end
 end
 
 % Set this to be true to generate figures for debugging. Because reusing
@@ -93,8 +108,8 @@ else
     for idxTileFormat = 1:length(lidarTileFormatsToScan)
         lidarTileExt = lidarTileFormatsToScan{idxTileFormat};
         tifFileHandles = rdir(fullfile( ...
-        ABS_PATH_TO_LOAD_LIDAR, '**', ['*.', lidarTileExt]), ...
-        '', ABS_PATH_TO_LOAD_LIDAR);
+            ABS_PATH_TO_LOAD_LIDAR, '**', ['*.', lidarTileExt]), ...
+            '', ABS_PATH_TO_LOAD_LIDAR);
 
         if ~isempty(tifFileHandles)
             break;

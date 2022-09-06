@@ -1,5 +1,5 @@
 function [blockagePL, coveragePL, ...
-    blockageDistInM, blockageByTerrainDistInM] ...
+    blockageDistInM, extraResults] ...
     = computeBlockageAndCoveragePLs( ...
     lidarProfile, terrainProfile, ...
     startXYH, endXYH, ...
@@ -25,6 +25,17 @@ function [blockagePL, coveragePL, ...
 %       location, we will weight that value with the eHata value (please
 %       see the code below for more details); otherwise, NaN will be
 %       assigned for the path loss of that location.
+%
+% Depending on simConfigs, we will conduct computation for some extra
+% simulation results and same them as fields of the output struct
+% extraResults:
+%   - extraResults.coveragePLItm
+%     Similar to coveragePL, but the path loss predictions are evaluated
+%     with the NTIA ITM model (instead of eHata).
+%   - extraResults.blockageByTerrainDistInM
+%     Similar to blockagePL, but the blockage distance values are computed
+%     based on the DEM models (bare-earth ground elevation data) instead of
+%     the DSM models (LiDAR z data).
 %
 % Yaguang Zhang, Purdue, 09/18/2019
 
@@ -60,10 +71,13 @@ rxXYAlt = [rxXYH(1:2), terrainProfile(end)+rxXYH(3)];
     txXYAlt, rxXYAlt, lidarProfile, simConfigs);
 
 if nargout>3
-    % Re-evaluate the LoS blockage using the ground elevation for
-    % comparison.
-    [~, blockageByTerrainDistInM] = computeBlockagePLAndDist( ...
-        txXYAlt, rxXYAlt, terrainProfile, simConfigs);
+    if simConfigs.FLAG_EVAL_LOSS_THROUGH_VEG
+        % Re-evaluate the LoS blockage using the ground elevation for
+        % comparison.
+        [~, extraResults.blockageByTerrainDistInM] ...
+            = computeBlockagePLAndDist( ...
+            txXYAlt, rxXYAlt, terrainProfile, simConfigs);
+    end
 end
 
 %% Coverage
@@ -86,6 +100,25 @@ elev = generateProfileForEHata(txXYH, rxXYH, terrainProfile);
 
 coveragePL ...
     = computeCoveragePL(txXYH, rxXYH, elev, simConfigs, lidarProfile);
+
+if nargout>3
+    if isfield(simConfigs, 'itmParameters')
+        switch lower(simConfigs.itmParameters.terrainProfileSource)
+            case 'dem'
+                extraResults.coveragePLItm = computeCoveragePL( ...
+                    txXYH, rxXYH, elev, ...
+                    simConfigs, lidarProfile, 'ITM');
+            case 'dsm'
+                lidarz = generateProfileForEHata(txXYH, rxXYH, ...
+                    lidarProfile);
+                extraResults.coveragePLItm = computeCoveragePL( ...
+                    txXYH, rxXYH, ...
+                    lidarz, simConfigs, lidarProfile, 'ITM');
+            otherwise
+                error(['Unsupported terrain profile source: ', ...
+                    simConfigs.itmParameters.terrainProfileSource, '!'])
+        end
+    end
 
 end
 % EOF

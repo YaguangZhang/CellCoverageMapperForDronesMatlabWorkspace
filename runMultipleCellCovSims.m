@@ -37,7 +37,10 @@ diary(pathToSaveSimManDiary);
 %   - 'acreLoRaTrailer
 %     The ACRE LoRa gateways installed on the mobile trailer, simulated (1)
 %     individually and (2) together.
-SIM_GROUP_PRESET = 'cellularCovExt';
+%   - 'uniOfCoBoulder' and 'uniOfCoBoulderMedianPL'
+%     The scenario with one cell tower on University of Colorado, Boulder
+%     campus, with reliabilty being 0.95 and 0.5, respectively.
+SIM_GROUP_PRESET = 'uniOfCoBoulderMedianPL'; % 'cellularCovExt';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -68,6 +71,8 @@ switch SIM_GROUP_PRESET
 
         % Enable vegetation blockage evaluation.
         simConfigFieldsToOverride.FLAG_EVAL_LOSS_THROUGH_VEG = true;
+        % % Simulate for the median path loss.
+        % simConfigs.NTIA_EHATA_RELIABILITY = 50;
     case 'whinLoRaWan'
         PRESETS = {'WHIN_WEATHER_STATIONS', 'WHIN_LORAWAN'};
         CARRIER_FREQUENCIES_IN_MHZ = {915};
@@ -79,6 +84,28 @@ switch SIM_GROUP_PRESET
         PRESETS = {'ACRE_LORA_TRAILER', ...
             'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY'};
         CARRIER_FREQUENCIES_IN_MHZ = {915};
+    case 'uniOfCoBoulder'
+        PRESETS = {'UniOfCoBoulderCampus'};
+        CARRIER_FREQUENCIES_IN_MHZ = {700, 1500, 3500};
+
+        % Override the mininum distance to consider weighing FSPL.
+        simConfigFieldsToOverride ...
+            .MIN_TX_TO_RX_DIST_FOR_EHATA_AND_ITM_IN_M = 10;
+    case 'uniOfCoBoulderMedianPL'
+        PRESETS = {'UniOfCoBoulderCampus'};
+        CARRIER_FREQUENCIES_IN_MHZ = {700, 1500, 3500};
+
+        % Override the mininum distance to consider weighing FSPL.
+        simConfigFieldsToOverride ...
+            .MIN_TX_TO_RX_DIST_FOR_EHATA_AND_ITM_IN_M = 10;
+        % Simulate for the median path loss.
+        simConfigs.NTIA_EHATA_RELIABILITY = 50;
+        simConfigs.itmParameters = struct( ...
+            'climate', 5, 'n_0', 301.00, 'pol', 1, ...
+            'epsilon', 15, 'sigma', 0.005, ...
+            'mdvar', 2, ... 'time', 95, 'location', 95, 'situation', 95
+            'time', 50, 'location', 50, 'situation', 50, ...
+            'terrainProfileSource', 'DSM');
     otherwise
         error(['Unknown simulation group: ', SIM_GROUP_PRESET, '!']);
 end

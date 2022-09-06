@@ -96,6 +96,8 @@ switch lower(mapType)
         maps = simState.blockageMaps;
     case 'coverage'
         maps = simState.coverageMaps;
+    case 'coverageitm'
+        maps = simState.coverageItmMaps;
     case 'blockagedist'
         maps = simState.blockageDistMaps;
     case 'pathlosswithveg'
@@ -141,7 +143,8 @@ for idxMap = 1:numMaps
     switch lower(mapType)
         case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
-        case {'coverage', 'pathlossbyveg', 'pathlosswithveg'}
+        case {'coverage', 'coverageitm', ...
+                'pathlossbyveg', 'pathlosswithveg'}
             boolsCovPs = (~isnan(curM)) ...
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
     end
@@ -161,7 +164,8 @@ cdfMeta.cdfVs = cdfVs;
 % Compute the ranges and points to show in the CDF plots.
 xMax = -inf;
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'coverageitm', ...
+            'pathlossbyveg', 'pathlosswithveg'}
         xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
     case 'blockagedist'
         xMin = inf;
@@ -259,7 +263,8 @@ end
 grid on; grid minor; box on;
 
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'coverageitm', ...
+            'pathlossbyveg', 'pathlosswithveg'}
         xlabel('Best Available Path Loss {\it{l_p}} (dB)');
         curLoc = 'NorthWest';
     case 'blockagedist'

@@ -22,8 +22,8 @@ function [hFigCovRatGain, cdfMeta] = plotCoverageRatioGain( ...
 %     An optional boolean for whether to show the resultant figure or not.
 %     Default to true.
 %   - flagManualXlim
-%     An optional boolean for whether to show the resultant figure or not.
-%     Default to false. If true, the xlim will be set to
+%     Default to false. In this case, xlim is adjusted to cover all x
+%     values. If true, xlim will be set to
 %     simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB.
 %   - flagShowFSPL
 %     An optional boolean for whether to show the ideal FSPL line as
@@ -81,6 +81,8 @@ switch lower(mapType)
         maps = simState.blockageMaps;
     case 'coverage'
         maps = simState.coverageMaps;
+    case 'coverageitm'
+        maps = simState.coverageItmMaps;
     case 'blockagedist'
         maps = simState.blockageDistMaps;
     case 'pathlosswithveg'
@@ -117,7 +119,8 @@ for idxMap = 1:numMaps
     switch lower(mapType)
         case {'blockage', 'blockagedist'}
             boolsCovPs = ~isnan(curM);
-        case {'coverage', 'pathlossbyveg', 'pathlosswithveg'}
+        case {'coverage', 'coverageitm', ...
+                'pathlossbyveg', 'pathlosswithveg'}
             boolsCovPs = (~isnan(curM)) ...
                 &(curM<=simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
     end
@@ -140,7 +143,8 @@ covRatios = cell(numMaps, 1);
 % Find the axis range.
 xMax = -inf;
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'coverageitm', ...
+            'pathlossbyveg', 'pathlosswithveg'}
         xMin = simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2);
     case 'blockagedist'
         xMin = inf;
@@ -199,11 +203,6 @@ for idxMap = 1:numMaps
     end
 end
 
-if flagManualXlim
-    xMin = min(xMin, simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(1));
-    xMax = max(xMax, simConfigs.ALLOWED_PATH_LOSS_RANGE_IN_DB(2));
-end
-
 % We will plot the reference track and delete it later to get a consistant
 % legend with the empirical CDF plots.
 refCdfVs = covRatios{1};
@@ -248,7 +247,8 @@ curYLimToSet = curAxisTight(3:4) ...
 curYLimToSet(1) = max(curYLimToSet(1), 0);
 
 switch lower(mapType)
-    case {'blockage', 'coverage', 'pathlossbyveg', 'pathlosswithveg'}
+    case {'blockage', 'coverage', 'coverageitm', ...
+            'pathlossbyveg', 'pathlosswithveg'}
         xlabel('Maximum Allowed Path Loss {\it{L_p}} (dB)');
         curLoc = 'NorthWest';
 
