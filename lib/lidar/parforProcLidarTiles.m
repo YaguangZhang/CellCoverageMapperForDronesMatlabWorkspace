@@ -76,6 +76,11 @@ for idxPar = chunkStart:chunkEnd
                 = readgeoraster(curLidarFileAbsDir);
             lidarDataImg(abs( ...
                 lidarDataImg(:))>maxAllowedAbsLidarZ) = nan;
+            % The "USGS_CO DRCOG 1 2020" dataset also has invalid -9999
+            % LiDAR z values.
+            if contains(ABS_PATH_TO_LOAD_LIDAR, 'USGS_CO DRCOG 1 2020')
+                lidarDataImg (lidarDataImg==-9999) = nan;
+            end
             % Reset samples with exact zero values. Regions with water seem
             % to always have a z value of 0.
             lidarDataImg(lidarDataImg(:)==0) = -inf;

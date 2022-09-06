@@ -704,6 +704,8 @@ for idxEffeCellAnt = nextIdxEffeCellAnt:numOfEffeCellAnts
             = curPathToOverheadTimeInSecStart;
     end
 
+    % % For debugging.
+    %  parforArg = 0; for idxWorker = 1:numOfWorkers
     parfor (idxWorker = 1:numOfWorkers, parforArg)
         % Processing time considering the overhead.
         if parforArg ~= 0

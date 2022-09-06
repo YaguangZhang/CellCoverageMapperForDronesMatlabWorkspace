@@ -822,26 +822,38 @@ if isfield(simConfigs, 'itmParameters')
     % For coverage maps with path loss predictions from the ITM model.
     mapType = 'CoverageItm';
 
-    flagManualXlim = true;
-    [curEmpCdfFig, simState.coverageItmMapsCovRatioMeta] ...
-        = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
-        mapType, ~curFlagGenFigsSilently, flagManualXlim);
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['EmpiricalCdf_', mapType]);
-    saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
-    saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
-    % Coverage ratio gain.
-    [ curCovRatioGainFig ] ...
-        = plotCoverageRatioGain(simState, simConfigs, ...
-        mapType, ~curFlagGenFigsSilently);
-    pathToSaveFig = fullfile(pathToSaveResults, ...
-        ['EmpiricalCdf_', mapType, 'CovRatGain']);
-    saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
-    saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+    try
+        flagManualXlim = true;
+        [curEmpCdfFig, simState.coverageItmMapsCovRatioMeta] ...
+            = plotEmpiricalCdfForCoverage(simState, simConfigs, ...
+            mapType, ~curFlagGenFigsSilently, flagManualXlim);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['EmpiricalCdf_', mapType]);
+        saveEpsFigForPaper(curEmpCdfFig, pathToSaveFig);
+        saveas(curEmpCdfFig, [pathToSaveFig, '.fig']);
 
-    if curFlagGenFigsSilently
-        close(curEmpCdfFig);
-        close(curCovRatioGainFig);
+        if curFlagGenFigsSilently
+            close(curEmpCdfFig);
+        end
+    catch
+        warning(['Unable to generate figure ', pathToSaveFig, '!'])
+    end
+
+    try
+        % Coverage ratio gain.
+        [ curCovRatioGainFig ] ...
+            = plotCoverageRatioGain(simState, simConfigs, ...
+            mapType, ~curFlagGenFigsSilently);
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['EmpiricalCdf_', mapType, 'CovRatGain']);
+        saveEpsFigForPaper(curCovRatioGainFig, pathToSaveFig);
+        saveas(curCovRatioGainFig, [pathToSaveFig, '.fig']);
+
+        if curFlagGenFigsSilently
+            close(curCovRatioGainFig);
+        end
+    catch
+        warning(['Unable to generate figure ', pathToSaveFig, '!'])
     end
 end
 
