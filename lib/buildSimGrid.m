@@ -36,15 +36,18 @@ else
     mapWidthInM = mapMaxX-mapMinX;
     mapHeightInM = mapMaxY-mapMinY;
 
-    gridResolution = max([mapWidthInM, mapHeightInM])./parameter;
+    % For simplicity, we will now use the number of grid points as the
+    % input. However, note that the grid resolution needs to be evaluated
+    % by the number of grid segments instead of number of grid points.
+    gridResolution = max([mapWidthInM, mapHeightInM])./(parameter-1);
 end
 
 mapXLabels = constructAxisGrid( ...
     mean([mapMaxX, mapMinX]), ...
-    floor((mapMaxX-mapMinX)./gridResolution), gridResolution);
+    floor((mapMaxX-mapMinX)./gridResolution)+1, gridResolution);
 mapYLabels = constructAxisGrid( ...
     mean([mapMaxY, mapMinY]), ...
-    floor((mapMaxY-mapMinY)./gridResolution), gridResolution);
+    floor((mapMaxY-mapMinY)./gridResolution)+1, gridResolution);
 [mapXs,mapYs] = meshgrid(mapXLabels,mapYLabels);
 
 % Discard map grid points out of the area of interest.
