@@ -239,6 +239,23 @@ exportgraphics(gca, [curFigNameExpGraph, '.jpg'], ...
 exportgraphics(gca, [curFigNameExpGraph, '.eps'], ...
     'Resolution', epsResolutionDpi);
 
+strFormatter = '%.2f';
+curVs = terrainEles;
+curVs(isnan(curVs)) = [];
+curMean = mean(curVs);
+curStd = std(curVs);
+text(-86.51167607294693, 37.928803183673466, 400, ...
+    ['Mean: ', num2str(curMean, strFormatter), ' m']);
+text(-88.22064572289156, 37.733011938775505, 400, ...
+    ['Standard Deviation: ', num2str(curStd, strFormatter), ' m']);
+
+hLeg.Position = [0.159875, 6.11372500000001, 2.4871, 0.5027];
+
+exportgraphics(gca, [curFigNameExpGraph, '_withStats.jpg'], ...
+    'Resolution', epsResolutionDpi);
+exportgraphics(gca, [curFigNameExpGraph, '_withStats.eps'], ...
+    'Resolution', epsResolutionDpi);
+
 % LiDAR z - ground ele.
 curColormap = customTurbo2;
 figure; ecdf(lidarZs-terrainEles); grid on; grid minor;
@@ -256,7 +273,7 @@ plot_google_map('MapType', 'roadmap', 'Alpha', 0); axis manual;
 [~, ~, hCb] = plot3k( ...
     [indianaGridLatLonPts(:,[2,1]), lidarZs-terrainEles], ...
     'Labels', {'', '', '', '', ...
-    'LiDAR z - Ground Elevation (m)'}, ...
+    'LiDAR z minus Ground Elevation (m)'}, ...
     'ColorRange', curTightestColorRange, ...
     'Marker', {'.', 1}, 'CBLabels', 6);
 hCb.Title.Position = curCbTitlePos;
@@ -280,6 +297,19 @@ title(' '); tightfig;
 %     'Resolution', epsResolutionDpi);
 saveas(gcf, [curFigName, '.eps'], 'epsc');
 saveas(gcf, [curFigName, '.jpg']);
+
+strFormatter = '%.2f';
+curVs = lidarZs-terrainEles;
+curVs(isnan(curVs)) = [];
+curMean = mean(curVs);
+curStd = std(curVs);
+text(-86.39550162650602,37.928803183673466, ...
+    ['Mean: ', num2str(curMean, strFormatter), ' m']);
+text(-88.22064572289156, 37.733011938775505, ...
+    ['Standard Deviation: ', num2str(curStd, strFormatter), ' m']);
+
+saveas(gcf, [curFigName, '_withStats.eps'], 'epsc');
+saveas(gcf, [curFigName, '_withStats.jpg']);
 
 disp(['    [', datestr(now, datetimeFormat), ...
     '] Done!'])
