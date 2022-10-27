@@ -711,6 +711,22 @@ for idxH = 1:numOfRxHeightToInspect
         saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
         saveas(hCurPLMap, [pathToSaveFig, '.png']);
         saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+
+        %------ 7_extra ------
+        % The version with colorbar hidden.
+        %---------------------
+        hCb = findobj(gcf, 'Type', 'Colorbar');
+        set(hCb, 'Visible', 'off');
+        tightfig(hCurPLMap);
+    
+        pathToSaveFig = fullfile(pathToSaveResults, ...
+            ['PathLossMap_CoverageItm_RxHeight_', ...
+            strrep(num2str(rxAntH), '.', '_')]);
+        saveas(hCurPLMap, [pathToSaveFig, '.eps'], 'epsc');
+        saveas(hCurPLMap, [pathToSaveFig, '.png']);
+        saveas(hCurPLMap, [pathToSaveFig, '.fig']);
+    
+        close(hCurPLMap);
     end
 end
 

@@ -34,13 +34,13 @@ diary(pathToSaveSimManDiary);
 %     The WHIN LoRaWAN + WHIN weather stations.
 %   - 'acreLoRaWan'
 %     The ACRE LoRaWAN.
-%   - 'acreLoRaTrailer
+%   - 'acreLoRaTrailer'
 %     The ACRE LoRa gateways installed on the mobile trailer, simulated (1)
 %     individually and (2) together.
 %   - 'uniOfCoBoulder' and 'uniOfCoBoulderMedianPL'
 %     The scenario with one cell tower on University of Colorado, Boulder
 %     campus, with reliabilty being 0.95 and 0.5, respectively.
-SIM_GROUP_PRESET = 'uniOfCoBoulderMedianPL'; % 'cellularCovExt';
+SIM_GROUP_PRESET = 'cellularCovExt'; % 'uniOfCoBoulder';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
