@@ -1,5 +1,5 @@
 %EXTRACTLIDARPROFILEFROMLAZ Snippet to extract a LiDAR profile for a long
-%link (~14.5 km) in Colorado.
+%link (~14.5 km) in Colorado based on .laz file(s).
 %
 % Developed with Matlab R2022a.
 %
@@ -16,9 +16,18 @@ prepareSimulationEnv;
 
 %% Configurations
 
-% Path to the LiDAR laz file.
-pathToLaz = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'Lidar', 'CO', 'YZ_CA_CO_LiDAR', 'OneTileExample', 'co_laz.laz');
+% Path to the folder holding the LiDAR laz file(s) to use. Currently, we
+% have datasets:
+%   - 'OneTileExample' - 'Complete'.
+lidarPreset = 'Complete';
+
+switch lidarPreset
+    case {'OneTileExample', 'Complete'}
+        pathToLazFolder = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
+            'Lidar', 'CO', 'YZ_CA_CO_LiDAR', lidarPreset);
+    otherwise
+        error(['Unsupported LiDAR dataset: ', lidarPreset, '!'])
+end
 
 % Link of interest:
 latLonStart = [39.991794, -105.274711];
@@ -26,50 +35,210 @@ latLonEnd = [40.121142, -105.250972];
 
 % The absolute path to the folder for saving the results.
 pathToSaveResults = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
-    'PostProcessingResults', 'CO_LongLink_LidarProfileForProfA');
+    'PostProcessingResults', ...
+    'CO_LongLink_LidarProfileForProfA', lidarPreset);
 
 if ~exist(pathToSaveResults, 'dir')
     mkdir(pathToSaveResults)
 end
 
-%% Load LiDAR Data
+maxAllowedResInM = 1;
+minNumSamps = 10;
 
-lasReader = lasFileReader(pathToLaz);
-ptCloud = readPointCloud(lasReader);
+%% Preprocess LiDAR Data
+% We will generate for each .laz file a .mat meta file with the same file
+% name containing fields:
+%   - lazPath
+%     Absolute path to the corresponding .laz file.
+%   - lonLatBoundary
+%     A 2-column matrix with each row containing the (longitude, latitude)
+%     of a vertex of the boundary polygon. The first row and the last row
+%     should be the same to indicate a closed polygon.
+%   - crs
+%     The coordinate reference system object for projfwd and projinv.
+%   - xYBoundary
+%     The (x, y) boundary from converting lonLatBoundary with crs.
 
-crs = readCRS(lasReader);
+% Find all laz files.
+dirsLaz = rdir(fullfile(pathToLazFolder, '*.laz'));
+numOfLazs = length(dirsLaz);
 
-% Convert UTM (x, y) to (lat, lon).
-[lidarLats, lidarLons] = projinv(crs, ...
-    ptCloud.Location(:, 1), ptCloud.Location(:, 2));
+% Extract the coverage boundaries.
+lonLatBounds = cell(numOfLazs, 1);
+crses = cell(numOfLazs, 1);
+parfor idxLaz = 1:numOfLazs
+    curDirLaz = dirsLaz(idxLaz);
+    [~, lazFileName] =  fileparts(curDirLaz.name);
 
-% Extract LiDAR z, too, for convenience.
-lidarZsInM = ptCloud.Location(:, 3);
+    curPathToLazMeta = fullfile(curDirLaz.folder, [lazFileName, '.mat']);
+    if exist(curPathToLazMeta, 'file')
+        curMeta = load(curPathToLazMeta, 'lonLatBoundary', 'crs');
+        lonLatBounds{idxLaz} = curMeta.lonLatBoundary;
+        crses{idxLaz} = curMeta.crs;
+    else
+        lazPath = curDirLaz.name;
+
+        lasReader = lasFileReader(lazPath);
+        ptCloud = readPointCloud(lasReader);
+        crs = readCRS(lasReader);
+
+        % For simplicity, we will use a rectangle as the boundary.
+        %     minX = min(ptCloud.Location(:, 1));
+        %      maxX = max(ptCloud.Location(:, 1));
+        %     minY = min(ptCloud.Location(:, 2));
+        %      maxY = max(ptCloud.Location(:, 2));
+
+        % We will expand the boundary by half of the resolution.
+        spatialRes = min( ...
+            min(abs( diff(unique(ptCloud.Location(:, 1))) )), ...
+            min(abs( diff(unique(ptCloud.Location(:, 2))) )));
+        distToExp = spatialRes/2;
+
+        minX = ptCloud.XLimits(1) - distToExp;
+        maxX = ptCloud.XLimits(2) + distToExp;
+        minY = ptCloud.YLimits(1) - distToExp;
+        maxY = ptCloud.YLimits(2) + distToExp;
+        xYBoundary = [minX, minY; minX, maxY; maxX, maxY; maxX, minY; ...
+            minX, minY];
+
+        % Convert UTM (x, y) to (lat, lon).
+        [latsBound, lonsBound] = projinv(crs, ...
+            xYBoundary(:, 1), xYBoundary(:, 2));
+        lonLatBoundary = [lonsBound, latsBound];
+
+        % Also generate an overview plot of the LiDAR data.
+        [lidarLats, lidarLons] = projinv(crs, ...
+            ptCloud.Location(:, 1), ptCloud.Location(:, 2));
+
+        curFigNamePrefix = fullfile(curDirLaz.folder, lazFileName);
+
+        hOverviewTile = figure;
+        plot3k([lidarLons, lidarLats, ptCloud.Location(:, 3)], ...
+            'Labels', {'Anemo LiDAR Data Overview', ...
+            'Longitude (degree)', 'Latitude (degree)', 'LiDAR z (m)', ...
+            'LiDAR z (m)'});
+        view(2);
+        plot_google_map('MapType', 'hybrid');
+
+        saveas(hOverviewTile, [curFigNamePrefix, '.jpg']);
+        close(hOverviewTile);
+
+        hOverviewTile = figure;
+        maxLidarZInM = max(ptCloud.Location(:, 3));
+        hLink = plot3([latLonStart(2), latLonEnd(2)], ...
+            [latLonStart(1), latLonEnd(1)], ...
+            [maxLidarZInM, maxLidarZInM], '-r'); %#ok<PFBNS>
+        view(2);
+        plot_google_map('MapType', 'hybrid');
+        plot3k([lidarLons, lidarLats, ptCloud.Location(:, 3)], ...
+            'Labels', {'Anemo LiDAR Data Overview', ...
+            'Longitude (degree)', 'Latitude (degree)', 'LiDAR z (m)', ...
+            'LiDAR z (m)'});
+        view(2);
+        legend(hLink, 'Link of Interest');
+
+        saveas(hOverviewTile, [curFigNamePrefix, '_WithExampleLink.jpg']);
+        close(hOverviewTile);
+
+        % Save the results.
+        parsave(curPathToLazMeta, lazPath, lonLatBoundary, ...
+            crs, xYBoundary);
+
+        lonLatBounds{idxLaz} = lonLatBoundary;
+        crses{idxLaz} = crs;
+    end
+end
+
+% Choose a common crs to use by voting.
+uniqueCrses = {};
+uniqueCrsesCnts = [];
+for idxCrs = 1:numOfLazs
+    curCrs = crses{idxCrs};
+
+    idxMatchingUniCrs = nan;
+    if ~isempty(uniqueCrses)
+        idxMatchingUniCrs = nan;
+        for idxUniCrs = 1:length(uniqueCrses)
+            if strcmp(uniqueCrses{idxUniCrs}.Name, curCrs.Name)
+                % CRS already registered.
+                idxMatchingUniCrs = idxUniCrs;
+                break;
+            else
+                [~, d1, d2] = comp_struct( ...
+                    uniqueCrses{idxUniCrs}.ProjectionParameters, ...
+                    curCrs.ProjectionParameters);
+                if isempty(d1) && isempty(d2) ...
+                        && strcmp( ...
+                        uniqueCrses{idxUniCrs}.ProjectionMethod, ...
+                        curCrs.ProjectionMethod) ...
+                        && strcmp(uniqueCrses{idxUniCrs}.LengthUnit, ...
+                        curCrs.LengthUnit)
+                    % CRS already registered.
+                    idxMatchingUniCrs = idxUniCrs;
+                    break;
+                end
+            end
+        end
+    end
+
+    if isnan(idxMatchingUniCrs)
+        uniqueCrses{end+1, 1} = curCrs; %#ok<SAGROW>
+        uniqueCrsesCnts(end+1, 1) = 1;  %#ok<SAGROW>
+    else
+        uniqueCrsesCnts(idxMatchingUniCrs) ...
+            = uniqueCrsesCnts(idxMatchingUniCrs) + 1; %#ok<SAGROW>
+    end
+end
+
+[~, maxCntIdx] = max(uniqueCrsesCnts);
+bestCrs = uniqueCrses{maxCntIdx};
 
 %% Construct Link of Interest in UTM
 
-[utmXStart, utmYStart] = projfwd(crs, latLonStart(1), latLonStart(2));
-[utmXEnd, utmYEnd] = projfwd(crs, latLonEnd(1), latLonEnd(2));
+[utmXStart, utmYStart] = projfwd(bestCrs, latLonStart(1), latLonStart(2));
+[utmXEnd, utmYEnd] = projfwd(bestCrs, latLonEnd(1), latLonEnd(2));
 
-%% Overview Figure of the LiDAR Data
+profLocsXY = generateTerrainProfileSampLocs( ...
+    [utmXStart, utmYStart], [utmXEnd, utmYEnd], ...
+    maxAllowedResInM, minNumSamps);
 
-hOverviewMap = figure;
-maxLidarZInM = max(lidarZsInM);
-hLink = plot3([latLonStart(2), latLonEnd(2)], ...
-    [latLonStart(1), latLonEnd(1)], ...
-    [maxLidarZInM, maxLidarZInM], '-r');
-view(2);
+[profLocsLats, profLocsLons] = projinv(bestCrs, ...
+    profLocsXY(:, 1), profLocsXY(:, 2));
+profLocsLonLats = [profLocsLons, profLocsLats];
+
+%% Overview Figure of the LiDAR Coverage
+
+hOverviewLidarCov = figure; hold on;
+for idxTile = 1:numOfLazs
+    hCov = patch('XData', lonLatBounds{idxTile}(:, 1), ...
+        'YData', lonLatBounds{idxTile}(:, 2), ...
+        'FaceColor', 'b', 'FaceAlpha',.5);
+end
+hLink = plot([latLonStart(2), latLonEnd(2)], ...
+    [latLonStart(1), latLonEnd(1)], '-r');
+hProfLocs = plot(profLocsLonLats(:, 1), profLocsLonLats(:, 2), '.r');
 plot_google_map('MapType', 'hybrid');
-plot3k([lidarLons, lidarLats, lidarZsInM], ...
-    'Labels', {'Anemo LiDAR Data Overview', ...
-    'Longitude (degree)', 'Latitude (degree)', 'LiDAR z (m)', ...
-    'LiDAR z (m)'});
-view(2);
-legend(hLink, 'Link of Interest');
+legend([hLink, hCov], 'Link of Interest', 'LiDAR Coverage');
 
-saveas(hOverviewMap, fullfile(pathToSaveResults, 'LidarOverview_Anemo'));
+curFigFilename = fullfile(pathToSaveResults, ...
+    'LidarOverview_Anemo');
+saveas(hOverviewLidarCov, [curFigFilename, '.jpg']);
+
+% Zoomed-in versions.
+axis([-105.2585011053211, -105.2574053433766, ...
+    40.0826508226302, 40.0833120621302]);
+saveas(hOverviewLidarCov, [curFigFilename, '_Zoom_1.jpg']);
+axis([-105.2579914369130, -105.2579637175118, ...
+    40.0829797815678, 40.0829965088883]);
+saveas(hOverviewLidarCov, [curFigFilename, '_Zoom_2.jpg']);
+axis([-105.2579747017336, -105.2579741493096, ...
+    40.0829873664333, 40.0829877085021]);
+saveas(hOverviewLidarCov, [curFigFilename, '_Zoom_3.jpg']);
+
+close(hOverviewLidarCov);
 
 %% Extract Profile
+
 
 %% Overview Figure of the Profile
 
