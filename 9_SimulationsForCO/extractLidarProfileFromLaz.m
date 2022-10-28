@@ -18,11 +18,19 @@ prepareSimulationEnv;
 
 % Path to the folder holding the LiDAR laz file(s) to use. Currently, we
 % have datasets:
-%   - 'OneTileExample' - 'Complete'.
-lidarPreset = 'Complete';
+%   - 'OneTileExample' 
+%      One example tile from Anemo fetched via the USGS TNM-LPC API.
+%   - 'Complete'
+%      A complete dataset covering the area needed for the long link, with
+%      some redundancy: there are tiles covering the same region, but
+%      probably are from different datasets.
+%   - 'Selected'
+%      Selected tiles from the complete set which are enough for the long
+%      link.
+lidarPreset = 'Selected';
 
 switch lidarPreset
-    case {'OneTileExample', 'Complete'}
+    case {'OneTileExample', 'Complete', 'Selected'}
         pathToLazFolder = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
             'Lidar', 'CO', 'YZ_CA_CO_LiDAR', lidarPreset);
     otherwise
@@ -66,7 +74,8 @@ numOfLazs = length(dirsLaz);
 % Extract the coverage boundaries.
 lonLatBounds = cell(numOfLazs, 1);
 crses = cell(numOfLazs, 1);
-parfor idxLaz = 1:numOfLazs
+% parfor may cause use too much resource because of the LiDAR plots.
+for idxLaz = 1:numOfLazs
     curDirLaz = dirsLaz(idxLaz);
     [~, lazFileName] =  fileparts(curDirLaz.name);
 
@@ -127,7 +136,7 @@ parfor idxLaz = 1:numOfLazs
         maxLidarZInM = max(ptCloud.Location(:, 3));
         hLink = plot3([latLonStart(2), latLonEnd(2)], ...
             [latLonStart(1), latLonEnd(1)], ...
-            [maxLidarZInM, maxLidarZInM], '-r'); %#ok<PFBNS>
+            [maxLidarZInM, maxLidarZInM], '-r'); % #ok<PFBNS>
         view(2);
         plot_google_map('MapType', 'hybrid');
         plot3k([lidarLons, lidarLats, ptCloud.Location(:, 3)], ...
