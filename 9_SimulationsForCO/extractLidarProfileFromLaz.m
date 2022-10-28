@@ -18,7 +18,7 @@ prepareSimulationEnv;
 
 % Path to the folder holding the LiDAR laz file(s) to use. Currently, we
 % have datasets:
-%   - 'OneTileExample' 
+%   - 'OneTileExample'
 %      One example tile from Anemo fetched via the USGS TNM-LPC API.
 %   - 'Complete'
 %      A complete dataset covering the area needed for the long link, with
@@ -211,9 +211,9 @@ profLocsXY = generateTerrainProfileSampLocs( ...
     [utmXStart, utmYStart], [utmXEnd, utmYEnd], ...
     maxAllowedResInM, minNumSamps);
 
-[profLocsLats, profLocsLons] = projinv(bestCrs, ...
+[profLocsLat, profLocsLon] = projinv(bestCrs, ...
     profLocsXY(:, 1), profLocsXY(:, 2));
-profLocsLonLats = [profLocsLons, profLocsLats];
+profLocsLonLat = [profLocsLon, profLocsLat];
 
 %% Overview Figure of the LiDAR Coverage
 
@@ -225,7 +225,7 @@ for idxTile = 1:numOfLazs
 end
 hLink = plot([latLonStart(2), latLonEnd(2)], ...
     [latLonStart(1), latLonEnd(1)], '-r');
-hProfLocs = plot(profLocsLonLats(:, 1), profLocsLonLats(:, 2), '.r');
+hProfLocs = plot(profLocsLonLat(:, 1), profLocsLonLat(:, 2), '.r');
 plot_google_map('MapType', 'hybrid');
 legend([hLink, hCov], 'Link of Interest', 'LiDAR Coverage');
 
@@ -248,6 +248,72 @@ close(hOverviewLidarCov);
 
 %% Extract Profile
 
+% Find which tile is needed for each sampled location along the link.
+numOfProfSamps = size(profLocsLonLat, 1);
+sampIndicesForTile = nan(numOfLazs, 1);
+tileIndicesForSamp = nan(numOfProfSamps, 1);
+profZs = nan(numOfProfSamps, 1);
+
+for idxTile = 1:numOfLazs    
+    crs = crses{idxTile};
+    [curProfLocsX, curProfLocsY] = projfwd(crs, ...
+        profLocsLonLat(:, 2), profLocsLonLat(:, 1));
+    [curBoundX, curBoundY] = projfwd(crs, ...
+        lonLatBounds{idxLaz}(:, 2), lonLatBounds{idxLaz}(:, 1));
+
+    curSampsInTile = inpoly2( ...
+        [curProfLocsX, curProfLocsY], [curBoundX, curBoundY]);
+
+    if ~isempty(curSampsInTile)
+        assert(all(isnan(tileIndicesForSamp(curSampsInTile))), ...
+            'Tile already found!');
+
+        % Load current tile.
+        curDirLaz = dirsLaz(idxLaz);
+        lazPath = curDirLaz.name;
+
+        lasReader = lasFileReader(lazPath);
+        ptCloud = readPointCloud(lasReader);
+
+        % Fetch LiDAR z by nearest neighbor.
+        %     curProfZs = ptCloud.Location(dsearchn( ...
+        %         [ptCloud.Location(:, 1), ptCloud.Location(:, 2)], ...
+        %          [curProfLocsX(curSampsInTile), ...
+        %         curProfLocsY(curSampsInTile)] ...
+        %          ), 3);
+        %     curProfZs = interp2( ...
+        %         ptCloud.Location(:, 1), ptCloud.Location(:, 2), ...
+        %          ptCloud.Location(:, 3), ...
+        %         curProfLocsX(curSampsInTile), ...
+        %          curProfLocsY(curSampsInTile), ...
+        %         'nearest');
+        F = scatteredInterpolant( ...
+            ptCloud.Location(:, 1), ptCloud.Location(:, 2), ...
+            ptCloud.Location(:, 3), 'nearest');
+
+        curProfZs = F(curProfLocsX(curSampsInTile), ...
+            curProfLocsY(curSampsInTile));
+
+        assert(all(~isnan(curProfZs)), 'Invalid LiDAR z!');
+
+        profZs(curSampsInTile) = curProfZs;
+
+        % Overview figure of this profile segment.
+        hOverviewProfSeg = figure;
+        plot3k([profLocsLonLat(curSampsInTile, :), curProfZs]);
+        view(2);
+        plot_google_map('MapType', 'hybrid');
+
+        curFigFilename = fullfile(pathToSaveResults, ...
+            ['ProfSeg_LidarTileIdx_', num2str(idxTile)]);
+        saveas(hOverviewProfSeg, [curFigFilename, '.jpg']);
+    end
+end
+
+%% Save Results
+
+save(fullfile(pathToSaveResults, 'LidarProfile.mat'), ...
+    'profLocsLonLat', 'profZs');
 
 %% Overview Figure of the Profile
 
