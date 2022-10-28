@@ -67,6 +67,9 @@ minNumSamps = 10;
 %   - xYBoundary
 %     The (x, y) boundary from converting lonLatBoundary with crs.
 
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Preprocessing LiDAR tiles ...'])
+
 % Find all laz files.
 dirsLaz = rdir(fullfile(pathToLazFolder, '*.laz'));
 numOfLazs = length(dirsLaz);
@@ -202,7 +205,14 @@ end
 [~, maxCntIdx] = max(uniqueCrsesCnts);
 bestCrs = uniqueCrses{maxCntIdx};
 
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Done!'])
+
 %% Construct Link of Interest in UTM
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Sampling link for profile locations ...'])
 
 [utmXStart, utmYStart] = projfwd(bestCrs, latLonStart(1), latLonStart(2));
 [utmXEnd, utmYEnd] = projfwd(bestCrs, latLonEnd(1), latLonEnd(2));
@@ -215,7 +225,14 @@ profLocsXY = generateTerrainProfileSampLocs( ...
     profLocsXY(:, 1), profLocsXY(:, 2));
 profLocsLonLat = [profLocsLon, profLocsLat];
 
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Done!'])
+
 %% Overview Figure of the LiDAR Coverage
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Generating overview plots of the link ...'])
 
 hOverviewLidarCov = figure; hold on;
 for idxTile = 1:numOfLazs
@@ -246,7 +263,14 @@ saveas(hOverviewLidarCov, [curFigFilename, '_Zoom_3.jpg']);
 
 close(hOverviewLidarCov);
 
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Done!'])
+
 %% Extract Profile
+
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Extracting LiDAR z ...'])
 
 % Find which tile is needed for each sampled location along the link.
 numOfProfSamps = size(profLocsLonLat, 1);
@@ -259,17 +283,19 @@ for idxTile = 1:numOfLazs
     [curProfLocsX, curProfLocsY] = projfwd(crs, ...
         profLocsLonLat(:, 2), profLocsLonLat(:, 1));
     [curBoundX, curBoundY] = projfwd(crs, ...
-        lonLatBounds{idxLaz}(:, 2), lonLatBounds{idxLaz}(:, 1));
+        lonLatBounds{idxTile}(:, 2), lonLatBounds{idxTile}(:, 1));
 
     curSampsInTile = inpoly2( ...
         [curProfLocsX, curProfLocsY], [curBoundX, curBoundY]);
 
-    if ~isempty(curSampsInTile)
+    if sum(curSampsInTile)>0
         assert(all(isnan(tileIndicesForSamp(curSampsInTile))), ...
             'Tile already found!');
 
+        tileIndicesForSamp(curSampsInTile) = idxTile;
+
         % Load current tile.
-        curDirLaz = dirsLaz(idxLaz);
+        curDirLaz = dirsLaz(idxTile);
         lazPath = curDirLaz.name;
 
         lasReader = lasFileReader(lazPath);
@@ -308,13 +334,43 @@ for idxTile = 1:numOfLazs
             ['ProfSeg_LidarTileIdx_', num2str(idxTile)]);
         saveas(hOverviewProfSeg, [curFigFilename, '.jpg']);
     end
+
+    close all;
 end
+
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Done!'])
 
 %% Save Results
 
-save(fullfile(pathToSaveResults, 'LidarProfile.mat'), ...
-    'profLocsLonLat', 'profZs');
+disp(' ')
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Saving results ...'])
 
-%% Overview Figure of the Profile
+save(fullfile(pathToSaveResults, 'LidarProfile.mat'), ...
+    'profLocsLonLat', 'profZs', 'bestCrs', 'profLocsXY');
+
+% Export results as a .cvs file.
+lidarProfile = table;
+lidarProfile.lat = profLocsLonLat(:, 2);
+lidarProfile.lon = profLocsLonLat(:, 1);
+lidarProfile.zInM = profZs;
+% lidarProfile.utmX = profLocsXY(:, 1);
+%  lidarProfile.utmY = profLocsXY(:, 2);
+
+writetable(lidarProfile, fullfile(pathToSaveResults, 'lidarProfile.csv'));
+
+% Overview Figure of the Profile
+hOverviewProfSeg = figure;
+plot3k([lidarProfile.lon, lidarProfile.lat, lidarProfile.zInM]);
+view(2);
+plot_google_map('MapType', 'hybrid');
+
+curFigFilename = fullfile(pathToSaveResults, ...
+    ['ProfSeg_LidarTileIdx_', num2str(idxTile)]);
+saveas(hOverviewProfSeg, [curFigFilename, '.jpg']);
+
+disp(['[', datestr(now, datetimeFormat), ...
+        '] Done!'])
 
 % EOF
