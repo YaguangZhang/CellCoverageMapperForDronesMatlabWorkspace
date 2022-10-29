@@ -367,7 +367,7 @@ view(2);
 plot_google_map('MapType', 'hybrid');
 
 curFigFilename = fullfile(pathToSaveResults, ...
-    ['ProfSeg_LidarTileIdx_', num2str(idxTile)]);
+    'ProfOverview');
 saveas(hOverviewProfSeg, [curFigFilename, '.jpg']);
 
 disp(['[', datestr(now, datetimeFormat), ...
