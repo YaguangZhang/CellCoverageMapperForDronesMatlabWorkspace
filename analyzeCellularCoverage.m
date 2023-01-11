@@ -533,6 +533,21 @@ if strcmpi(PRESET, 'CustomSim')
             simResultsFolderName);
     end
 
+    % Extract the polygon to ingore LiDAR z values (e.g., those for power
+    % lines).
+    if isfield(CustomSimMeta, 'polyLatLonsToUseGroundEle')
+        simConfigs.polyLatLonsToUseGroundEle = ...
+            CustomSimMeta.polyLatLonsToUseGroundEle;
+
+        % Convert (lat, lon) to UTM.
+        [polyXsToUseGroundEle, polyYsToUseGroundEle] = ...
+            simConfigs.deg2utm_speZone( ...
+            simConfigs.polyLatLonsToUseGroundEle(:, 1), ...
+            simConfigs.polyLatLonsToUseGroundEle(:, 2));
+        simConfigs.polyXYsToUseGroundEle ...
+            = [polyXsToUseGroundEle, polyYsToUseGroundEle];
+    end
+
     % Append simulation index if it shows up.
     if exist('idxSim', 'var')
         pathToSaveResults = [pathToSaveResults, ...

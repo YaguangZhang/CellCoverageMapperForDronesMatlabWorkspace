@@ -25,10 +25,15 @@ disp(['[', datestr(now, datetimeFormat), ...
 %     The ACRE LoRaWAN results collected in 2021: one tower gateway +
 %     multiple vechiles. Based on ThingsBoard records.
 %   - 'AcreLoRaWan2021AgIT'
-%     Same as 'acreLoRaWan2021', except that the data source is Purdue Ag
+%     Same as 'AcreLoRaWan2021', except that the data source is Purdue Ag
 %     IT, which powers ThingsBoard and is in fact more complete (with less
 %     missing points).
-SIM_GROUP_PRESET = 'AcreLoRaWan2021AgIT';
+%   - 'AcreLoRaWan2021AgITCleaned'
+%     Same as 'AcreLoRaWan2021AgIT', but (i) with some invalid records
+%     removed (e.g., a GPS sensor on a vehicle for another project is
+%     ignored), and (ii) we would also want to remove power lines (via a
+%     hand-drawn polygon) near ACRE in the simulations.
+SIM_GROUP_PRESET = 'AcreLoRaWan2021AgITCleaned';
 
 pathToPostProcessingResultsFolder ...
     = fullfile(ABS_PATH_TO_SHARED_FOLDER, ...
@@ -97,6 +102,53 @@ switch lower(SIM_GROUP_PRESET)
         ABS_PATH_TO_RX_LOCS = fullfile( ...
             ABS_PATH_TO_SHARED_FOLDER, ...
             'AcreRxInfo', '2021', 'oyster_data_ag_it.csv');
+    case lower('AcreLoRaWan2021AgITCleaned')
+        ABS_PATH_TO_RX_LOCS = fullfile( ...
+            ABS_PATH_TO_SHARED_FOLDER, ...
+            'AcreRxInfo', '2021', 'oyster_data_ag_it_cleaned.csv');
+        % Also include a polygon for ignoring LiDAR z values. For any LiDAR
+        % z profile points in (inside or on the edge of) this polygon, the
+        % LiDAR z values will be replaced with ground elevation (from the
+        % cached digital terrain models).
+        CustomSimMetaDefault.polyLatLonsToUseGroundEle = [ ...
+            40.470880933942098 -87.013911394462895
+            40.470786314240300 -87.013592862673406
+            40.473407922992202 -87.011985035545493
+            40.475997122720003 -87.010383275689705
+            40.478733904435600 -87.008678372206901
+            40.479709980873302 -87.008077712260999
+            40.481768232660500 -87.006791450558694
+            40.484620145404499 -87.005019807081894
+            40.485639974755898 -87.004400945319404
+            40.487578069277902 -87.003181423610997
+            40.491057269974000 -87.001009340170199
+            40.494407099131699 -86.999316571231802
+            40.497812125967400 -86.997587398660201
+            40.501590672962500 -86.995688342467602
+            40.503567520255103 -86.994666007105096
+            40.505959496781401 -86.993434350852397
+            40.509689149175799 -86.991550462840195
+            40.509734125165302 -86.991914499171102
+            40.506669922752103 -86.993449519032794
+            40.505273282733100 -86.994163940332200
+            40.504143032525597 -86.994725163008894
+            40.502754413340199 -86.995435033853994
+            40.501478795965397 -86.996078164705196
+            40.499829453636998 -86.996939717354905
+            40.499181239467902 -86.997252181872199
+            40.497594126378097 -86.998065196344399
+            40.496316103955699 -86.998711360831706
+            40.494472848237201 -86.999654821655795
+            40.492666454645203 -87.000580080663397
+            40.491046888012100 -87.001429498768701
+            40.489496497009902 -87.002379026865000
+            40.488322144270803 -87.003110133162807
+            40.486434831004999 -87.004299318510306
+            40.482916165183902 -87.006471401951003
+            40.479724979573000 -87.008446299045900
+            40.476021352727102 -87.010754896110797
+            40.473847540143197 -87.012089695990596
+            40.470880933942098 -87.013911394462895];
     otherwise
         error(['Unsupported SIM_GROUP_PRESET: ', SIM_GROUP_PRESET, '!']);
 end
