@@ -63,10 +63,10 @@ end
 % Make sure only the right NTIA libraries are added to the path.
 if ispc
     rmpath(fullfile(pwd, 'lib', 'ext', 'eHataNtiaLinux'));
-    rmpath(fullfile(pwd, 'lib', 'ext', 'itmNtiaLinux'));
+    rmpath(fullfile(pwd, 'lib', 'ext', 'ItmNtiaLinux'));
 elseif isunix
     rmpath(fullfile(pwd, 'lib', 'ext', 'eHataNtia'));
-    rmpath(fullfile(pwd, 'lib', 'ext', 'itmNtia'));
+    rmpath(fullfile(pwd, 'lib', 'ext', 'ItmNtia'));
 end
 
 % We need Python for concurrent HTTP requests to get elevation data from
