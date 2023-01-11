@@ -87,7 +87,8 @@ switch lower(modelToUse)
         end
     case 'itm'
         if ~libisloaded('itm')
-            loadlibrary('itm');
+            % Ignore (i) "not found" error and (ii) warnings.
+            [~, ~] = loadlibrary('itm');
         end
     otherwise
         error(['Unsupported propagation model: ', modelToUse, '!'])
