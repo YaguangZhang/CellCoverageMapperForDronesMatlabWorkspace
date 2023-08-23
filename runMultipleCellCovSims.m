@@ -40,7 +40,13 @@ diary(pathToSaveSimManDiary);
 %   - 'uniOfCoBoulder' and 'uniOfCoBoulderMedianPL'
 %     The scenario with one cell tower on University of Colorado, Boulder
 %     campus, with reliabilty being 0.95 and 0.5, respectively.
-SIM_GROUP_PRESET = 'cellularCovExt'; % 'uniOfCoBoulder';
+%   - 'diffResTipp'
+%     Simulate the Tipp scenario with different resolutions of the user
+%     location grid.
+%   - 'diffFreqAcreML'
+%     Simulate the ACRE scenario specified by four tiles from Byunghyun
+%     with high user location resolution and different carrier frequencies.
+SIM_GROUP_PRESET = 'diffFreqAcreML';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -106,36 +112,78 @@ switch SIM_GROUP_PRESET
             'mdvar', 2, ... 'time', 95, 'location', 95, 'situation', 95
             'time', 50, 'location', 50, 'situation', 50, ...
             'terrainProfileSource', 'DSM');
+    case 'diffResTipp'
+        % Presets of interest.
+        PRESETS = {'Tipp'};
+
+        % Carrier frequency:
+        %	- 1900 MHz
+        %     For cellular 4G LTE.
+        CARRIER_FREQUENCIES_IN_MHZ = {1900};
+
+        % Different numbers of pixels for the longer side of the area of
+        % interest to simulate.
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 2.^(1:8);
+    case 'diffFreqAcreML'
+        % Presets of interest.
+        PRESETS = {'ACRE_ML'};
+        % Carrier frequencies from Ahmed.
+        CARRIER_FREQUENCIES_IN_MHZ = ...
+            {1900, ...
+            624.5, 632.45, 731.5, 739, 742.5, 751, 763, 885, ...
+            1940, 1957.5, 1970, 1977.5, 1982.6, 1990, ...
+            2115.1, 2125, 2137.5, 2147.5, 2150, 2152.5, 2155, 2175, ...
+            2506, 2525.8, 3605.3, 3620.2, 3640};
+
+        % Number of pixels for the longer side of the area of interest to
+        % simulate.
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 256;
     otherwise
         error(['Unknown simulation group: ', SIM_GROUP_PRESET, '!']);
 end
 
-for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
-    for idxPreset = 1:length(PRESETS)
-        PRESET = PRESETS{idxPreset};
-        CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
-        disp(' ')
-        disp(['[', datestr(now, datetimeFormat), ...
-            '] Running sim for ', PRESET, ' (', ...
-            num2str(CARRIER_FREQUENCY_IN_MHZ), ' MHz) ...'])
+% Configuration variable MIN_TX_TO_RX_DIST_FOR_EHATA_AND_ITM_IN_M is
+% optional.
+if exist('NUMS_OF_PIXELS_FOR_LONGER_SIDE', 'var')
+    numOfNGrid = length(NUMS_OF_PIXELS_FOR_LONGER_SIDE);
+else
+    numOfNGrid = 1;
+    clear NUM_OF_PIXELS_FOR_LONGER_SIDE;
+end
 
-        try
-            diary off;
-            if strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY')
-                for idxT = 1:3
+for idxN = 1:numOfNGrid
+    if exist('NUMS_OF_PIXELS_FOR_LONGER_SIDE', 'var')
+        NUM_OF_PIXELS_FOR_LONGER_SIDE ...
+            = NUMS_OF_PIXELS_FOR_LONGER_SIDE(idxN);
+    end
+
+    for idxFre = 1:length(CARRIER_FREQUENCIES_IN_MHZ)
+        for idxPreset = 1:length(PRESETS)
+            PRESET = PRESETS{idxPreset};
+            CARRIER_FREQUENCY_IN_MHZ = CARRIER_FREQUENCIES_IN_MHZ{idxFre};
+            disp(' ')
+            disp(['[', datestr(now, datetimeFormat), ...
+                '] Running sim for ', PRESET, ' (', ...
+                num2str(CARRIER_FREQUENCY_IN_MHZ), ' MHz) ...'])
+
+            try
+                diary off;
+                if strcmpi(PRESET, 'ACRE_LORA_TRAILER_INDIVIDUAL_GATEWAY')
+                    for idxT = 1:3
+                        analyzeCellularCoverage;
+                    end
+                else
                     analyzeCellularCoverage;
                 end
-            else
-                analyzeCellularCoverage;
+                diary(pathToSaveSimManDiary);
+            catch err
+                diary(pathToSaveSimManDiary);
+                disp(getReport(err))
+                rethrow(err);
             end
-            diary(pathToSaveSimManDiary);
-        catch err
-            diary(pathToSaveSimManDiary);
-            disp(getReport(err))
-            rethrow(err);
+            disp(['[', datestr(now, datetimeFormat), ...
+                '] Done!'])
         end
-        disp(['[', datestr(now, datetimeFormat), ...
-            '] Done!'])
     end
 end
 
