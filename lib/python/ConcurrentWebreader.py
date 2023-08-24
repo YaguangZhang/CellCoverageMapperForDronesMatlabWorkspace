@@ -45,8 +45,11 @@ def concurrent_fetch_urls(urls):
 
 if __name__ == '__main__':
     # For testing.
+    # Comment 20230823: USGS updated their point query API.
+    #   Old example: https://nationalmap.gov/epqs/pqs.php?x=-80&y=42&units=Meters&output=json
+    #   New example: https://epqs.nationalmap.gov/v1/json?x=-80&y=42&units=Meters&wkid=4326&includeDate=False
     urls = ["https://www.google.com", "http://www.yahoo.com", "http://www.baidu.com", \
-        "https://nationalmap.gov/epqs/pqs.php?x=-80&y=42&units=Meters&output=json"]
+        "https://epqs.nationalmap.gov/v1/json?x=-80&y=42&units=Meters&wkid=4326&includeDate=False"]
     htmls = concurrent_fetch_urls(urls)
     print('Successfully fetched', sum(h is not None for h in htmls), 'out of', len(urls), 'URLs!')
     for i, val in enumerate(htmls):
