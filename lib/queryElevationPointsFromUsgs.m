@@ -104,6 +104,16 @@ switch lower(language)
         end
     case 'python'
         ctnTrials = 0;
+
+        curTask = getCurrentTask();
+        curWorkerId = curTask.ID;
+        curRelDirToFetchedJsons ...
+            = fullfile('.', ['degbugFetchedPyJsonsChar_', ...
+            curWorkerId, '.mat']);
+        curRelDirToErrWorkspace ...
+            = fullfile('.', ['errorWorkspaceInQuerryEle_', ...
+            curWorkerId, '.mat']);
+
         while ctnTrials<maxNumOfTrials
             ctnTrials = ctnTrials+1;
             try
@@ -133,6 +143,11 @@ switch lower(language)
                         fetchedJsons = cellfun(@(jo) ...
                             jsondecode(native2unicode(jo)), ...
                             fetchedJsonsCell(boolsIsValidJson));
+
+                        % Delete the debug info .mat file.
+                        if exist(curRelDirToFetchedJsons, 'file')
+                            delete(curRelDirToFetchedJsons);
+                        end
                     catch err
                         % Save the fetched JSON object to a file for
                         % debugging.
@@ -140,8 +155,13 @@ switch lower(language)
                         warning( ...
                             ['Unable to process fetchedPyJsons: ', ...
                             fetchedPyJsonsChar]);
-                        parsave('./degbugFetchedPyJsonsChar', ...
+                        
+                        parsave(curRelDirToFetchedJsons, ...
                             curUrls, fetchedPyJsonsChar);
+                        disp(['More info can be found ', ...
+                            'in the log file: ', ...
+                            curRelDirToFetchedJsons, '.'])
+
                         throw(err);
                     end
 
@@ -172,7 +192,11 @@ switch lower(language)
                     boolsEleFetched(indicesToUpdate) = true;
                 end
 
+                % Delete the log file if there is no error.
                 ctnTrials = inf;
+                if exist(curRelDirToErrWorkspace, 'file')
+                    delete(curRelDirToErrWorkspace);
+                end
             catch err
                 disp(['There was an error fetching data ', ...
                     'from USGS via Python (In total ', ...
@@ -181,7 +205,7 @@ switch lower(language)
                     num2str(maxNumOfTrials), ')!'])
                 dispErr(err);
                 if ctnTrials == maxNumOfTrials
-                    save('errorWorkspaceInQuerryEle.mat');
+                    save(curRelDirToErrWorkspace);
                     error('Run out of allowed number of trials!');
                 end
             end
