@@ -43,10 +43,12 @@ diary(pathToSaveSimManDiary);
 %   - 'diffResTipp'
 %     Simulate the Tipp scenario with different resolutions of the user
 %     location grid.
-%   - 'diffFreqAcreML'
-%     Simulate the ACRE scenario specified by four tiles from Byunghyun
-%     with high user location resolution and different carrier frequencies.
-SIM_GROUP_PRESET = 'diffFreqAcreML';
+%   - 'diffFreqAcreML', 'diffFreqHappyHollowParkML',
+%      'diffFreqLindbergVillageML'
+%     Simulate the ACRE/Happy Hollow Park/Lindberg Village scenarios
+%     specified by four/two/four tiles from Byunghyun with high user
+%     location resolution and different carrier frequencies.
+SIM_GROUP_PRESET = 'diffFreqHappyHollowParkML';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -134,6 +136,34 @@ switch SIM_GROUP_PRESET
             1940, 1957.5, 1970, 1977.5, 1982.6, 1990, ...
             2115.1, 2125, 2137.5, 2147.5, 2150, 2152.5, 2155, 2175, ...
             2506, 2525.8, 3605.3, 3620.2, 3640};
+
+        % Number of pixels for the longer side of the area of interest to
+        % simulate.
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 256;
+    case 'diffFreqHappyHollowParkML'
+        % Presets of interest.
+        PRESETS = {'HappyHollowPark_ML'};
+        % Carrier frequencies from Ahmed.
+        CARRIER_FREQUENCIES_IN_MHZ = ...
+            {1900, ...
+            731.5, 742.5, 763, ...
+            1955, 1970.1, 1982.5, 1985, ...
+            2115, 2125, 2132.5, 2140, 2157.5, 2160, 2167.5, ...
+            2355, 2506, 2525.8, 2538.2};
+
+        % Number of pixels for the longer side of the area of interest to
+        % simulate.
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 256;
+    case 'diffFreqLindbergVillageML'
+        % Presets of interest.
+        PRESETS = {'LindbergVillage_ML'};
+        % Carrier frequencies from Ahmed.
+        CARRIER_FREQUENCIES_IN_MHZ = ...
+            {1900, ...
+            731.5, 742.5, 763, ...
+            1955, 1970.1, 1982.5, 1985, ...
+            2115, 2125, 2132.5, 2140, 2157.5, 2160, 2167.5, ...
+            2355, 2506, 2525.8, 2538.2};
 
         % Number of pixels for the longer side of the area of interest to
         % simulate.
