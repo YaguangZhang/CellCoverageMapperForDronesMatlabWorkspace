@@ -153,7 +153,7 @@ switch SIM_GROUP_PRESET
 
         % Number of pixels for the longer side of the area of interest to
         % simulate.
-        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 256;
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 100; % 256;
     case 'diffFreqLindbergVillageML'
         % Presets of interest.
         PRESETS = {'LindbergVillage_ML'};

@@ -76,7 +76,7 @@ if ~exist('PRESET', 'var')
     % by four/two/four tiles from Byunghyun and manually selected towers
     % based on https://www.antennasearch.com/.
     %   {'ACRE_ML', 'HappyHollowPark_ML', 'LindbergVillage_ML'}
-    PRESET = 'ACRE_ML';
+    PRESET = 'HappyHollowPark_ML';
 end
 
 % Suppress selected warnings to reduce messages.
@@ -291,8 +291,9 @@ switch PRESET
         % Use a square area with boundary coordinates.
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
             = constructUtmRectanglePolyMat(...
-            [40.431564, -86.904384; ...
-            40.444903, -86.896195]);
+            [40.426118, -86.908957; ...
+            40.448314, -86.859313]);
+            % [40.431564, -86.904384; 40.444903, -86.896195]
     case {'LindbergVillage_ML'}
         % Use a square area with boundary coordinates.
         simConfigs.UTM_X_Y_BOUNDARY_OF_INTEREST ...
