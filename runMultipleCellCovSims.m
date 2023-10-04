@@ -48,7 +48,7 @@ diary(pathToSaveSimManDiary);
 %     Simulate the ACRE/Happy Hollow Park/Lindberg Village scenarios
 %     specified by four/two/four tiles from Byunghyun with high user
 %     location resolution and different carrier frequencies.
-SIM_GROUP_PRESET = 'diffFreqAcreML';
+SIM_GROUP_PRESET = 'diffFreqLindbergVillageML';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -167,7 +167,7 @@ switch SIM_GROUP_PRESET
 
         % Number of pixels for the longer side of the area of interest to
         % simulate.
-        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 256;
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 100; % 256;
     otherwise
         error(['Unknown simulation group: ', SIM_GROUP_PRESET, '!']);
 end
