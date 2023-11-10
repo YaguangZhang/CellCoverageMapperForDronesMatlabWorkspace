@@ -777,7 +777,8 @@ end
 %% Export Results to .csv Files
 % For easier cooperation,  export into .csv files the raw data of path loss
 % maps for selected scenarios, e.g., ACRE LoRaWAN.
-if startsWith(PRESET, {'ACRE_LORA_', 'UniOfCoBoulderCampus'})
+if startsWith(PRESET, {'ACRE_LORA_', 'ACRE_LORAWAN_ANDREW_', ...
+        'UniOfCoBoulderCampus'})
     disp(' ')
     disp(['    [', datestr(now, datetimeFormat), ...
         '] Exporting results to .csv files ...'])
