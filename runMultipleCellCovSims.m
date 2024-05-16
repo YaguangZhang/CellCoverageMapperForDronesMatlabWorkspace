@@ -48,7 +48,11 @@ diary(pathToSaveSimManDiary);
 %     Simulate the ACRE/Happy Hollow Park/Lindberg Village scenarios
 %     specified by four/two/four tiles from Byunghyun with high user
 %     location resolution and different carrier frequencies.
-SIM_GROUP_PRESET = 'diffFreqLindbergVillageML';
+%   - 'diffFreqLafayetteDowntown'
+%     Simulate the Lafayette Downtown scenario speficified by boundaries
+%     from Ahmed with high user location resolution and different carrier
+%     frequencies.
+SIM_GROUP_PRESET = 'diffFreqLafayetteDowntown';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -164,6 +168,19 @@ switch SIM_GROUP_PRESET
             1955, 1970.1, 1982.5, 1985, ...
             2115, 2125, 2132.5, 2140, 2157.5, 2160, 2167.5, ...
             2355, 2506, 2525.8, 2538.2};
+
+        % Number of pixels for the longer side of the area of interest to
+        % simulate.
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 100; % 256;
+    case 'diffFreqLafayetteDowntown'
+        % Presets of interest.
+        PRESETS = {'LafayetteDowntown_ML'};
+        % Carrier frequencies from Ahmed.
+        CARRIER_FREQUENCIES_IN_MHZ = ...
+            {731.5, 885, ...
+            1955, 1970.1, 1977.5, ...
+            2125, 2150, 2175, 2355, 2506, 2525.8, ...
+            3560,3730.08};
 
         % Number of pixels for the longer side of the area of interest to
         % simulate.
