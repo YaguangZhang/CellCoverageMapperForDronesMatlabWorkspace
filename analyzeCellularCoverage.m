@@ -402,7 +402,7 @@ if exist('NUM_OF_PIXELS_FOR_LONGER_SIDE', 'var')
     simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE ...
         = NUM_OF_PIXELS_FOR_LONGER_SIDE;
 else
-    simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 100;
+    simConfigs.NUM_OF_PIXELS_FOR_LONGER_SIDE = 360;
 end
 
 %   - The guaranteed spacial resolution for terrain profiles; a larger
@@ -519,7 +519,7 @@ end
 %   least this ratio of the first Fresnel zone needs to be clear for a path
 %   to be considered as "line of sight" (LoS); we expect the value to be
 %   larger or equal to 50%.
-simConfigs.LOS_FIRST_FRES_CLEAR_RATIO = 0.6;
+simConfigs.LOS_FIRST_FRES_CLEAR_RATIO = 0.1;
 
 %   - For the NTIA eHata library: the quantile percent not exceeded of the
 %   signal. Limits: 0 < reliability < 1.
