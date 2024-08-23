@@ -49,11 +49,15 @@ diary(pathToSaveSimManDiary);
 %     specified by four/two/four tiles from Byunghyun with high user
 %     location resolution and different carrier frequencies.
 %   - 'diffFreqLafayetteDowntown', 'diffFreqLafayetteValleySt',
-%     'diffFreqLafayetteIndustrial'
+%       'diffFreqLafayetteIndustrial'
 %     Simulate the Lafayette Downtown scenarios speficified by boundaries
 %     from Ahmed with high user location resolution and different carrier
 %     frequencies.
-SIM_GROUP_PRESET = 'diffFreqLafayetteIndustrial';
+%   - {'sevenSetsForcalibrationML'}
+%     Simulate 7 sets of multipleCellCovSims to help Ahmed to calibrate the
+%     measurement datasets for his ML project.
+
+SIM_GROUP_PRESET = 'sevenSetsForcalibrationML';
 
 switch SIM_GROUP_PRESET
     case 'cellularCov'
@@ -210,6 +214,42 @@ switch SIM_GROUP_PRESET
             2125, 2132.5, 2140, 2150, 2160, 2167.5, 2175, ...
             2355, 2506, 2525.8, ...
             3560.4, 3580.2, 3600, 3730.08, 3809.28};
+
+        % Number of pixels for the longer side of the area of interest to
+        % simulate.
+        NUMS_OF_PIXELS_FOR_LONGER_SIDE = 100; % 256;
+    case 'sevenSetsForcalibrationML'
+        % Presets of interest.
+        PRESETS = {'calibrationML-1', 'calibrationML-2', ...
+            'calibrationML-3', 'calibrationML-4', ...
+            'calibrationML-5', 'calibrationML-6', ...
+            'calibrationML-7'};
+
+        % Carrier frequencies from Ahmed. We will simulate all frequencies
+        % for all sets.
+
+        CARRIER_FREQUENCIES_IN_MHZ = num2cell(unique(...
+            [ ... set 1
+            731.5, 742.5, 1955, 1970.1, 1977.5, 1985, ...
+            2140, 2150, 2150, 2167.5, 2175, ...
+            ... set 2
+            742.5, 1955, 1970.1, 2140, 2167.5, ...
+            ... set 3
+            731.5, 742.5, 1955, 1970.1, 1977.5, ...
+            2125, 2132.5, 2140, 2150, 2160, 2167.5, 2355, 2506, 2525.8, ...
+            ... set 4
+            731.5, 742.5, 1955, 1970.1, ...
+            2115, 2132.5, 2140, 2160, 2167.5, 2506, 2525.8, ...
+            ... set 5
+            731.5, 742.5, 1955, 1970.1, 1977.5, ...
+            2125, 2140, 2150, 2160, 2167.5, 2175, 2506, 2525.8, ...
+            ... set 6
+            731.5, 742.5, 1955, 1970.1, 1977.5, ...
+            2125, 2140, 2150, 2160, 2167.5, 2175, 2506, 2525.8, ...
+            ... set 7
+            731.5, 742.5, 1955, 1970.1, ...
+            2115, 2125, 2140, 2150, 2167.5, 2175, 2506, 2525.8
+            ]));
 
         % Number of pixels for the longer side of the area of interest to
         % simulate.
